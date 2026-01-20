@@ -48,6 +48,8 @@ services:
         value: 7d
       - key: LOG_LEVEL
         value: info
+      - key: CORS_ORIGIN
+        value: https://partner-hub-frontend.onrender.com
 
   - type: web
     name: partner-hub-frontend

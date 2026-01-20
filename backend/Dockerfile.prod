@@ -24,4 +24,5 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["node", "dist/main.js"]
+# Run seed then start server
+CMD node dist/seeds/seed.js && node dist/main.js
