@@ -49,8 +49,9 @@ services:
       - key: LOG_LEVEL
         value: info
 
-  - type: static_site
+  - type: web
     name: partner-hub-frontend
+    runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
