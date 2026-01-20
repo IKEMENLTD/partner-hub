@@ -1,6 +1,6 @@
 databases:
   - name: partner-hub-db
-    plan: basic
+    plan: free
     databaseName: partner_hub
     user: partner_hub_user
 
