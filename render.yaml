@@ -1,6 +1,6 @@
 databases:
   - name: partner-hub-db
-    plan: starter
+    plan: basic
     databaseName: partner_hub
     user: partner_hub_user
 
@@ -49,10 +49,8 @@ services:
       - key: LOG_LEVEL
         value: info
 
-  - type: web
+  - type: static_site
     name: partner-hub-frontend
-    runtime: static
-    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
