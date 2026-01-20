@@ -1,7 +1,9 @@
 import { useAuthStore } from '@/store';
 import type { ApiResponse, PaginatedResponse } from '@/types';
 
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api/v1`
+  : '/api/v1';
 
 // Error types for better error handling
 export class ApiError extends Error {
