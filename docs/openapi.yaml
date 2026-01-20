@@ -1,0 +1,2283 @@
+openapi: 3.0.3
+info:
+  title: パートナー協業プラットフォーム API
+  description: |
+    パートナー企業との協業を管理するためのREST API仕様です。
+
+    ## 認証
+    このAPIはBearer Token (JWT)認証を使用します。
+    ログインAPIで取得したアクセストークンを`Authorization`ヘッダーに設定してください。
+
+    ```
+    Authorization: Bearer {accessToken}
+    ```
+
+    ## ページネーション
+    一覧取得APIでは`limit`と`offset`パラメータでページネーションを制御できます。
+
+    ## エラーレスポンス
+    全てのエラーは統一フォーマットで返却されます。
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@example.com
+
+servers:
+  - url: https://api.example.com/api
+    description: Production server
+  - url: https://staging-api.example.com/api
+    description: Staging server
+  - url: http://localhost:3000/api
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: 認証関連API
+  - name: Projects
+    description: 案件管理API
+  - name: Tasks
+    description: タスク管理API
+  - name: Partners
+    description: パートナー管理API
+  - name: Dashboard
+    description: ダッシュボードAPI
+  - name: Reminders
+    description: リマインド設定API
+
+paths:
+  # ============================================================
+  # Authentication APIs
+  # ============================================================
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: ログイン
+      description: ユーザー認証を行い、アクセストークンを取得します。
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: INVALID_CREDENTIALS
+                  message: メールアドレスまたはパスワードが正しくありません
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: ログアウト
+      description: 現在のセッションをログアウトします。
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: ログアウト成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: 現在のユーザー情報取得
+      description: 現在ログイン中のユーザー情報を取得します。
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============================================================
+  # Project APIs
+  # ============================================================
+  /projects:
+    get:
+      tags:
+        - Projects
+      summary: 案件一覧取得
+      description: 案件一覧を取得します。フィルタリング、ページネーションに対応しています。
+      operationId: listProjects
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - name: status
+          in: query
+          description: ステータスでフィルタ
+          schema:
+            $ref: '#/components/schemas/ProjectStatus'
+        - name: partnerId
+          in: query
+          description: パートナーIDでフィルタ
+          schema:
+            type: string
+        - name: managerId
+          in: query
+          description: 担当マネージャーIDでフィルタ
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: 案件名・説明での検索
+          schema:
+            type: string
+        - name: startDateFrom
+          in: query
+          description: 開始日（以降）でフィルタ
+          schema:
+            type: string
+            format: date
+        - name: startDateTo
+          in: query
+          description: 開始日（以前）でフィルタ
+          schema:
+            type: string
+            format: date
+        - name: sortBy
+          in: query
+          description: ソート項目
+          schema:
+            type: string
+            enum: [createdAt, updatedAt, startDate, name]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: ソート順
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Projects
+      summary: 案件作成
+      description: 新規案件を作成します。
+      operationId: createProject
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /projects/{id}:
+    get:
+      tags:
+        - Projects
+      summary: 案件詳細取得
+      description: 指定した案件の詳細情報を取得します。
+      operationId: getProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdParam'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProjectDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Projects
+      summary: 案件更新
+      description: 既存の案件を更新します。
+      operationId: updateProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags:
+        - Projects
+      summary: 案件削除
+      description: 案件を削除します（論理削除）。
+      operationId: deleteProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdParam'
+      responses:
+        '204':
+          description: 削除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 競合エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: HAS_ACTIVE_TASKS
+                  message: 進行中のタスクがあるため削除できません
+
+  # ============================================================
+  # Task APIs
+  # ============================================================
+  /projects/{projectId}/tasks:
+    get:
+      tags:
+        - Tasks
+      summary: タスク一覧取得
+      description: 指定した案件のタスク一覧を取得します。
+      operationId: listTasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          description: 案件ID
+          schema:
+            type: string
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - name: status
+          in: query
+          description: ステータスでフィルタ
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+        - name: assigneeId
+          in: query
+          description: 担当者IDでフィルタ
+          schema:
+            type: string
+        - name: priority
+          in: query
+          description: 優先度でフィルタ
+          schema:
+            $ref: '#/components/schemas/Priority'
+        - name: dueDateFrom
+          in: query
+          description: 期限日（以降）でフィルタ
+          schema:
+            type: string
+            format: date
+        - name: dueDateTo
+          in: query
+          description: 期限日（以前）でフィルタ
+          schema:
+            type: string
+            format: date
+        - name: isOverdue
+          in: query
+          description: 期限超過タスクのみ取得
+          schema:
+            type: boolean
+        - name: sortBy
+          in: query
+          description: ソート項目
+          schema:
+            type: string
+            enum: [createdAt, dueDate, priority]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: ソート順
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Tasks
+      summary: タスク作成
+      description: 新規タスクを作成します。
+      operationId: createTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          description: 案件ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /tasks/{id}:
+    put:
+      tags:
+        - Tasks
+      summary: タスク更新
+      description: 既存のタスクを更新します。
+      operationId: updateTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags:
+        - Tasks
+      summary: タスク削除
+      description: タスクを削除します。
+      operationId: deleteTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '204':
+          description: 削除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================================
+  # Partner APIs
+  # ============================================================
+  /partners:
+    get:
+      tags:
+        - Partners
+      summary: パートナー一覧取得
+      description: パートナー一覧を取得します。
+      operationId: listPartners
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - name: status
+          in: query
+          description: ステータスでフィルタ
+          schema:
+            $ref: '#/components/schemas/PartnerStatus'
+        - name: search
+          in: query
+          description: 会社名・担当者名での検索
+          schema:
+            type: string
+        - name: industry
+          in: query
+          description: 業種でフィルタ
+          schema:
+            type: string
+        - name: rating
+          in: query
+          description: 評価（この値以上）でフィルタ
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+        - name: sortBy
+          in: query
+          description: ソート項目
+          schema:
+            type: string
+            enum: [createdAt, name, rating]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: ソート順
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Partners
+      summary: パートナー登録
+      description: 新規パートナーを登録します。
+      operationId: createPartner
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerCreateRequest'
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Partner'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /partners/{id}:
+    get:
+      tags:
+        - Partners
+      summary: パートナー詳細取得
+      description: 指定したパートナーの詳細情報を取得します。
+      operationId: getPartner
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PartnerIdParam'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartnerDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Partners
+      summary: パートナー更新
+      description: 既存のパートナー情報を更新します。
+      operationId: updatePartner
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PartnerIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Partner'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ============================================================
+  # Dashboard APIs
+  # ============================================================
+  /dashboard/my-today:
+    get:
+      tags:
+        - Dashboard
+      summary: 今日のタスク・アラート取得
+      description: ログインユーザーの今日のタスクとアラートを取得します。
+      operationId: getMyTodayDashboard
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MyTodayDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /dashboard/manager:
+    get:
+      tags:
+        - Dashboard
+      summary: マネージャーダッシュボード取得
+      description: マネージャー向けダッシュボード情報を取得します。
+      operationId: getManagerDashboard
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          description: 集計期間
+          schema:
+            type: string
+            enum: [week, month, quarter]
+            default: month
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ManagerDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================================
+  # Reminder APIs
+  # ============================================================
+  /reminders:
+    get:
+      tags:
+        - Reminders
+      summary: リマインド設定一覧取得
+      description: リマインド設定一覧を取得します。
+      operationId: listReminders
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - name: isActive
+          in: query
+          description: 有効なリマインドのみ取得
+          schema:
+            type: boolean
+        - name: type
+          in: query
+          description: タイプでフィルタ
+          schema:
+            $ref: '#/components/schemas/ReminderType'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Reminders
+      summary: リマインド設定作成
+      description: 新規リマインド設定を作成します。
+      operationId: createReminder
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderCreateRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Reminder'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /reminders/{id}:
+    put:
+      tags:
+        - Reminders
+      summary: リマインド設定更新
+      description: 既存のリマインド設定を更新します。
+      operationId: updateReminder
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ReminderIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Reminder'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+# ============================================================
+# Components
+# ============================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWTアクセストークン
+
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      description: 取得件数
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+    OffsetParam:
+      name: offset
+      in: query
+      description: 取得開始位置
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+    ProjectIdParam:
+      name: id
+      in: path
+      required: true
+      description: 案件ID
+      schema:
+        type: string
+
+    TaskIdParam:
+      name: id
+      in: path
+      required: true
+      description: タスクID
+      schema:
+        type: string
+
+    PartnerIdParam:
+      name: id
+      in: path
+      required: true
+      description: パートナーID
+      schema:
+        type: string
+
+    ReminderIdParam:
+      name: id
+      in: path
+      required: true
+      description: リマインドID
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: 認証エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: 認証が必要です
+
+    Forbidden:
+      description: 権限エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: FORBIDDEN
+              message: アクセス権限がありません
+
+    NotFound:
+      description: リソース未検出
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: NOT_FOUND
+              message: 指定されたリソースが見つかりません
+
+    ValidationError:
+      description: バリデーションエラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: 入力内容に誤りがあります
+              details:
+                - field: email
+                  message: 有効なメールアドレスを入力してください
+
+  schemas:
+    # ============================================================
+    # Common Schemas
+    # ============================================================
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: エラーコード
+            message:
+              type: string
+              description: エラーメッセージ
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    description: フィールド名
+                  message:
+                    type: string
+                    description: 詳細メッセージ
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: 総件数
+        limit:
+          type: integer
+          description: 取得件数
+        offset:
+          type: integer
+          description: 取得開始位置
+        hasMore:
+          type: boolean
+          description: 追加データの有無
+
+    Priority:
+      type: string
+      enum: [low, medium, high]
+      description: 優先度
+
+    # ============================================================
+    # Authentication Schemas
+    # ============================================================
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          description: パスワード
+          example: password123
+
+    LoginResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+              description: アクセストークン
+            refreshToken:
+              type: string
+              description: リフレッシュトークン
+            expiresIn:
+              type: integer
+              description: トークン有効期限（秒）
+            tokenType:
+              type: string
+              description: トークンタイプ
+              example: Bearer
+            user:
+              $ref: '#/components/schemas/UserSummary'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ユーザーID
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+        name:
+          type: string
+          description: 氏名
+        role:
+          type: string
+          enum: [admin, manager, member, partner]
+          description: 役割
+        department:
+          type: string
+          description: 部署
+        partnerId:
+          type: string
+          nullable: true
+          description: パートナーID
+        permissions:
+          type: array
+          items:
+            type: string
+          description: 権限リスト
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ユーザーID
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+        name:
+          type: string
+          description: 氏名
+        role:
+          type: string
+          enum: [admin, manager, member, partner]
+          description: 役割
+
+    # ============================================================
+    # Project Schemas
+    # ============================================================
+    ProjectStatus:
+      type: string
+      enum: [draft, active, completed, archived]
+      description: 案件ステータス
+
+    ProjectSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 案件ID
+        name:
+          type: string
+          description: 案件名
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 案件ID
+        name:
+          type: string
+          description: 案件名
+        description:
+          type: string
+          description: 説明
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        startDate:
+          type: string
+          format: date
+          description: 開始日
+        endDate:
+          type: string
+          format: date
+          description: 終了日
+        budget:
+          type: integer
+          description: 予算（円）
+        actualCost:
+          type: integer
+          description: 実績費用（円）
+        partner:
+          $ref: '#/components/schemas/PartnerSummary'
+        manager:
+          $ref: '#/components/schemas/UserSummary'
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: 進捗率
+        taskSummary:
+          $ref: '#/components/schemas/TaskSummary'
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+
+    ProjectDetail:
+      allOf:
+        - $ref: '#/components/schemas/Project'
+        - type: object
+          properties:
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserSummary'
+              description: メンバー一覧
+            milestones:
+              type: array
+              items:
+                $ref: '#/components/schemas/Milestone'
+              description: マイルストーン一覧
+            attachments:
+              type: array
+              items:
+                $ref: '#/components/schemas/Attachment'
+              description: 添付ファイル一覧
+
+    ProjectListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    ProjectCreateRequest:
+      type: object
+      required:
+        - name
+        - startDate
+        - endDate
+        - partnerId
+        - managerId
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: 案件名
+        description:
+          type: string
+          maxLength: 2000
+          description: 説明
+        status:
+          type: string
+          enum: [draft, active]
+          default: draft
+          description: ステータス
+        priority:
+          $ref: '#/components/schemas/Priority'
+        startDate:
+          type: string
+          format: date
+          description: 開始日
+        endDate:
+          type: string
+          format: date
+          description: 終了日
+        budget:
+          type: integer
+          description: 予算（円）
+        partnerId:
+          type: string
+          description: パートナーID
+        managerId:
+          type: string
+          description: マネージャーID
+        memberIds:
+          type: array
+          items:
+            type: string
+          description: メンバーIDリスト
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ
+
+    ProjectUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: 案件名
+        description:
+          type: string
+          maxLength: 2000
+          description: 説明
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        startDate:
+          type: string
+          format: date
+          description: 開始日
+        endDate:
+          type: string
+          format: date
+          description: 終了日
+        budget:
+          type: integer
+          description: 予算（円）
+        partnerId:
+          type: string
+          description: パートナーID
+        managerId:
+          type: string
+          description: マネージャーID
+        memberIds:
+          type: array
+          items:
+            type: string
+          description: メンバーIDリスト
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ
+
+    TaskSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: 総タスク数
+        completed:
+          type: integer
+          description: 完了タスク数
+        inProgress:
+          type: integer
+          description: 進行中タスク数
+        pending:
+          type: integer
+          description: 保留タスク数
+        overdue:
+          type: integer
+          description: 期限超過タスク数
+
+    Milestone:
+      type: object
+      properties:
+        id:
+          type: string
+          description: マイルストーンID
+        name:
+          type: string
+          description: マイルストーン名
+        dueDate:
+          type: string
+          format: date
+          description: 期限日
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+          description: ステータス
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 添付ファイルID
+        name:
+          type: string
+          description: ファイル名
+        size:
+          type: integer
+          description: ファイルサイズ（バイト）
+        mimeType:
+          type: string
+          description: MIMEタイプ
+        uploadedAt:
+          type: string
+          format: date-time
+          description: アップロード日時
+
+    # ============================================================
+    # Task Schemas
+    # ============================================================
+    TaskStatus:
+      type: string
+      enum: [pending, in_progress, review, completed]
+      description: タスクステータス
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          description: タスクID
+        projectId:
+          type: string
+          description: 案件ID
+        title:
+          type: string
+          description: タスク名
+        description:
+          type: string
+          description: 説明
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        dueDate:
+          type: string
+          format: date
+          description: 期限日
+        estimatedHours:
+          type: integer
+          description: 見積工数（時間）
+        actualHours:
+          type: integer
+          description: 実績工数（時間）
+        assignee:
+          $ref: '#/components/schemas/UserSummary'
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ
+        isOverdue:
+          type: boolean
+          description: 期限超過フラグ
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 完了日時
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+
+    TaskListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    TaskCreateRequest:
+      type: object
+      required:
+        - title
+        - dueDate
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          description: タスク名
+        description:
+          type: string
+          maxLength: 4000
+          description: 説明
+        status:
+          type: string
+          enum: [pending, in_progress]
+          default: pending
+          description: ステータス
+        priority:
+          $ref: '#/components/schemas/Priority'
+        dueDate:
+          type: string
+          format: date
+          description: 期限日
+        estimatedHours:
+          type: integer
+          description: 見積工数（時間）
+        assigneeId:
+          type: string
+          description: 担当者ID
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ
+
+    TaskUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          description: タスク名
+        description:
+          type: string
+          maxLength: 4000
+          description: 説明
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        dueDate:
+          type: string
+          format: date
+          description: 期限日
+        estimatedHours:
+          type: integer
+          description: 見積工数（時間）
+        actualHours:
+          type: integer
+          description: 実績工数（時間）
+        assigneeId:
+          type: string
+          description: 担当者ID
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ
+
+    # ============================================================
+    # Partner Schemas
+    # ============================================================
+    PartnerStatus:
+      type: string
+      enum: [pending, active, inactive]
+      description: パートナーステータス
+
+    PartnerSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: パートナーID
+        name:
+          type: string
+          description: 会社名
+
+    Partner:
+      type: object
+      properties:
+        id:
+          type: string
+          description: パートナーID
+        name:
+          type: string
+          description: 会社名
+        industry:
+          type: string
+          description: 業種
+        status:
+          $ref: '#/components/schemas/PartnerStatus'
+        contactPerson:
+          type: string
+          description: 担当者名
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+        phone:
+          type: string
+          description: 電話番号
+        rating:
+          type: number
+          format: float
+          minimum: 1.0
+          maximum: 5.0
+          nullable: true
+          description: 評価
+        totalProjects:
+          type: integer
+          description: 総案件数
+        activeProjects:
+          type: integer
+          description: 進行中案件数
+        contractStartDate:
+          type: string
+          format: date
+          description: 契約開始日
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+
+    PartnerDetail:
+      allOf:
+        - $ref: '#/components/schemas/Partner'
+        - type: object
+          properties:
+            description:
+              type: string
+              description: 会社説明
+            address:
+              $ref: '#/components/schemas/Address'
+            website:
+              type: string
+              format: uri
+              description: WebサイトURL
+            skills:
+              type: array
+              items:
+                type: string
+              description: スキル・技術
+            certifications:
+              type: array
+              items:
+                type: string
+              description: 資格・認定
+            contractInfo:
+              $ref: '#/components/schemas/ContractInfo'
+            statistics:
+              $ref: '#/components/schemas/PartnerStatistics'
+            recentProjects:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProjectSummary'
+              description: 最近の案件
+            notes:
+              type: string
+              description: 備考
+
+    PartnerListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Partner'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    PartnerCreateRequest:
+      type: object
+      required:
+        - name
+        - industry
+        - contactPerson
+        - email
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: 会社名
+        industry:
+          type: string
+          description: 業種
+        status:
+          type: string
+          enum: [pending, active]
+          default: pending
+          description: ステータス
+        description:
+          type: string
+          maxLength: 2000
+          description: 会社説明
+        address:
+          $ref: '#/components/schemas/Address'
+        contactPerson:
+          type: string
+          description: 担当者名
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+        phone:
+          type: string
+          description: 電話番号
+        website:
+          type: string
+          format: uri
+          description: WebサイトURL
+        skills:
+          type: array
+          items:
+            type: string
+          description: スキル・技術
+        certifications:
+          type: array
+          items:
+            type: string
+          description: 資格・認定
+        contractInfo:
+          $ref: '#/components/schemas/ContractInfo'
+        notes:
+          type: string
+          description: 備考
+
+    PartnerUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: 会社名
+        industry:
+          type: string
+          description: 業種
+        status:
+          $ref: '#/components/schemas/PartnerStatus'
+        description:
+          type: string
+          maxLength: 2000
+          description: 会社説明
+        address:
+          $ref: '#/components/schemas/Address'
+        contactPerson:
+          type: string
+          description: 担当者名
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+        phone:
+          type: string
+          description: 電話番号
+        website:
+          type: string
+          format: uri
+          description: WebサイトURL
+        skills:
+          type: array
+          items:
+            type: string
+          description: スキル・技術
+        certifications:
+          type: array
+          items:
+            type: string
+          description: 資格・認定
+        contractInfo:
+          $ref: '#/components/schemas/ContractInfo'
+        rating:
+          type: number
+          format: float
+          minimum: 1.0
+          maximum: 5.0
+          description: 評価
+        notes:
+          type: string
+          description: 備考
+
+    Address:
+      type: object
+      properties:
+        postalCode:
+          type: string
+          description: 郵便番号
+        prefecture:
+          type: string
+          description: 都道府県
+        city:
+          type: string
+          description: 市区町村
+        street:
+          type: string
+          description: 町名・番地
+        building:
+          type: string
+          description: 建物名
+
+    ContractInfo:
+      type: object
+      properties:
+        contractStartDate:
+          type: string
+          format: date
+          description: 契約開始日
+        contractEndDate:
+          type: string
+          format: date
+          description: 契約終了日
+        contractType:
+          type: string
+          description: 契約タイプ
+        paymentTerms:
+          type: string
+          description: 支払条件
+
+    PartnerStatistics:
+      type: object
+      properties:
+        totalProjects:
+          type: integer
+          description: 総案件数
+        activeProjects:
+          type: integer
+          description: 進行中案件数
+        completedProjects:
+          type: integer
+          description: 完了案件数
+        averageProjectDuration:
+          type: integer
+          description: 平均案件期間（日）
+        onTimeDeliveryRate:
+          type: number
+          format: float
+          description: 納期遵守率（%）
+
+    # ============================================================
+    # Dashboard Schemas
+    # ============================================================
+    MyTodayDashboard:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: 対象日
+        user:
+          $ref: '#/components/schemas/UserSummary'
+        summary:
+          type: object
+          properties:
+            totalTasks:
+              type: integer
+              description: 総タスク数
+            completedTasks:
+              type: integer
+              description: 完了タスク数
+            inProgressTasks:
+              type: integer
+              description: 進行中タスク数
+            pendingTasks:
+              type: integer
+              description: 保留タスク数
+            overdueTasks:
+              type: integer
+              description: 期限超過タスク数
+        todayTasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardTask'
+          description: 今日のタスク
+        overdueTasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/OverdueTask'
+          description: 期限超過タスク
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+          description: アラート
+        upcomingMeetings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Meeting'
+          description: 予定されている会議
+
+    DashboardTask:
+      type: object
+      properties:
+        id:
+          type: string
+          description: タスクID
+        projectId:
+          type: string
+          description: 案件ID
+        projectName:
+          type: string
+          description: 案件名
+        title:
+          type: string
+          description: タスク名
+        priority:
+          $ref: '#/components/schemas/Priority'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        dueDate:
+          type: string
+          format: date
+          description: 期限日
+        isOverdue:
+          type: boolean
+          description: 期限超過フラグ
+
+    OverdueTask:
+      allOf:
+        - $ref: '#/components/schemas/DashboardTask'
+        - type: object
+          properties:
+            daysOverdue:
+              type: integer
+              description: 超過日数
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          description: アラートID
+        type:
+          type: string
+          enum: [task_overdue, project_milestone, project_deadline, budget_warning]
+          description: アラートタイプ
+        severity:
+          type: string
+          enum: [low, medium, high]
+          description: 重要度
+        message:
+          type: string
+          description: メッセージ
+        relatedId:
+          type: string
+          description: 関連リソースID
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+
+    Meeting:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 会議ID
+        title:
+          type: string
+          description: 会議名
+        startTime:
+          type: string
+          format: date-time
+          description: 開始時刻
+        endTime:
+          type: string
+          format: date-time
+          description: 終了時刻
+        projectId:
+          type: string
+          description: 関連案件ID
+        projectName:
+          type: string
+          description: 関連案件名
+
+    ManagerDashboard:
+      type: object
+      properties:
+        period:
+          type: string
+          enum: [week, month, quarter]
+          description: 集計期間
+        periodStart:
+          type: string
+          format: date
+          description: 期間開始日
+        periodEnd:
+          type: string
+          format: date
+          description: 期間終了日
+        projectSummary:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: 総案件数
+            active:
+              type: integer
+              description: 進行中
+            completed:
+              type: integer
+              description: 完了
+            delayed:
+              type: integer
+              description: 遅延
+            onTrack:
+              type: integer
+              description: 順調
+            atRisk:
+              type: integer
+              description: リスクあり
+        taskSummary:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: 総タスク数
+            completed:
+              type: integer
+              description: 完了
+            inProgress:
+              type: integer
+              description: 進行中
+            pending:
+              type: integer
+              description: 保留
+            overdue:
+              type: integer
+              description: 期限超過
+            completionRate:
+              type: number
+              format: float
+              description: 完了率（%）
+        partnerPerformance:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartnerPerformance'
+          description: パートナー実績
+        projectsAtRisk:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectAtRisk'
+          description: リスクのある案件
+        recentActivities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+          description: 最近のアクティビティ
+        budgetOverview:
+          $ref: '#/components/schemas/BudgetOverview'
+        upcomingDeadlines:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deadline'
+          description: 今後の期限
+
+    PartnerPerformance:
+      type: object
+      properties:
+        partnerId:
+          type: string
+          description: パートナーID
+        partnerName:
+          type: string
+          description: パートナー名
+        activeProjects:
+          type: integer
+          description: 進行中案件数
+        tasksCompleted:
+          type: integer
+          description: 完了タスク数
+        tasksTotal:
+          type: integer
+          description: 総タスク数
+        onTimeDeliveryRate:
+          type: number
+          format: float
+          description: 納期遵守率（%）
+        rating:
+          type: number
+          format: float
+          description: 評価
+
+    ProjectAtRisk:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 案件ID
+        name:
+          type: string
+          description: 案件名
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        progress:
+          type: integer
+          description: 進捗率
+        daysRemaining:
+          type: integer
+          description: 残り日数
+        overdueTaskCount:
+          type: integer
+          description: 期限超過タスク数
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+          description: リスクレベル
+        riskReasons:
+          type: array
+          items:
+            type: string
+          description: リスク理由
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+          description: アクティビティID
+        type:
+          type: string
+          enum: [task_completed, task_created, project_created, project_updated, comment_added]
+          description: アクティビティタイプ
+        description:
+          type: string
+          description: 説明
+        projectId:
+          type: string
+          description: 関連案件ID
+        projectName:
+          type: string
+          description: 関連案件名
+        userId:
+          type: string
+          description: ユーザーID
+        userName:
+          type: string
+          description: ユーザー名
+        createdAt:
+          type: string
+          format: date-time
+          description: 発生日時
+
+    BudgetOverview:
+      type: object
+      properties:
+        totalBudget:
+          type: integer
+          description: 総予算（円）
+        totalSpent:
+          type: integer
+          description: 総使用額（円）
+        utilizationRate:
+          type: number
+          format: float
+          description: 利用率（%）
+        projectBudgets:
+          type: array
+          items:
+            type: object
+            properties:
+              projectId:
+                type: string
+                description: 案件ID
+              projectName:
+                type: string
+                description: 案件名
+              budget:
+                type: integer
+                description: 予算（円）
+              spent:
+                type: integer
+                description: 使用額（円）
+              utilizationRate:
+                type: number
+                format: float
+                description: 利用率（%）
+
+    Deadline:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [milestone, project, task]
+          description: 期限タイプ
+        projectId:
+          type: string
+          description: 関連案件ID
+        projectName:
+          type: string
+          description: 関連案件名
+        title:
+          type: string
+          description: タイトル
+        dueDate:
+          type: string
+          format: date
+          description: 期限日
+        daysRemaining:
+          type: integer
+          description: 残り日数
+
+    # ============================================================
+    # Reminder Schemas
+    # ============================================================
+    ReminderType:
+      type: string
+      enum: [task, project, custom]
+      description: リマインドタイプ
+
+    Reminder:
+      type: object
+      properties:
+        id:
+          type: string
+          description: リマインドID
+        type:
+          $ref: '#/components/schemas/ReminderType'
+        title:
+          type: string
+          description: タイトル
+        description:
+          type: string
+          description: 説明
+        isActive:
+          type: boolean
+          description: 有効フラグ
+        triggerCondition:
+          $ref: '#/components/schemas/TriggerCondition'
+        notificationChannels:
+          type: array
+          items:
+            type: string
+            enum: [email, in_app, slack]
+          description: 通知チャネル
+        targetUsers:
+          type: array
+          items:
+            type: string
+            enum: [assignee, manager, all_members]
+          description: 通知対象
+        relatedProjectId:
+          type: string
+          nullable: true
+          description: 関連案件ID
+        relatedTaskId:
+          type: string
+          nullable: true
+          description: 関連タスクID
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        lastTriggeredAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 最終実行日時
+        nextTriggerAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 次回実行日時
+        createdBy:
+          $ref: '#/components/schemas/UserSummary'
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+
+    ReminderListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reminder'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    ReminderCreateRequest:
+      type: object
+      required:
+        - type
+        - title
+        - notificationChannels
+        - targetUsers
+      properties:
+        type:
+          $ref: '#/components/schemas/ReminderType'
+        title:
+          type: string
+          maxLength: 100
+          description: タイトル
+        description:
+          type: string
+          maxLength: 500
+          description: 説明
+        isActive:
+          type: boolean
+          default: true
+          description: 有効フラグ
+        triggerCondition:
+          $ref: '#/components/schemas/TriggerCondition'
+        notificationChannels:
+          type: array
+          items:
+            type: string
+            enum: [email, in_app, slack]
+          description: 通知チャネル
+        targetUsers:
+          type: array
+          items:
+            type: string
+            enum: [assignee, manager, all_members]
+          description: 通知対象
+        relatedProjectId:
+          type: string
+          description: 関連案件ID
+        relatedTaskId:
+          type: string
+          description: 関連タスクID
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+
+    ReminderUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          description: タイトル
+        description:
+          type: string
+          maxLength: 500
+          description: 説明
+        isActive:
+          type: boolean
+          description: 有効フラグ
+        triggerCondition:
+          $ref: '#/components/schemas/TriggerCondition'
+        notificationChannels:
+          type: array
+          items:
+            type: string
+            enum: [email, in_app, slack]
+          description: 通知チャネル
+        targetUsers:
+          type: array
+          items:
+            type: string
+            enum: [assignee, manager, all_members]
+          description: 通知対象
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+
+    TriggerCondition:
+      type: object
+      nullable: true
+      properties:
+        event:
+          type: string
+          enum: [task_due, project_end, milestone_due]
+          description: イベントタイプ
+        offsetDays:
+          type: integer
+          description: オフセット日数
+        offsetHours:
+          type: integer
+          description: オフセット時間
+        filter:
+          type: object
+          additionalProperties: true
+          description: フィルタ条件
+
+    Schedule:
+      type: object
+      nullable: true
+      properties:
+        type:
+          type: string
+          enum: [daily, weekly, monthly]
+          description: スケジュールタイプ
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: 曜日（0-6、週次の場合）
+        dayOfMonth:
+          type: integer
+          minimum: 1
+          maximum: 31
+          description: 日（1-31、月次の場合）
+        time:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: 時刻（HH:mm形式）

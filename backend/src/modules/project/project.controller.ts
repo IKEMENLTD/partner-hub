@@ -1,0 +1,245 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  ParseUUIDPipe,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
+import { ProjectService } from './project.service';
+import {
+  CreateProjectDto,
+  UpdateProjectDto,
+  QueryProjectDto,
+  UpdateProjectStatusDto,
+  UpdateProjectProgressDto,
+} from './dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
+import { TaskService } from '../task/task.service';
+import { CreateTaskDto, QueryTaskDto } from '../task/dto';
+
+@ApiTags('Projects')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('projects')
+export class ProjectController {
+  constructor(
+    private readonly projectService: ProjectService,
+    private readonly taskService: TaskService,
+  ) {}
+
+  @Post()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Create a new project' })
+  @ApiResponse({ status: 201, description: 'Project created successfully' })
+  async create(
+    @Body() createProjectDto: CreateProjectDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.projectService.create(createProjectDto, userId);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all projects with pagination and filters' })
+  @ApiResponse({ status: 200, description: 'List of projects' })
+  async findAll(@Query() queryDto: QueryProjectDto) {
+    return this.projectService.findAll(queryDto);
+  }
+
+  @Get('statistics')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Get project statistics' })
+  @ApiResponse({ status: 200, description: 'Project statistics' })
+  async getStatistics() {
+    return this.projectService.getProjectStatistics();
+  }
+
+  @Get('overdue')
+  @ApiOperation({ summary: 'Get overdue projects' })
+  @ApiResponse({ status: 200, description: 'List of overdue projects' })
+  async getOverdueProjects() {
+    return this.projectService.getOverdueProjects();
+  }
+
+  @Get('upcoming-deadlines')
+  @ApiOperation({ summary: 'Get projects with upcoming deadlines' })
+  @ApiQuery({ name: 'days', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'List of projects with upcoming deadlines' })
+  async getUpcomingDeadlines(@Query('days') days?: number) {
+    return this.projectService.getUpcomingDeadlines(days || 7);
+  }
+
+  @Get('by-partner/:partnerId')
+  @ApiOperation({ summary: 'Get projects by partner ID' })
+  @ApiParam({ name: 'partnerId', description: 'Partner ID' })
+  @ApiResponse({ status: 200, description: 'List of projects for the partner' })
+  async getProjectsByPartner(@Param('partnerId', ParseUUIDPipe) partnerId: string) {
+    return this.projectService.getProjectsByPartner(partnerId);
+  }
+
+  @Get(':id/timeline')
+  @ApiOperation({ summary: 'Get project timeline/history' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project timeline' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  async getTimeline(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectService.getProjectTimeline(id);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get project by ID' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project details' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectService.findOne(id);
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Update project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project updated successfully' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateProjectDto: UpdateProjectDto,
+  ) {
+    return this.projectService.update(id, updateProjectDto);
+  }
+
+  @Patch(':id/status')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Update project status' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project status updated' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  @ApiResponse({ status: 400, description: 'Invalid status value' })
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateStatusDto: UpdateProjectStatusDto,
+  ) {
+    return this.projectService.updateStatus(id, updateStatusDto.status);
+  }
+
+  @Patch(':id/progress')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @ApiOperation({ summary: 'Update project progress' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project progress updated' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  @ApiResponse({ status: 400, description: 'Invalid progress value (must be 0-100)' })
+  async updateProgress(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateProgressDto: UpdateProjectProgressDto,
+  ) {
+    return this.projectService.updateProgress(id, updateProgressDto.progress);
+  }
+
+  @Post(':id/partners/:partnerId')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Add partner to project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiParam({ name: 'partnerId', description: 'Partner ID' })
+  @ApiResponse({ status: 200, description: 'Partner added to project' })
+  async addPartner(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('partnerId', ParseUUIDPipe) partnerId: string,
+  ) {
+    return this.projectService.addPartner(id, partnerId);
+  }
+
+  @Delete(':id/partners/:partnerId')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Remove partner from project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiParam({ name: 'partnerId', description: 'Partner ID' })
+  @ApiResponse({ status: 200, description: 'Partner removed from project' })
+  async removePartner(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('partnerId', ParseUUIDPipe) partnerId: string,
+  ) {
+    return this.projectService.removePartner(id, partnerId);
+  }
+
+  @Post(':id/members')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Add member to project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Member added to project' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  async addMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.projectService.addMember(id, userId);
+  }
+
+  @Delete(':id/members/:memberId')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Remove member from project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiParam({ name: 'memberId', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Member removed from project' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  async removeMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('memberId', ParseUUIDPipe) memberId: string,
+  ) {
+    return this.projectService.removeMember(id, memberId);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 204, description: 'Project deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    await this.projectService.remove(id);
+  }
+
+  // Task endpoints under project
+  @Get(':projectId/tasks')
+  @ApiOperation({ summary: 'Get tasks for a project' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'List of tasks' })
+  async getProjectTasks(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Query() queryDto: QueryTaskDto,
+  ) {
+    return this.taskService.findAll({ ...queryDto, projectId });
+  }
+
+  @Post(':projectId/tasks')
+  @ApiOperation({ summary: 'Create a task for a project' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 201, description: 'Task created successfully' })
+  async createProjectTask(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() createTaskDto: CreateTaskDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.taskService.create({ ...createTaskDto, projectId }, userId);
+  }
+}

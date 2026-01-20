@@ -1,0 +1,65 @@
+databases:
+  - name: partner-hub-db
+    plan: starter
+    databaseName: partner_hub
+    user: partner_hub_user
+
+services:
+  - type: web
+    name: partner-hub-backend
+    runtime: docker
+    plan: starter
+    rootDir: backend
+    dockerfilePath: ./Dockerfile.prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: API_PREFIX
+        value: api/v1
+      - key: DB_HOST
+        fromDatabase:
+          name: partner-hub-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: partner-hub-db
+          property: port
+      - key: DB_USERNAME
+        fromDatabase:
+          name: partner-hub-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: partner-hub-db
+          property: password
+      - key: DB_DATABASE
+        fromDatabase:
+          name: partner-hub-db
+          property: database
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: LOG_LEVEL
+        value: info
+
+  - type: web
+    name: partner-hub-frontend
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://partner-hub-backend.onrender.com

@@ -1,0 +1,420 @@
+import { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import {
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Calendar,
+  Users,
+  Clock,
+  Building,
+  FileText,
+  CheckSquare,
+  History,
+  Paperclip,
+  Upload,
+} from 'lucide-react';
+import { useProject, useProjectTimeline, useDeleteProject, useUpdateTask } from '@/hooks';
+import type { ProjectDetailTab, TaskStatus } from '@/types';
+import { getUserDisplayName } from '@/types';
+import {
+  Button,
+  Badge,
+  Avatar,
+  Card,
+  CardHeader,
+  CardContent,
+  PageLoading,
+  ErrorMessage,
+  Tabs,
+  TabList,
+  TabPanel,
+  Modal,
+  ModalFooter,
+  EmptyState,
+} from '@/components/common';
+import { TaskList } from '@/components/task';
+import { ProjectTimeline } from '@/components/project';
+
+const statusConfig = {
+  draft: { label: '下書き', variant: 'default' as const },
+  planning: { label: '計画中', variant: 'info' as const },
+  in_progress: { label: '進行中', variant: 'primary' as const },
+  review: { label: 'レビュー', variant: 'warning' as const },
+  completed: { label: '完了', variant: 'success' as const },
+  on_hold: { label: '保留', variant: 'default' as const },
+  cancelled: { label: 'キャンセル', variant: 'danger' as const },
+};
+
+const priorityConfig = {
+  low: { label: '低', variant: 'default' as const },
+  medium: { label: '中', variant: 'info' as const },
+  high: { label: '高', variant: 'warning' as const },
+  urgent: { label: '緊急', variant: 'danger' as const },
+};
+
+export function ProjectDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const { data, isLoading, error, refetch } = useProject(id);
+  const { data: timelineData } = useProjectTimeline(id);
+  const { mutate: deleteProject, isPending: isDeleting } = useDeleteProject();
+  const { mutate: updateTask } = useUpdateTask();
+
+  const [activeTab, setActiveTab] = useState<ProjectDetailTab>('overview');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  if (isLoading) {
+    return <PageLoading />;
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage
+        message="案件の読み込みに失敗しました"
+        retry={() => refetch()}
+      />
+    );
+  }
+
+  const project = data;
+  if (!project) {
+    return (
+      <ErrorMessage message="案件が見つかりません" />
+    );
+  }
+
+  const status = statusConfig[project.status];
+  const priority = priorityConfig[project.priority];
+  const timeline: import('@/types').TimelineEvent[] = timelineData || [];
+
+  const progress = project.progress ?? 0;
+
+  const handleDelete = () => {
+    deleteProject(project.id, {
+      onSuccess: () => {
+        navigate('/projects');
+      },
+    });
+  };
+
+  const handleTaskStatusChange = (taskId: string, newStatus: TaskStatus) => {
+    updateTask({ id: taskId, data: { status: newStatus } });
+  };
+
+  const tabs = [
+    { id: 'overview' as const, label: '概要', icon: <FileText className="h-4 w-4" /> },
+    { id: 'members' as const, label: '関係者', icon: <Users className="h-4 w-4" />, badge: project.partners?.length },
+    { id: 'tasks' as const, label: 'タスク', icon: <CheckSquare className="h-4 w-4" /> },
+    { id: 'timeline' as const, label: 'タイムライン', icon: <History className="h-4 w-4" /> },
+    { id: 'files' as const, label: 'ファイル', icon: <Paperclip className="h-4 w-4" /> },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <Link
+          to="/projects"
+          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          案件一覧に戻る
+        </Link>
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
+              <Badge variant={status.variant}>{status.label}</Badge>
+              <Badge variant={priority.variant}>{priority.label}</Badge>
+            </div>
+            {project.partners && project.partners.length > 0 && (
+              <p className="mt-1 text-gray-600">
+                <Building className="inline h-4 w-4 mr-1" />
+                {project.partners.map((p: import('@/types').Partner) => p.companyName || p.name).join(', ')}
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              leftIcon={<Edit className="h-4 w-4" />}
+              as={Link}
+              to={`/projects/${project.id}/edit`}
+            >
+              編集
+            </Button>
+            <Button
+              variant="danger"
+              leftIcon={<Trash2 className="h-4 w-4" />}
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              削除
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Card className="text-center">
+          <Calendar className="h-5 w-5 mx-auto text-gray-400 mb-2" />
+          <p className="text-xs text-gray-500">開始日</p>
+          <p className="text-sm font-medium text-gray-900">
+            {format(new Date(project.startDate), 'yyyy/M/d', { locale: ja })}
+          </p>
+        </Card>
+        <Card className="text-center">
+          <Clock className="h-5 w-5 mx-auto text-gray-400 mb-2" />
+          <p className="text-xs text-gray-500">終了日</p>
+          <p className="text-sm font-medium text-gray-900">
+            {project.endDate
+              ? format(new Date(project.endDate), 'yyyy/M/d', { locale: ja })
+              : '未設定'}
+          </p>
+        </Card>
+        <Card className="text-center">
+          <Users className="h-5 w-5 mx-auto text-gray-400 mb-2" />
+          <p className="text-xs text-gray-500">パートナー</p>
+          <p className="text-sm font-medium text-gray-900">
+            {project.partners?.length || 0} 社
+          </p>
+        </Card>
+        <Card className="text-center">
+          <CheckSquare className="h-5 w-5 mx-auto text-gray-400 mb-2" />
+          <p className="text-xs text-gray-500">進捗</p>
+          <p className="text-sm font-medium text-gray-900">
+            {progress}%
+          </p>
+        </Card>
+      </div>
+
+      {/* Tabs */}
+      <Tabs activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as ProjectDetailTab)}>
+        <TabList tabs={tabs} />
+
+        {/* Overview Tab */}
+        <TabPanel id="overview" className="mt-6">
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Description */}
+              <Card>
+                <CardHeader>説明</CardHeader>
+                <CardContent>
+                  {project.description ? (
+                    <p className="text-gray-700 whitespace-pre-wrap">
+                      {project.description}
+                    </p>
+                  ) : (
+                    <p className="text-gray-400 italic">説明がありません</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Progress */}
+              <Card>
+                <CardHeader>タスク進捗</CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-500">完了率</span>
+                    <span className="text-lg font-bold text-gray-900">{progress}%</span>
+                  </div>
+                  <div className="h-3 w-full rounded-full bg-gray-200">
+                    <div
+                      className="h-3 rounded-full bg-primary-500 transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <div className="mt-4 text-center">
+                    <p className="text-xs text-gray-500">現在の進捗率</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Manager */}
+              {project.manager && (
+                <Card>
+                  <CardHeader>担当マネージャー</CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={getUserDisplayName(project.manager)}
+                        src={project.manager.avatarUrl}
+                        size="md"
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {getUserDisplayName(project.manager)}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {project.manager.email}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Partners */}
+              {project.partners && project.partners.length > 0 && (
+                <Card>
+                  <CardHeader>パートナー</CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {project.partners.map((partner: import('@/types').Partner) => (
+                        <Link
+                          key={partner.id}
+                          to={`/partners/${partner.id}`}
+                          className="block hover:bg-gray-50 -m-2 p-2 rounded-lg transition-colors"
+                        >
+                          <p className="font-medium text-gray-900">
+                            {partner.name}
+                          </p>
+                          {partner.companyName && (
+                            <p className="text-sm text-gray-500">
+                              {partner.companyName}
+                            </p>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Budget */}
+              {project.budget && (
+                <Card>
+                  <CardHeader>予算</CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-gray-900">
+                      ¥{project.budget.toLocaleString()}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Tags */}
+              {project.tags && project.tags.length > 0 && (
+                <Card>
+                  <CardHeader>タグ</CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {project.tags.map((tag: string) => (
+                        <Badge key={tag} variant="default">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabPanel>
+
+        {/* Partners Tab */}
+        <TabPanel id="members" className="mt-6">
+          {project.partners && project.partners.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {project.partners.map((partner: import('@/types').Partner) => (
+                <div
+                  key={partner.id}
+                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                      <span className="text-sm font-medium text-primary-600">
+                        {(partner.companyName || partner.name).charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900">
+                        {partner.companyName || partner.name}
+                      </h4>
+                      {partner.companyName && partner.name && (
+                        <p className="text-xs text-gray-500">{partner.name}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              パートナーが登録されていません
+            </div>
+          )}
+        </TabPanel>
+
+        {/* Tasks Tab */}
+        <TabPanel id="tasks" className="mt-6">
+          <TaskList
+            tasks={[]}
+            onTaskStatusChange={handleTaskStatusChange}
+            onTaskClick={(task) => navigate(`/projects/${project.id}/tasks/${task.id}`)}
+            onAddTask={() => navigate(`/projects/${project.id}/tasks/new`)}
+            showFilters
+          />
+        </TabPanel>
+
+        {/* Timeline Tab */}
+        <TabPanel id="timeline" className="mt-6">
+          <ProjectTimeline events={timeline} />
+        </TabPanel>
+
+        {/* Files Tab */}
+        <TabPanel id="files" className="mt-6">
+          <Card>
+            <CardHeader
+              action={
+                <Button variant="outline" size="sm" leftIcon={<Upload className="h-4 w-4" />}>
+                  アップロード
+                </Button>
+              }
+            >
+              ファイル一覧
+            </CardHeader>
+            <CardContent>
+              <EmptyState
+                icon={<Paperclip className="h-10 w-10" />}
+                title="ファイルがありません"
+                description="ファイルをアップロードすると、ここに表示されます"
+                className="py-8"
+              />
+            </CardContent>
+          </Card>
+        </TabPanel>
+      </Tabs>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="案件の削除"
+        size="sm"
+      >
+        <p className="text-sm text-gray-600">
+          「{project.name}」を削除しますか？
+          この操作は取り消せません。関連するすべてのタスクも削除されます。
+        </p>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)}>
+            キャンセル
+          </Button>
+          <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>
+            削除
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </div>
+  );
+}
