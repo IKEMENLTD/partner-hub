@@ -2,6 +2,7 @@ import {
   Injectable,
   ExecutionContext,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
@@ -9,6 +10,8 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
 export class SupabaseAuthGuard extends AuthGuard('supabase-jwt') {
+  private readonly logger = new Logger(SupabaseAuthGuard.name);
+
   constructor(private reflector: Reflector) {
     super();
   }
@@ -27,9 +30,20 @@ export class SupabaseAuthGuard extends AuthGuard('supabase-jwt') {
   }
 
   handleRequest(err: any, user: any, info: any) {
-    if (err || !user) {
-      throw err || new UnauthorizedException('Authentication required');
+    if (err) {
+      this.logger.error(`Auth error: ${err.message}`, err.stack);
+      throw err;
     }
+
+    if (info) {
+      this.logger.warn(`JWT Info: ${info.message || info}`);
+    }
+
+    if (!user) {
+      this.logger.warn('No user returned from JWT validation');
+      throw new UnauthorizedException(info?.message || 'Authentication required');
+    }
+
     return user;
   }
 }

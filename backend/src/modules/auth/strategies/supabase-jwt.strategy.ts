@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserProfile } from '../entities/user-profile.entity';
+import { UserRole } from '../enums/user-role.enum';
 
 export interface SupabaseJwtPayload {
   sub: string;
@@ -32,6 +33,11 @@ export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jw
     private userProfileRepository: Repository<UserProfile>,
   ) {
     const jwtSecret = configService.get<string>('supabase.jwtSecret') || '';
+
+    if (!jwtSecret) {
+      throw new Error('SUPABASE_JWT_SECRET is not configured');
+    }
+
     // Supabase JWT secret is base64 encoded, decode it for verification
     const secretBuffer = Buffer.from(jwtSecret, 'base64');
 
@@ -40,11 +46,16 @@ export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jw
       ignoreExpiration: false,
       secretOrKey: secretBuffer,
     });
+
+    this.logger.log(`SupabaseJwtStrategy initialized, secret length: ${jwtSecret.length}, decoded length: ${secretBuffer.length}`);
   }
 
   async validate(payload: SupabaseJwtPayload): Promise<UserProfile> {
+    this.logger.debug(`Validating JWT payload: sub=${payload.sub}, email=${payload.email}, role=${payload.role}`);
+
     if (payload.role !== 'authenticated') {
-      throw new UnauthorizedException('Invalid token');
+      this.logger.warn(`Invalid token role: ${payload.role}`);
+      throw new UnauthorizedException('Invalid token role');
     }
 
     let userProfile = await this.userProfileRepository.findOne({
@@ -58,14 +69,19 @@ export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jw
         email: payload.email,
         firstName: payload.user_metadata?.first_name || '',
         lastName: payload.user_metadata?.last_name || '',
+        role: UserRole.MEMBER,
+        isActive: true,
       });
       await this.userProfileRepository.save(userProfile);
+      this.logger.log(`Profile created successfully for user: ${payload.email}`);
     }
 
     if (!userProfile.isActive) {
+      this.logger.warn(`User is inactive: ${payload.email}`);
       throw new UnauthorizedException('User is inactive');
     }
 
+    this.logger.debug(`User authenticated: ${payload.email}, role=${userProfile.role}`);
     return userProfile;
   }
 }
