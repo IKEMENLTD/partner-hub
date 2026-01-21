@@ -276,10 +276,10 @@ export class AuthService {
 
     // Update password and clear reset token
     matchedUser.password = await bcrypt.hash(newPassword, 10);
-    matchedUser.passwordResetToken = null;
-    matchedUser.passwordResetExpires = null;
+    matchedUser.passwordResetToken = undefined;
+    matchedUser.passwordResetExpires = undefined;
     // Clear refresh token to invalidate all sessions (security best practice)
-    matchedUser.refreshToken = null;
+    matchedUser.refreshToken = undefined;
     await this.userRepository.save(matchedUser);
 
     this.logger.log(`Password reset successful for user: ${matchedUser.email}`);
