@@ -6,7 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 // Config
-import { databaseConfig, jwtConfig, appConfig, supabaseConfig } from './config';
+import { databaseConfig, appConfig, supabaseConfig } from './config';
 
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -29,26 +29,41 @@ import { SupabaseModule } from './modules/supabase/supabase.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
-      load: [databaseConfig, jwtConfig, appConfig, supabaseConfig],
+      load: [databaseConfig, appConfig, supabaseConfig],
     }),
 
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('database.host'),
-        port: configService.get<number>('database.port'),
-        username: configService.get<string>('database.username'),
-        password: configService.get<string>('database.password'),
-        database: configService.get<string>('database.database'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        // SECURITY FIX: Never use synchronize in production - use migrations instead
-        // synchronize: true can cause data loss and schema inconsistencies
-        synchronize: configService.get<string>('app.nodeEnv') === 'development',
-        logging: configService.get<string>('app.nodeEnv') === 'development',
-        autoLoadEntities: true,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('database.url');
+        const isProduction = configService.get<string>('app.nodeEnv') === 'production';
+
+        if (databaseUrl) {
+          return {
+            type: 'postgres' as const,
+            url: databaseUrl,
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            synchronize: !isProduction,
+            logging: !isProduction,
+            autoLoadEntities: true,
+            ssl: isProduction ? { rejectUnauthorized: false } : false,
+          };
+        }
+
+        return {
+          type: 'postgres' as const,
+          host: configService.get<string>('database.host'),
+          port: configService.get<number>('database.port'),
+          username: configService.get<string>('database.username'),
+          password: configService.get<string>('database.password'),
+          database: configService.get<string>('database.database'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: !isProduction,
+          logging: !isProduction,
+          autoLoadEntities: true,
+        };
+      },
       inject: [ConfigService],
     }),
 
