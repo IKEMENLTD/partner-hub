@@ -13,19 +13,22 @@ import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { ProjectStatus } from './enums/project-status.enum';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
-const ALLOWED_SORT_COLUMNS = [
-  'createdAt',
-  'updatedAt',
-  'name',
-  'status',
-  'priority',
-  'startDate',
-  'endDate',
-  'budget',
-  'actualCost',
-  'progress',
-  'healthScore',
-];
+// Maps API field names to actual database column names
+const SORT_COLUMN_MAPPING: Record<string, string> = {
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  name: 'name',
+  status: 'status',
+  priority: 'priority',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  budget: 'budget',
+  actualCost: 'actualCost',
+  progress: 'progress',
+  healthScore: 'health_score', // DB column uses snake_case
+};
+
+const ALLOWED_SORT_COLUMNS = Object.keys(SORT_COLUMN_MAPPING);
 
 @Injectable()
 export class ProjectService {
@@ -142,7 +145,10 @@ export class ProjectService {
     }
 
     // SECURITY FIX: Validate sortBy against whitelist to prevent SQL injection
-    const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'createdAt';
+    // Use mapping to convert API field names to actual DB column names
+    const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy)
+      ? SORT_COLUMN_MAPPING[sortBy]
+      : 'createdAt';
     queryBuilder.orderBy(`project.${safeSortBy}`, sortOrder);
 
     // Apply pagination

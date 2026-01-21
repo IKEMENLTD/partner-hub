@@ -46,28 +46,28 @@ export class Task {
   })
   type: TaskType;
 
-  @Column({ nullable: true })
+  @Column({ name: 'project_id', nullable: true })
   projectId: string;
 
   @ManyToOne(() => Project, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'project_id' })
   project: Project;
 
-  @Column({ nullable: true })
+  @Column({ name: 'assignee_id', nullable: true })
   assigneeId: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'assignee_id' })
   assignee: User;
 
-  @Column({ nullable: true })
+  @Column({ name: 'partner_id', nullable: true })
   partnerId: string;
 
   @ManyToOne(() => Partner)
   @JoinColumn({ name: 'partner_id' })
   partner: Partner;
 
-  @Column({ nullable: true })
+  @Column({ name: 'parent_task_id', nullable: true })
   parentTaskId: string;
 
   @ManyToOne(() => Task, (task) => task.subtasks, { onDelete: 'CASCADE' })
@@ -77,19 +77,19 @@ export class Task {
   @OneToMany(() => Task, (task) => task.parentTask)
   subtasks: Task[];
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'due_date', type: 'date', nullable: true })
   dueDate: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'start_date', type: 'date', nullable: true })
   startDate: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'completed_at', type: 'date', nullable: true })
   completedAt: Date;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ name: 'estimated_hours', type: 'int', default: 0 })
   estimatedHours: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ name: 'actual_hours', type: 'int', default: 0 })
   actualHours: number;
 
   @Column({ type: 'int', default: 0 })
@@ -104,16 +104,16 @@ export class Task {
   @Column({ name: 'reminder_config', type: 'jsonb', nullable: true })
   reminderConfig: ReminderConfig;
 
-  @Column({ nullable: true })
+  @Column({ name: 'created_by', nullable: true })
   createdById: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

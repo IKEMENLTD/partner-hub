@@ -42,6 +42,7 @@ export class Project {
   priority: ProjectPriority;
 
   @Column({
+    name: 'project_type',
     type: 'enum',
     enum: ProjectType,
     nullable: true,
@@ -50,25 +51,26 @@ export class Project {
   projectType: ProjectType;
 
   @Column({
+    name: 'company_role',
     type: 'enum',
     enum: CompanyRole,
     nullable: true,
   })
   companyRole: CompanyRole;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'start_date', type: 'date', nullable: true })
   startDate: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'end_date', type: 'date', nullable: true })
   endDate: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'actual_end_date', type: 'date', nullable: true })
   actualEndDate: Date;
 
   @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
   budget: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({ name: 'actual_cost', type: 'decimal', precision: 15, scale: 2, default: 0 })
   actualCost: number;
 
   @Column({ type: 'int', default: 0 })
@@ -77,14 +79,14 @@ export class Project {
   @Column({ name: 'health_score', type: 'int', default: 100 })
   healthScore: number;
 
-  @Column({ nullable: true })
+  @Column({ name: 'owner_id', nullable: true })
   ownerId: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'owner_id' })
   owner: User;
 
-  @Column({ nullable: true })
+  @Column({ name: 'manager_id', nullable: true })
   managerId: string;
 
   @ManyToOne(() => User)
@@ -105,16 +107,16 @@ export class Project {
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 
-  @Column({ nullable: true })
+  @Column({ name: 'created_by', nullable: true })
   createdById: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
