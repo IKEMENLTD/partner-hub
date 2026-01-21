@@ -52,7 +52,7 @@ export class ProjectFile {
   @Column({ name: 'storage_path' })
   storagePath: string;
 
-  @Column({ name: 'public_url', nullable: true })
+  @Column({ name: 'public_url', type: 'text', nullable: true })
   publicUrl: string | null;
 
   @Column({
