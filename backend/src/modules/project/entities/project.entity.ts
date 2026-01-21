@@ -81,14 +81,14 @@ export class Project {
   ownerId: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'ownerId' })
+  @JoinColumn({ name: 'owner_id' })
   owner: User;
 
   @Column({ nullable: true })
   managerId: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'managerId' })
+  @JoinColumn({ name: 'manager_id' })
   manager: User;
 
   @ManyToMany(() => Partner)
@@ -109,7 +109,7 @@ export class Project {
   createdById: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'createdById' })
+  @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
   @CreateDateColumn()

@@ -50,28 +50,28 @@ export class Task {
   projectId: string;
 
   @ManyToOne(() => Project, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'projectId' })
+  @JoinColumn({ name: 'project_id' })
   project: Project;
 
   @Column({ nullable: true })
   assigneeId: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'assigneeId' })
+  @JoinColumn({ name: 'assignee_id' })
   assignee: User;
 
   @Column({ nullable: true })
   partnerId: string;
 
   @ManyToOne(() => Partner)
-  @JoinColumn({ name: 'partnerId' })
+  @JoinColumn({ name: 'partner_id' })
   partner: Partner;
 
   @Column({ nullable: true })
   parentTaskId: string;
 
   @ManyToOne(() => Task, (task) => task.subtasks, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'parentTaskId' })
+  @JoinColumn({ name: 'parent_task_id' })
   parentTask: Task;
 
   @OneToMany(() => Task, (task) => task.parentTask)
@@ -108,7 +108,7 @@ export class Task {
   createdById: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'createdById' })
+  @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
   @CreateDateColumn()

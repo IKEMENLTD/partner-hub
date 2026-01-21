@@ -48,21 +48,21 @@ export class Reminder {
   userId: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @Column({ nullable: true })
   taskId: string;
 
   @ManyToOne(() => Task, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'taskId' })
+  @JoinColumn({ name: 'task_id' })
   task: Task;
 
   @Column({ nullable: true })
   projectId: string;
 
   @ManyToOne(() => Project, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'projectId' })
+  @JoinColumn({ name: 'project_id' })
   project: Project;
 
   @Column({ type: 'timestamp' })
@@ -87,7 +87,7 @@ export class Reminder {
   createdById: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'createdById' })
+  @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
   @CreateDateColumn()

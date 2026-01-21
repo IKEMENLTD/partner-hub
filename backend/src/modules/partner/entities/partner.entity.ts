@@ -73,14 +73,14 @@ export class Partner {
   userId: string;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @Column({ nullable: true })
   createdById: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'createdById' })
+  @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
   @CreateDateColumn()
