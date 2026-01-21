@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '@/store';
@@ -14,7 +14,6 @@ export function ResetPasswordPage() {
   const {
     data: tokenValidation,
     isLoading: isValidating,
-    error: validationError,
   } = useValidateResetToken(token);
 
   const [formData, setFormData] = useState({
