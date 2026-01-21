@@ -261,6 +261,7 @@ export class AuthService {
     // Find the user with matching token
     let matchedUser: User | null = null;
     for (const user of usersWithValidTokens) {
+      if (!user.passwordResetToken) continue;
       const isTokenValid = await bcrypt.compare(token, user.passwordResetToken);
       if (isTokenValid) {
         matchedUser = user;
@@ -299,6 +300,7 @@ export class AuthService {
     });
 
     for (const user of usersWithValidTokens) {
+      if (!user.passwordResetToken) continue;
       const isTokenValid = await bcrypt.compare(token, user.passwordResetToken);
       if (isTokenValid) {
         return { valid: true };
