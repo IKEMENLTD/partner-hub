@@ -42,7 +42,7 @@ export class ProjectStakeholder {
   @Column({ name: 'role_description', nullable: true })
   roleDescription: string;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
+  @Column({ name: 'contract_amount', type: 'decimal', precision: 15, scale: 2, nullable: true })
   contractAmount: number;
 
   @Column({ name: 'is_primary', default: false })
