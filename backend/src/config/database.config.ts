@@ -22,6 +22,7 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
     synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV === 'development',
     autoLoadEntities: true,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
+    // Supabaseは自己署名証明書を使用するため、rejectUnauthorized: false が必要
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   };
 });

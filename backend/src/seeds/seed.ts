@@ -14,7 +14,7 @@ async function seed() {
     url: databaseUrl,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     synchronize: true,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   });
 
   await dataSource.initialize();

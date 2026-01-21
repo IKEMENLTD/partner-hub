@@ -56,7 +56,7 @@ import { AuditModule } from './modules/audit/audit.module';
             synchronize: !isProduction,
             logging: !isProduction,
             autoLoadEntities: true,
-            ssl: isProduction ? { rejectUnauthorized: true } : false,
+            ssl: isProduction ? { rejectUnauthorized: false } : false,
           };
         }
 
