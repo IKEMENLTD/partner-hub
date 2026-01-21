@@ -31,10 +31,14 @@ export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jw
     @InjectRepository(UserProfile)
     private userProfileRepository: Repository<UserProfile>,
   ) {
+    const jwtSecret = configService.get<string>('supabase.jwtSecret') || '';
+    // Supabase JWT secret is base64 encoded, decode it for verification
+    const secretBuffer = Buffer.from(jwtSecret, 'base64');
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('supabase.jwtSecret'),
+      secretOrKey: secretBuffer,
     });
   }
 
