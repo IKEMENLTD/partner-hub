@@ -14,8 +14,8 @@ export default registerAs('supabase', (): SupabaseConfig => {
     if (!process.env.SUPABASE_URL) {
       throw new Error('SUPABASE_URL is required in production');
     }
-    if (!process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_JWT_SECRET.length < 32) {
-      throw new Error('SUPABASE_JWT_SECRET must be set and at least 32 characters');
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is required in production for authentication');
     }
   }
 

@@ -8,6 +8,9 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 // Config
 import { databaseConfig, appConfig, supabaseConfig } from './config';
 
+// Entities
+import { UserProfile } from './modules/auth/entities/user-profile.entity';
+
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -91,6 +94,9 @@ import { SupabaseModule } from './modules/supabase/supabase.module';
 
     // Supabase
     SupabaseModule,
+
+    // UserProfile entity for SupabaseAuthGuard
+    TypeOrmModule.forFeature([UserProfile]),
 
     // Feature Modules
     AuthModule,
