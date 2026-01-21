@@ -38,6 +38,9 @@ export class UserProfile {
   @Column({ name: 'last_login_at', nullable: true })
   lastLoginAt?: Date;
 
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

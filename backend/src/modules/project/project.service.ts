@@ -104,13 +104,12 @@ export class ProjectService {
         .leftJoinAndSelect('project.owner', 'owner')
         .leftJoinAndSelect('project.manager', 'manager')
         .leftJoinAndSelect('project.partners', 'partners')
-        .leftJoinAndSelect('project.createdBy', 'createdBy')
-        .leftJoin('project.stakeholders', 'stakeholder');
+        .leftJoinAndSelect('project.createdBy', 'createdBy');
 
       // Apply access control filtering for non-admin users
       if (userId && userRole !== 'admin') {
         queryBuilder.andWhere(
-          '(project.ownerId = :userId OR project.managerId = :userId OR project.createdById = :userId OR stakeholder.userId = :userId)',
+          '(project.ownerId = :userId OR project.managerId = :userId OR project.createdById = :userId)',
           { userId }
         );
       }
@@ -186,7 +185,7 @@ export class ProjectService {
   async findOne(id: string, userId?: string): Promise<Project> {
     const project = await this.projectRepository.findOne({
       where: { id },
-      relations: ['owner', 'manager', 'partners', 'createdBy', 'stakeholders'],
+      relations: ['owner', 'manager', 'partners', 'createdBy'],
     });
 
     if (!project) {
@@ -219,9 +218,6 @@ export class ProjectService {
 
     // Creator has access
     if (project.createdById === userId) return true;
-
-    // Stakeholder has access
-    if (project.stakeholders?.some(s => s.userId === userId)) return true;
 
     // Partner organization member has access (simplified check)
     // In a full implementation, you'd check if the user belongs to a partner organization
