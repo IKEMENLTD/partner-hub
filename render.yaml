@@ -45,3 +45,8 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://partner-hub-backend.onrender.com
+      # Supabase Configuration (Render Dashboard で設定)
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
