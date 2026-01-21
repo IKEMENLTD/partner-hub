@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout';
 import { ToastProvider } from '@/components/common';
 import { useUIStore, useAuthStore } from '@/store';
 import { useAuthListener } from '@/hooks';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import {
   LoginPage,
   RegisterPage,
@@ -45,6 +46,28 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   useAuthListener();
 
   const isInitialized = useAuthStore((state) => state.isInitialized);
+
+  // Supabase環境変数が未設定の場合
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md p-8 bg-white rounded-lg shadow-lg">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h1 className="text-xl font-bold text-gray-800 mb-2">設定エラー</h1>
+          <p className="text-gray-600 mb-4">
+            Supabase環境変数が設定されていません。
+          </p>
+          <div className="text-left bg-gray-100 p-4 rounded text-sm font-mono">
+            <p>VITE_SUPABASE_URL</p>
+            <p>VITE_SUPABASE_ANON_KEY</p>
+          </div>
+          <p className="text-gray-500 text-sm mt-4">
+            Render Dashboardで環境変数を設定後、再デプロイしてください。
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isInitialized) {
     return (
