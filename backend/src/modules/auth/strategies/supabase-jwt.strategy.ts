@@ -45,6 +45,7 @@ export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jw
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: secretBuffer,
+      algorithms: ['HS256'],
     });
 
     this.logger.log(`SupabaseJwtStrategy initialized, secret length: ${jwtSecret.length}, decoded length: ${secretBuffer.length}`);
