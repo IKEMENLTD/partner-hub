@@ -1,9 +1,22 @@
 import { registerAs } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
-export default registerAs(
-  'database',
-  (): TypeOrmModuleOptions => ({
+export default registerAs('database', (): TypeOrmModuleOptions => {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (databaseUrl) {
+    return {
+      type: 'postgres',
+      url: databaseUrl,
+      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+      synchronize: process.env.NODE_ENV !== 'production',
+      logging: process.env.NODE_ENV === 'development',
+      autoLoadEntities: true,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    };
+  }
+
+  return {
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
@@ -14,5 +27,5 @@ export default registerAs(
     synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV === 'development',
     autoLoadEntities: true,
-  }),
-);
+  };
+});
