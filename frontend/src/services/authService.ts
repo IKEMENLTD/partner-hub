@@ -18,6 +18,23 @@ interface RegisterInput {
   lastName: string;
 }
 
+interface ForgotPasswordInput {
+  email: string;
+}
+
+interface ResetPasswordInput {
+  token: string;
+  newPassword: string;
+}
+
+interface MessageResponse {
+  message: string;
+}
+
+interface TokenValidationResponse {
+  valid: boolean;
+}
+
 export const authService = {
   login: (credentials: LoginInput) =>
     api.post<ApiResponse<LoginResponse>>('/auth/login', credentials, true),
@@ -31,4 +48,13 @@ export const authService = {
 
   refreshToken: (refreshToken: string) =>
     api.post<ApiResponse<AuthTokens>>('/auth/refresh', { refreshToken }, true),
+
+  forgotPassword: (data: ForgotPasswordInput) =>
+    api.post<MessageResponse>('/auth/forgot-password', data, true),
+
+  resetPassword: (data: ResetPasswordInput) =>
+    api.post<MessageResponse>('/auth/reset-password', data, true),
+
+  validateResetToken: (token: string) =>
+    api.post<TokenValidationResponse>('/auth/validate-reset-token', { token }, true),
 };

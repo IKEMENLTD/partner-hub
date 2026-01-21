@@ -111,6 +111,8 @@ CREATE TABLE users (
     avatar_url TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
     last_login_at TIMESTAMP WITH TIME ZONE,
+    password_reset_token VARCHAR(255),
+    password_reset_expires TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -118,9 +120,12 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_email ON users(email) WHERE deleted_at IS NULL;
 CREATE INDEX idx_users_is_active ON users(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX idx_users_password_reset_token ON users(password_reset_token) WHERE password_reset_token IS NOT NULL;
 
 COMMENT ON TABLE users IS '自社ユーザー情報';
 COMMENT ON COLUMN users.display_name IS '表示名（姓名結合など）';
+COMMENT ON COLUMN users.password_reset_token IS 'パスワードリセット用トークン（bcryptハッシュ）';
+COMMENT ON COLUMN users.password_reset_expires IS 'パスワードリセットトークンの有効期限';
 
 -- -----------------------------------------------------------------------------
 -- 組織（パートナー企業）

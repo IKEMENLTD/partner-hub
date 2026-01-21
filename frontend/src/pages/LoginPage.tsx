@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { useLogin } from '@/hooks';
@@ -184,12 +184,12 @@ export function LoginPage() {
                   ログイン状態を保持
                 </span>
               </label>
-              <a
-                href="#"
+              <Link
+                to="/forgot-password"
                 className="text-sm font-medium text-primary-600 hover:text-primary-500"
               >
                 パスワードを忘れた方
-              </a>
+              </Link>
             </div>
 
             <Button
@@ -201,6 +201,16 @@ export function LoginPage() {
               ログイン
             </Button>
           </form>
+
+          <p className="mt-6 text-center text-sm text-gray-600">
+            アカウントをお持ちでないですか？{' '}
+            <Link
+              to="/register"
+              className="font-medium text-primary-600 hover:text-primary-500"
+            >
+              新規登録
+            </Link>
+          </p>
 
           {/* Demo credentials hint - only show in development */}
           {import.meta.env.MODE === 'development' && (

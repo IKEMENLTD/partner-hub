@@ -42,6 +42,14 @@ export class User {
   refreshToken: string;
 
   @Column({ nullable: true })
+  @Exclude()
+  passwordResetToken: string;
+
+  @Column({ nullable: true })
+  @Exclude()
+  passwordResetExpires: Date;
+
+  @Column({ nullable: true })
   lastLoginAt: Date;
 
   @CreateDateColumn()

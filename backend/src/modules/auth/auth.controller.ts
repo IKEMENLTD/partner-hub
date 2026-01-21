@@ -25,6 +25,9 @@ import {
   AuthResponseDto,
   UpdateUserDto,
   ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  ValidateResetTokenDto,
 } from './dto';
 import { User } from './entities/user.entity';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -75,6 +78,40 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshTokens(refreshTokenDto.refreshToken);
+  }
+
+  @Public()
+  @ThrottleRegister() // Rate limit to prevent abuse
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent (if account exists)' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Public()
+  @ThrottleRegister() // Rate limit to prevent abuse
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password with token' })
+  @ApiResponse({ status: 200, description: 'Password reset successful' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @Public()
+  @ThrottleRegister() // Rate limit to prevent token enumeration attacks
+  @Post('validate-reset-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Validate password reset token' })
+  @ApiResponse({ status: 200, description: 'Token validation result' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async validateResetToken(@Body() validateResetTokenDto: ValidateResetTokenDto) {
+    return this.authService.validateResetToken(validateResetTokenDto.token);
   }
 
   @UseGuards(JwtAuthGuard)

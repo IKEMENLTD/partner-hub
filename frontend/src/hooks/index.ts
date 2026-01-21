@@ -1,4 +1,11 @@
-export { useLogin, useLogout } from './useAuth';
+export {
+  useLogin,
+  useLogout,
+  useRegister,
+  useForgotPassword,
+  useResetPassword,
+  useValidateResetToken,
+} from './useAuth';
 export {
   useProjects,
   useProject,

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan, Not, IsNull } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
@@ -18,7 +18,10 @@ import {
   AuthResponseDto,
   UpdateUserDto,
   ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
 } from './dto';
+import * as crypto from 'crypto';
 import { JwtPayload } from './strategies/jwt.strategy';
 
 @Injectable()
@@ -203,6 +206,105 @@ export class AuthService {
     const user = await this.findUserById(id);
     await this.userRepository.remove(user);
     this.logger.log(`User deleted: ${user.email}`);
+  }
+
+  async forgotPassword(
+    forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    const { email } = forgotPasswordDto;
+    const user = await this.userRepository.findOne({ where: { email } });
+
+    // Always return success message to prevent email enumeration attacks
+    if (!user || !user.isActive) {
+      this.logger.log(`Password reset requested for non-existent or inactive email: ${email}`);
+      return {
+        message: 'パスワードリセットの手順をメールで送信しました（登録されている場合）',
+      };
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = await bcrypt.hash(resetToken, 10);
+
+    // Set token and expiry (1 hour)
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+    await this.userRepository.save(user);
+
+    this.logger.log(`Password reset token generated for user: ${user.email}`);
+
+    // In production, send email with reset link
+    // For now, log the token (in development only)
+    if (process.env.NODE_ENV === 'development') {
+      this.logger.debug(`Reset token for ${email}: ${resetToken}`);
+    }
+
+    // TODO: Implement email sending
+    // await this.emailService.sendPasswordResetEmail(user.email, resetToken);
+
+    return {
+      message: 'パスワードリセットの手順をメールで送信しました（登録されている場合）',
+    };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+    const { token, newPassword } = resetPasswordDto;
+
+    // Find users with non-expired reset tokens only (performance optimized)
+    const usersWithValidTokens = await this.userRepository.find({
+      where: {
+        passwordResetToken: Not(IsNull()),
+        passwordResetExpires: MoreThan(new Date()),
+      },
+    });
+
+    // Find the user with matching token
+    let matchedUser: User | null = null;
+    for (const user of usersWithValidTokens) {
+      const isTokenValid = await bcrypt.compare(token, user.passwordResetToken);
+      if (isTokenValid) {
+        matchedUser = user;
+        break;
+      }
+    }
+
+    if (!matchedUser) {
+      throw new BadRequestException(
+        'リセットトークンが無効または期限切れです',
+      );
+    }
+
+    // Update password and clear reset token
+    matchedUser.password = await bcrypt.hash(newPassword, 10);
+    matchedUser.passwordResetToken = null;
+    matchedUser.passwordResetExpires = null;
+    // Clear refresh token to invalidate all sessions (security best practice)
+    matchedUser.refreshToken = null;
+    await this.userRepository.save(matchedUser);
+
+    this.logger.log(`Password reset successful for user: ${matchedUser.email}`);
+
+    return {
+      message: 'パスワードが正常にリセットされました',
+    };
+  }
+
+  async validateResetToken(token: string): Promise<{ valid: boolean }> {
+    // Find users with non-expired reset tokens only (performance optimized)
+    const usersWithValidTokens = await this.userRepository.find({
+      where: {
+        passwordResetToken: Not(IsNull()),
+        passwordResetExpires: MoreThan(new Date()),
+      },
+    });
+
+    for (const user of usersWithValidTokens) {
+      const isTokenValid = await bcrypt.compare(token, user.passwordResetToken);
+      if (isTokenValid) {
+        return { valid: true };
+      }
+    }
+    return { valid: false };
   }
 
   private async generateTokens(
