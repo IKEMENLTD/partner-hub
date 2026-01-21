@@ -1,100 +1,77 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import type { User } from '@/types';
 
 /**
- * SECURITY NOTE: Token Storage Considerations
+ * Auth Store - Supabase Edition
  *
- * This implementation uses sessionStorage instead of localStorage for improved security:
- * - sessionStorage is cleared when the browser tab is closed
- * - Reduces the window of opportunity for XSS attacks to steal tokens
- * - For production, consider using httpOnly cookies with the server
- *
- * Additional security measures:
- * - Token should have short expiration (15 minutes)
- * - Implement token refresh mechanism
- * - Consider implementing CSRF protection if using cookies
+ * Supabaseがセッション管理を行うため、トークンの永続化は不要。
+ * Supabaseクライアントが自動的にsessionStorageを管理する。
  */
 
 interface AuthState {
   user: User | null;
-  token: string | null;
-  refreshToken: string | null;
+  supabaseUser: SupabaseUser | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean;
   error: string | null;
 }
 
 interface AuthActions {
-  login: (user: User, token: string, refreshToken?: string) => void;
+  setSession: (session: Session | null) => void;
+  setUser: (user: User | null) => void;
   logout: () => void;
   setLoading: (isLoading: boolean) => void;
+  setInitialized: (initialized: boolean) => void;
   setError: (error: string | null) => void;
   updateUser: (user: Partial<User>) => void;
-  updateTokens: (token: string, refreshToken?: string) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
-      // State
-      user: null,
-      token: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      isLoading: false,
+export const useAuthStore = create<AuthStore>()((set) => ({
+  // State
+  user: null,
+  supabaseUser: null,
+  session: null,
+  isAuthenticated: false,
+  isLoading: true, // Start true for initialization
+  isInitialized: false,
+  error: null,
+
+  // Actions
+  setSession: (session) =>
+    set({
+      session,
+      supabaseUser: session?.user ?? null,
+      isAuthenticated: !!session,
       error: null,
-
-      // Actions
-      login: (user, token, refreshToken) =>
-        set({
-          user,
-          token,
-          refreshToken: refreshToken || null,
-          isAuthenticated: true,
-          error: null,
-        }),
-
-      logout: () => {
-        // SECURITY FIX: Clear all storage on logout
-        sessionStorage.removeItem('auth-storage');
-        set({
-          user: null,
-          token: null,
-          refreshToken: null,
-          isAuthenticated: false,
-          error: null,
-        });
-      },
-
-      setLoading: (isLoading) => set({ isLoading }),
-
-      setError: (error) => set({ error }),
-
-      updateUser: (userData) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, ...userData } : null,
-        })),
-
-      updateTokens: (token, refreshToken) =>
-        set((state) => ({
-          token,
-          refreshToken: refreshToken || state.refreshToken,
-        })),
     }),
-    {
-      name: 'auth-storage',
-      // SECURITY FIX: Use sessionStorage instead of localStorage
-      // sessionStorage is cleared when browser tab is closed, reducing XSS risk
-      storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({
-        user: state.user,
-        token: state.token,
-        refreshToken: state.refreshToken,
-        isAuthenticated: state.isAuthenticated,
-      }),
-    }
-  )
-);
+
+  setUser: (user) =>
+    set({
+      user,
+    }),
+
+  logout: () =>
+    set({
+      user: null,
+      supabaseUser: null,
+      session: null,
+      isAuthenticated: false,
+      error: null,
+    }),
+
+  setLoading: (isLoading) => set({ isLoading }),
+
+  setInitialized: (isInitialized) => set({ isInitialized, isLoading: false }),
+
+  setError: (error) => set({ error }),
+
+  updateUser: (userData) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...userData } : null,
+    })),
+}));

@@ -1,5 +1,13 @@
 import { useAuthStore } from '@/store';
+import { supabase } from '@/lib/supabase';
 import type { ApiResponse, PaginatedResponse } from '@/types';
+
+/**
+ * API Client - Supabase Edition
+ *
+ * トークン管理はSupabaseに委譲。
+ * トークンリフレッシュもSupabaseが自動的に処理。
+ */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api/v1`
@@ -35,56 +43,10 @@ export class RateLimitError extends ApiError {
   }
 }
 
-// Token refresh state to prevent multiple simultaneous refresh attempts
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
-
-function subscribeTokenRefresh(callback: (token: string) => void): void {
-  refreshSubscribers.push(callback);
-}
-
-function onTokenRefreshed(newToken: string): void {
-  refreshSubscribers.forEach((callback) => callback(newToken));
-  refreshSubscribers = [];
-}
-
-async function refreshAccessToken(): Promise<string | null> {
-  const { refreshToken, updateTokens, logout } = useAuthStore.getState();
-
-  if (!refreshToken) {
-    logout();
-    return null;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (!response.ok) {
-      logout();
-      return null;
-    }
-
-    const data = await response.json();
-    const newToken = data.data?.accessToken || data.data?.token;
-    const newRefreshToken = data.data?.refreshToken;
-
-    if (newToken) {
-      updateTokens(newToken, newRefreshToken);
-      return newToken;
-    }
-
-    logout();
-    return null;
-  } catch {
-    logout();
-    return null;
-  }
+// Supabaseからアクセストークンを取得
+async function getAccessToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
 }
 
 async function request<T>(
@@ -92,15 +54,19 @@ async function request<T>(
   options: RequestInit = {},
   skipAuth = false
 ): Promise<T> {
-  const { token, logout } = useAuthStore.getState();
+  const { logout } = useAuthStore.getState();
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
 
-  if (token && !skipAuth) {
-    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  // Supabaseからアクセストークンを取得
+  if (!skipAuth) {
+    const token = await getAccessToken();
+    if (token) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
   }
 
   try {
@@ -120,85 +86,42 @@ async function request<T>(
       throw new RateLimitError(retryAfter);
     }
 
-    // Handle 401 Unauthorized with token refresh
-    if (response.status === 401 && token && !skipAuth) {
-      if (!isRefreshing) {
-        isRefreshing = true;
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
+      // Supabaseのセッション更新を試みる
+      const { data: { session }, error } = await supabase.auth.refreshSession();
 
-        const newToken = await refreshAccessToken();
-
-        isRefreshing = false;
-
-        if (newToken) {
-          onTokenRefreshed(newToken);
-
-          // Retry original request with new token
-          (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
-          const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
-            ...options,
-            headers,
-          });
-
-          if (retryResponse.status === 204) {
-            return undefined as T;
-          }
-
-          if (!retryResponse.ok) {
-            const errorData = await retryResponse.json().catch(() => ({}));
-            throw new ApiError(
-              retryResponse.status,
-              errorData.message || `HTTP error! status: ${retryResponse.status}`,
-              errorData.code,
-              errorData.details
-            );
-          }
-
-          return retryResponse.json();
-        } else {
-          throw new ApiError(401, '認証の有効期限が切れました。再度ログインしてください。', 'SESSION_EXPIRED');
-        }
-      } else {
-        // Wait for the refresh to complete
-        return new Promise((resolve, reject) => {
-          subscribeTokenRefresh(async (newToken: string) => {
-            try {
-              (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
-              const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
-                ...options,
-                headers,
-              });
-
-              if (retryResponse.status === 204) {
-                resolve(undefined as T);
-                return;
-              }
-
-              if (!retryResponse.ok) {
-                const errorData = await retryResponse.json().catch(() => ({}));
-                reject(new ApiError(
-                  retryResponse.status,
-                  errorData.message || `HTTP error! status: ${retryResponse.status}`,
-                  errorData.code,
-                  errorData.details
-                ));
-                return;
-              }
-
-              resolve(retryResponse.json());
-            } catch (error) {
-              reject(error);
-            }
-          });
-        });
+      if (error || !session) {
+        logout();
+        throw new ApiError(401, '認証の有効期限が切れました。再度ログインしてください。', 'SESSION_EXPIRED');
       }
+
+      // 新しいトークンでリトライ
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${session.access_token}`;
+      const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+
+      if (retryResponse.status === 204) {
+        return undefined as T;
+      }
+
+      if (!retryResponse.ok) {
+        const errorData = await retryResponse.json().catch(() => ({}));
+        throw new ApiError(
+          retryResponse.status,
+          errorData.message || `HTTP error! status: ${retryResponse.status}`,
+          errorData.code,
+          errorData.details
+        );
+      }
+
+      return retryResponse.json();
     }
 
     // Handle other errors
     if (!response.ok) {
-      if (response.status === 401) {
-        logout();
-      }
-
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
         response.status,

@@ -4,7 +4,9 @@ export {
   useRegister,
   useForgotPassword,
   useResetPassword,
-  useValidateResetToken,
+  useAuthListener,
+  useSession,
+  useAccessToken,
 } from './useAuth';
 export {
   useProjects,

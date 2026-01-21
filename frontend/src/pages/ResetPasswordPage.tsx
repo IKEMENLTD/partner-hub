@@ -1,20 +1,25 @@
-import { useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '@/store';
-import { useResetPassword, useValidateResetToken } from '@/hooks';
+import { useResetPassword } from '@/hooks';
+import { supabase } from '@/lib/supabase';
 import { Button, Input, Alert } from '@/components/common';
+
+/**
+ * Reset Password Page - Supabase Edition
+ *
+ * Supabaseはパスワードリセット時にURLのハッシュフラグメントでトークンを渡す。
+ * 例: /reset-password#access_token=xxx&type=recovery
+ *
+ * Supabaseクライアントが自動的にセッションを確立するので、
+ * このページではセッションの有無を確認して処理を行う。
+ */
 
 export function ResetPasswordPage() {
   const { isAuthenticated } = useAuthStore();
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') || '';
 
   const { mutate: resetPassword, isPending, isSuccess, error } = useResetPassword();
-  const {
-    data: tokenValidation,
-    isLoading: isValidating,
-  } = useValidateResetToken(token);
 
   const [formData, setFormData] = useState({
     newPassword: '',
@@ -26,8 +31,44 @@ export function ResetPasswordPage() {
     newPassword?: string;
     confirmPassword?: string;
   }>({});
+  const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
 
-  if (isAuthenticated) {
+  // Supabaseのパスワードリセットセッションを確認
+  useEffect(() => {
+    const checkSession = async () => {
+      // URLハッシュにrecoveryトークンがあるか確認
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const type = hashParams.get('type');
+
+      if (type === 'recovery') {
+        // Supabaseが自動的にセッションを設定するのを監視
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'PASSWORD_RECOVERY' && session) {
+            setIsValidSession(true);
+          }
+        });
+
+        // 少し待ってからセッションを確認
+        setTimeout(async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setIsValidSession(true);
+          } else {
+            setIsValidSession(false);
+          }
+          subscription.unsubscribe();
+        }, 1000);
+      } else {
+        // recoveryタイプでない場合は無効
+        setIsValidSession(false);
+      }
+    };
+
+    checkSession();
+  }, []);
+
+  // 既にログイン中の場合はリダイレクト（ただしリセットフロー中は除く）
+  if (isAuthenticated && isValidSession !== true) {
     return <Navigate to="/today" replace />;
   }
 
@@ -69,7 +110,6 @@ export function ResetPasswordPage() {
     }
 
     resetPassword({
-      token,
       newPassword: formData.newPassword,
     });
   };
@@ -129,7 +169,7 @@ export function ResetPasswordPage() {
   }
 
   // Loading state
-  if (isValidating) {
+  if (isValidSession === null) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -141,7 +181,7 @@ export function ResetPasswordPage() {
   }
 
   // Invalid token state
-  if (!token || (tokenValidation && !tokenValidation.valid)) {
+  if (!isValidSession) {
     return (
       <div className="flex min-h-screen">
         {/* Left side - Branding */}

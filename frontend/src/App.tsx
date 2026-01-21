@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout';
-import { useUIStore } from '@/store';
+import { useUIStore, useAuthStore } from '@/store';
+import { useAuthListener } from '@/hooks';
 import {
   LoginPage,
   RegisterPage,
@@ -37,6 +38,26 @@ const queryClient = new QueryClient({
   },
 });
 
+// 認証初期化コンポーネント
+function AuthProvider({ children }: { children: React.ReactNode }) {
+  useAuthListener();
+
+  const isInitialized = useAuthStore((state) => state.isInitialized);
+
+  if (!isInitialized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function App() {
   const initTheme = useUIStore((state) => state.initTheme);
 
@@ -47,7 +68,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
+        <AuthProvider>
+          <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -88,6 +110,7 @@ function App() {
             <Route path="*" element={<Navigate to="/today" replace />} />
           </Route>
         </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

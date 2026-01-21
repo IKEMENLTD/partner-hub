@@ -6,13 +6,13 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 // Config
-import { databaseConfig, jwtConfig, appConfig } from './config';
+import { databaseConfig, jwtConfig, appConfig, supabaseConfig } from './config';
 
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -21,6 +21,7 @@ import { ProjectModule } from './modules/project/project.module';
 import { TaskModule } from './modules/task/task.module';
 import { ReminderModule } from './modules/reminder/reminder.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SupabaseModule } from './modules/supabase/supabase.module';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
-      load: [databaseConfig, jwtConfig, appConfig],
+      load: [databaseConfig, jwtConfig, appConfig, supabaseConfig],
     }),
 
     // Database
@@ -73,6 +74,9 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
       },
     ]),
 
+    // Supabase
+    SupabaseModule,
+
     // Feature Modules
     AuthModule,
     PartnerModule,
@@ -92,10 +96,10 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    // Global JWT Auth Guard
+    // Global Supabase JWT Auth Guard
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useClass: SupabaseAuthGuard,
     },
     // Global Logging Interceptor
     {

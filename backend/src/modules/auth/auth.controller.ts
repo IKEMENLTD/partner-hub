@@ -1,11 +1,11 @@
 import {
   Controller,
-  Post,
-  Body,
   Get,
   Param,
   Patch,
+  Post,
   Delete,
+  Body,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -17,207 +17,118 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import {
-  RegisterDto,
-  LoginDto,
-  RefreshTokenDto,
-  AuthResponseDto,
-  UpdateUserDto,
-  ChangePasswordDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-  ValidateResetTokenDto,
-} from './dto';
-import { User } from './entities/user.entity';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UserProfile } from './entities/user-profile.entity';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import {
-  ThrottleAuth,
-  ThrottleRegister,
-  ThrottlePasswordChange,
-} from '../../common/decorators/throttle-auth.decorator';
 import { UserRole } from './enums/user-role.enum';
 
+/**
+ * Auth Controller - Supabase Edition
+ *
+ * 認証エンドポイント（login, register, forgot-password等）は削除。
+ * これらはフロントエンドからSupabase Authに直接リクエストされる。
+ *
+ * このコントローラーはプロファイル管理のみを担当。
+ */
 @ApiTags('Auth')
 @Controller('auth')
+@UseGuards(AuthGuard('supabase-jwt'))
+@ApiBearerAuth()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Public()
-  @ThrottleRegister() // SECURITY FIX: Rate limit registration to 3 per minute
-  @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 409, description: 'User already exists' })
-  @ApiResponse({ status: 429, description: 'Too many requests' })
-  async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
-    return this.authService.register(registerDto);
-  }
+  // ===== User Profile Endpoints =====
 
-  @Public()
-  @ThrottleAuth() // SECURITY FIX: Rate limit login to 5 per minute to prevent brute force
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'User login' })
-  @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({ status: 429, description: 'Too many requests' })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(loginDto);
-  }
-
-  @Public()
-  @Post('refresh')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
-  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshTokens(refreshTokenDto.refreshToken);
-  }
-
-  @Public()
-  @ThrottleRegister() // Rate limit to prevent abuse
-  @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Request password reset' })
-  @ApiResponse({ status: 200, description: 'Password reset email sent (if account exists)' })
-  @ApiResponse({ status: 429, description: 'Too many requests' })
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto);
-  }
-
-  @Public()
-  @ThrottleRegister() // Rate limit to prevent abuse
-  @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Reset password with token' })
-  @ApiResponse({ status: 200, description: 'Password reset successful' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
-  @ApiResponse({ status: 429, description: 'Too many requests' })
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
-  }
-
-  @Public()
-  @ThrottleRegister() // Rate limit to prevent token enumeration attacks
-  @Post('validate-reset-token')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Validate password reset token' })
-  @ApiResponse({ status: 200, description: 'Token validation result' })
-  @ApiResponse({ status: 429, description: 'Too many requests' })
-  async validateResetToken(@Body() validateResetTokenDto: ValidateResetTokenDto) {
-    return this.authService.validateResetToken(validateResetTokenDto.token);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('logout')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'User logout' })
-  @ApiResponse({ status: 204, description: 'Logout successful' })
-  async logout(@CurrentUser('id') userId: string) {
-    await this.authService.logout(userId);
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Get('me')
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Current user profile' })
-  async getProfile(@CurrentUser() user: User) {
-    return this.authService.findUserById(user.id);
+  async getProfile(@CurrentUser() user: UserProfile) {
+    return this.authService.mapProfileToResponse(user);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch('me')
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   async updateProfile(
     @CurrentUser('id') userId: string,
-    @Body() updateUserDto: UpdateUserDto,
+    @Body() updateProfileDto: UpdateProfileDto,
   ) {
-    // Users cannot change their own role
-    delete updateUserDto.role;
-    delete updateUserDto.isActive;
-    return this.authService.updateUser(userId, updateUserDto);
+    // Users cannot change their own role or active status
+    delete updateProfileDto.role;
+    delete updateProfileDto.isActive;
+    const profile = await this.authService.updateProfile(userId, updateProfileDto);
+    return this.authService.mapProfileToResponse(profile);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @ThrottlePasswordChange() // SECURITY FIX: Rate limit password changes
-  @Post('change-password')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Change password' })
-  @ApiResponse({ status: 200, description: 'Password changed successfully' })
-  @ApiResponse({ status: 429, description: 'Too many requests' })
-  async changePassword(
-    @CurrentUser('id') userId: string,
-    @Body() changePasswordDto: ChangePasswordDto,
-  ) {
-    await this.authService.changePassword(userId, changePasswordDto);
-    return { message: 'Password changed successfully' };
-  }
+  // ===== Admin Endpoints =====
 
-  // Admin endpoints
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('users')
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users (Admin only)' })
   @ApiResponse({ status: 200, description: 'List of all users' })
   async getAllUsers() {
-    return this.authService.findAllUsers();
+    const profiles = await this.authService.findAllProfiles();
+    return profiles.map((p) => this.authService.mapProfileToResponse(p));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('users/:id')
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by ID (Admin only)' })
   @ApiResponse({ status: 200, description: 'User details' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  // SECURITY FIX: Added ParseUUIDPipe for input validation
   async getUserById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.authService.findUserById(id);
+    const profile = await this.authService.findProfileById(id);
+    return this.authService.mapProfileToResponse(profile);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch('users/:id')
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user (Admin only)' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid UUID format' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async updateUser(
-    // SECURITY FIX: Added ParseUUIDPipe for input validation
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateUserDto: UpdateUserDto,
+    @Body() updateProfileDto: UpdateProfileDto,
   ) {
-    return this.authService.updateUser(id, updateUserDto);
+    const profile = await this.authService.updateProfile(id, updateProfileDto);
+    return this.authService.mapProfileToResponse(profile);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  @Delete('users/:id')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete user (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  @ApiResponse({ status: 400, description: 'Cannot delete own account or invalid UUID' })
+  @Post('users/:id/deactivate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Deactivate user (Admin only)' })
+  @ApiResponse({ status: 200, description: 'User deactivated successfully' })
+  @ApiResponse({ status: 400, description: 'Cannot deactivate own account' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async deleteUser(
-    // SECURITY FIX: Added ParseUUIDPipe for input validation
+  async deactivateUser(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') currentUserId: string,
   ) {
-    // SECURITY FIX: Prevent admin from deleting their own account
-    await this.authService.deleteUser(id, currentUserId);
-    return { message: 'User deleted successfully' };
+    await this.authService.deactivateUser(id, currentUserId);
+    return { message: 'User deactivated successfully' };
   }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('users/:id/activate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Activate user (Admin only)' })
+  @ApiResponse({ status: 200, description: 'User activated successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async activateUser(@Param('id', ParseUUIDPipe) id: string) {
+    await this.authService.activateUser(id);
+    return { message: 'User activated successfully' };
+  }
+
+  // Note: DELETE endpoint removed - users are managed in Supabase Auth Dashboard
+  // Deactivation is preferred over deletion for data integrity
 }

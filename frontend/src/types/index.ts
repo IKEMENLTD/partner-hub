@@ -5,10 +5,11 @@ export interface User {
   firstName: string;
   lastName: string;
   role: UserRole;
+  isActive: boolean;
   avatarUrl?: string;
   departmentId?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 // ユーザー名表示用ユーティリティ関数
