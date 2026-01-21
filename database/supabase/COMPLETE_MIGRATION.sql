@@ -457,7 +457,8 @@ CREATE INDEX IF NOT EXISTS idx_tasks_priority ON public.tasks(priority);
 CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON public.tasks(due_date);
 CREATE INDEX IF NOT EXISTS idx_tasks_type ON public.tasks(type);
 CREATE INDEX IF NOT EXISTS idx_tasks_tags ON public.tasks USING GIN(tags);
-CREATE INDEX IF NOT EXISTS idx_tasks_overdue ON public.tasks(due_date) WHERE status NOT IN ('completed', 'cancelled') AND due_date < CURRENT_DATE;
+-- idx_tasks_overdue は CURRENT_DATE が IMMUTABLE でないため削除
+-- 期限切れタスクのクエリには idx_tasks_due_date と idx_tasks_status を使用してください
 
 -- RLS無効化
 ALTER TABLE public.tasks DISABLE ROW LEVEL SECURITY;
