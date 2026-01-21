@@ -39,15 +39,15 @@ export class User {
 
   @Column({ nullable: true })
   @Exclude()
-  refreshToken: string;
+  refreshToken?: string;
 
   @Column({ nullable: true })
   @Exclude()
-  passwordResetToken: string;
+  passwordResetToken?: string;
 
   @Column({ nullable: true })
   @Exclude()
-  passwordResetExpires: Date;
+  passwordResetExpires?: Date;
 
   @Column({ nullable: true })
   lastLoginAt: Date;
