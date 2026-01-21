@@ -38,17 +38,17 @@ export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jw
       throw new Error('SUPABASE_JWT_SECRET is not configured');
     }
 
-    // Supabase JWT secret is base64 encoded, decode it for verification
-    const secretBuffer = Buffer.from(jwtSecret, 'base64');
-
+    // IMPORTANT: Do NOT decode the base64 secret!
+    // Supabase JWT secret should be used as-is (raw base64 string)
+    // Decoding it will cause signature verification to fail
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: secretBuffer,
+      secretOrKey: jwtSecret,  // Use raw string, NOT decoded
       algorithms: ['HS256'],
     });
 
-    this.logger.log(`SupabaseJwtStrategy initialized, secret length: ${jwtSecret.length}, decoded length: ${secretBuffer.length}`);
+    this.logger.log(`SupabaseJwtStrategy initialized with HS256, secret length: ${jwtSecret.length}`);
   }
 
   async validate(payload: SupabaseJwtPayload): Promise<UserProfile> {
