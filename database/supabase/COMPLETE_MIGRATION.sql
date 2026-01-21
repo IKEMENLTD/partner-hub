@@ -143,10 +143,11 @@ END $$;
 DO $$ BEGIN
     CREATE TYPE public.task_type AS ENUM (
         'task',
-        'milestone',
-        'meeting',
-        'review',
-        'approval',
+        'feature',
+        'bug',
+        'improvement',
+        'documentation',
+        'research',
         'other'
     );
 EXCEPTION

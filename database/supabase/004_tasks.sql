@@ -28,10 +28,11 @@ CREATE TYPE public.task_priority AS ENUM (
 -- タスク種別
 CREATE TYPE public.task_type AS ENUM (
     'task',                 -- 通常タスク
-    'milestone',            -- マイルストーン
-    'meeting',              -- 会議
-    'review',               -- レビュー
-    'approval',             -- 承認
+    'feature',              -- 機能
+    'bug',                  -- バグ
+    'improvement',          -- 改善
+    'documentation',        -- ドキュメント
+    'research',             -- 調査
     'other'                 -- その他
 );
 

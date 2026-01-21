@@ -15,6 +15,7 @@ export enum TaskPriority {
 }
 
 export enum TaskType {
+  TASK = 'task',
   FEATURE = 'feature',
   BUG = 'bug',
   IMPROVEMENT = 'improvement',

@@ -42,7 +42,7 @@ export class Task {
   @Column({
     type: 'enum',
     enum: TaskType,
-    default: TaskType.OTHER,
+    default: TaskType.TASK,
   })
   type: TaskType;
 

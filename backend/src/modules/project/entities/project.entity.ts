@@ -94,8 +94,8 @@ export class Project {
   @ManyToMany(() => Partner)
   @JoinTable({
     name: 'project_partners',
-    joinColumn: { name: 'projectId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'partnerId', referencedColumnName: 'id' },
+    joinColumn: { name: 'project_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'partner_id', referencedColumnName: 'id' },
   })
   partners: Partner[];
 

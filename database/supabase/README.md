@@ -127,7 +127,7 @@ supabase/
 - `stakeholder_tier`: tier1, tier2, tier3, tier4
 - `task_status`: todo, in_progress, waiting, review, completed, cancelled
 - `task_priority`: low, medium, high, critical
-- `task_type`: task, milestone, meeting, review, approval, other
+- `task_type`: task, feature, bug, improvement, documentation, research, other
 - `reminder_type`: due_date, follow_up, status_change, custom
 - `reminder_status`: pending, sent, delivered, failed, cancelled
 - `reminder_channel`: email, in_app, slack, teams, webhook
