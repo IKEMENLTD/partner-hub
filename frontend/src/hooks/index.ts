@@ -45,3 +45,11 @@ export {
   useMarkAlertAsRead,
   useMarkAllAlertsAsRead,
 } from './useDashboard';
+export {
+  useProjectStakeholders,
+  useStakeholderTree,
+  useStakeholder,
+  useAddStakeholder,
+  useUpdateStakeholder,
+  useDeleteStakeholder,
+} from './useStakeholders';

@@ -42,6 +42,7 @@ export class ProjectTemplate {
 export interface TemplatePhase {
   name: string;
   order: number;
+  estimatedDays?: number;
   tasks: TemplateTask[];
 }
 

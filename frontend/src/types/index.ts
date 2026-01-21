@@ -121,13 +121,59 @@ export interface ProjectStakeholder {
   projectId: string;
   partnerId?: string;
   partner?: Partner;
-  tier: number;
+  userId?: string;
+  user?: User;
+  tier: StakeholderTier;
   parentStakeholderId?: string;
+  parentStakeholder?: ProjectStakeholder;
+  children?: ProjectStakeholder[];
   roleDescription?: string;
+  responsibilities?: string;
   contractAmount?: number;
   isPrimary: boolean;
+  isKeyPerson?: boolean;
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+  };
+  notes?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// ステークホルダーのティア
+export type StakeholderTier = 1 | 2 | 3;
+
+// ステークホルダーツリーノード
+export interface StakeholderTreeNode extends ProjectStakeholder {
+  children: StakeholderTreeNode[];
+}
+
+// ステークホルダー入力型
+export interface StakeholderInput {
+  projectId: string;
+  partnerId?: string;
+  userId?: string;
+  tier: StakeholderTier;
+  parentStakeholderId?: string;
+  roleDescription?: string;
+  responsibilities?: string;
+  contractAmount?: number;
+  isPrimary?: boolean;
+  isKeyPerson?: boolean;
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+  };
+  notes?: string;
+}
+
+// ステークホルダーフィルター
+export interface StakeholderFilter {
+  tier?: StakeholderTier;
+  isPrimary?: boolean;
+  isKeyPerson?: boolean;
+  search?: string;
 }
 
 // リマインド設定の型定義

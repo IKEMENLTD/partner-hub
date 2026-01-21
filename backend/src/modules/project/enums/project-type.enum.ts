@@ -3,5 +3,7 @@ export enum ProjectType {
   ASP = 'asp',
   DEVELOPMENT = 'development',
   SERVICE = 'service',
+  MAINTENANCE = 'maintenance',
+  SUPPORT = 'support',
   OTHER = 'other',
 }

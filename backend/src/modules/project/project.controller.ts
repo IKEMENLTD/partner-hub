@@ -22,6 +22,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
+import { HealthScoreService } from './services/health-score.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -43,6 +44,7 @@ import { CreateTaskDto, QueryTaskDto } from '../task/dto';
 export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,
+    private readonly healthScoreService: HealthScoreService,
     private readonly taskService: TaskService,
   ) {}
 
@@ -70,6 +72,22 @@ export class ProjectController {
   @ApiResponse({ status: 200, description: 'Project statistics' })
   async getStatistics() {
     return this.projectService.getProjectStatistics();
+  }
+
+  @Get('health-statistics')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Get health score statistics across all projects' })
+  @ApiResponse({ status: 200, description: 'Health score statistics' })
+  async getHealthStatistics() {
+    return this.healthScoreService.getHealthScoreStatistics();
+  }
+
+  @Post('recalculate-all-health')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Recalculate health scores for all active projects' })
+  @ApiResponse({ status: 200, description: 'Health scores recalculated for all projects' })
+  async recalculateAllHealthScores() {
+    return this.healthScoreService.updateAllProjectHealthScores();
   }
 
   @Get('overdue')
@@ -216,6 +234,26 @@ export class ProjectController {
   @ApiResponse({ status: 404, description: 'Project not found' })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.projectService.remove(id);
+  }
+
+  // Health Score endpoints
+  @Post(':id/recalculate-health')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Recalculate health score for a project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Health score recalculated successfully' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  async recalculateHealthScore(@Param('id', ParseUUIDPipe) id: string) {
+    return this.healthScoreService.updateProjectHealthScore(id);
+  }
+
+  @Get(':id/health-breakdown')
+  @ApiOperation({ summary: 'Get detailed health score breakdown for a project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Health score breakdown' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  async getHealthBreakdown(@Param('id', ParseUUIDPipe) id: string) {
+    return this.healthScoreService.calculateHealthScore(id);
   }
 
   // Task endpoints under project

@@ -3,6 +3,8 @@ import {
   NotFoundException,
   Logger,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, LessThan, Not, In } from 'typeorm';
@@ -10,6 +12,7 @@ import { Task } from './entities/task.entity';
 import { CreateTaskDto, UpdateTaskDto, QueryTaskDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { TaskStatus } from './enums/task-status.enum';
+import { HealthScoreService } from '../project/services/health-score.service';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -33,6 +36,8 @@ export class TaskService {
   constructor(
     @InjectRepository(Task)
     private taskRepository: Repository<Task>,
+    @Inject(forwardRef(() => HealthScoreService))
+    private healthScoreService: HealthScoreService,
   ) {}
 
   async create(createTaskDto: CreateTaskDto, createdById: string): Promise<Task> {
@@ -53,6 +58,11 @@ export class TaskService {
 
     await this.taskRepository.save(task);
     this.logger.log(`Task created: ${task.title} (${task.id})`);
+
+    // Update project health score if task belongs to a project
+    if (task.projectId) {
+      await this.healthScoreService.onTaskChanged(task.projectId);
+    }
 
     return this.findOne(task.id);
   }
@@ -169,6 +179,7 @@ export class TaskService {
 
   async update(id: string, updateTaskDto: UpdateTaskDto): Promise<Task> {
     const task = await this.findOne(id);
+    const originalProjectId = task.projectId;
 
     // Validate parent task if changing
     if (updateTaskDto.parentTaskId && updateTaskDto.parentTaskId !== task.parentTaskId) {
@@ -188,6 +199,15 @@ export class TaskService {
 
     this.logger.log(`Task updated: ${task.title} (${task.id})`);
 
+    // Update project health score if task belongs to a project
+    if (task.projectId) {
+      await this.healthScoreService.onTaskChanged(task.projectId);
+    }
+    // If project changed, also update the original project
+    if (originalProjectId && originalProjectId !== task.projectId) {
+      await this.healthScoreService.onTaskChanged(originalProjectId);
+    }
+
     return this.findOne(task.id);
   }
 
@@ -203,6 +223,11 @@ export class TaskService {
     await this.taskRepository.save(task);
     this.logger.log(`Task status updated: ${task.title} -> ${status}`);
 
+    // Update project health score if task belongs to a project
+    if (task.projectId) {
+      await this.healthScoreService.onTaskChanged(task.projectId);
+    }
+
     return task;
   }
 
@@ -217,6 +242,11 @@ export class TaskService {
 
     await this.taskRepository.save(task);
     this.logger.log(`Task progress updated: ${task.title} -> ${progress}%`);
+
+    // Update project health score if task belongs to a project
+    if (task.projectId) {
+      await this.healthScoreService.onTaskChanged(task.projectId);
+    }
 
     return task;
   }
@@ -243,8 +273,14 @@ export class TaskService {
 
   async remove(id: string): Promise<void> {
     const task = await this.findOne(id);
+    const projectId = task.projectId;
     await this.taskRepository.remove(task);
     this.logger.log(`Task deleted: ${task.title} (${id})`);
+
+    // Update project health score if task belonged to a project
+    if (projectId) {
+      await this.healthScoreService.onTaskChanged(projectId);
+    }
   }
 
   async getTasksByProject(projectId: string): Promise<Task[]> {

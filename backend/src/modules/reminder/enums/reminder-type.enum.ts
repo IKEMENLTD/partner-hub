@@ -18,5 +18,7 @@ export enum ReminderStatus {
 export enum ReminderChannel {
   EMAIL = 'email',
   IN_APP = 'in_app',
+  SLACK = 'slack',
   BOTH = 'both',
+  ALL = 'all',
 }

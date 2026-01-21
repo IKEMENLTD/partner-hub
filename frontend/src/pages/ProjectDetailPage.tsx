@@ -16,8 +16,18 @@ import {
   Paperclip,
   Upload,
 } from 'lucide-react';
-import { useProject, useProjectTimeline, useDeleteProject, useUpdateTask } from '@/hooks';
-import type { ProjectDetailTab, TaskStatus } from '@/types';
+import {
+  useProject,
+  useProjectTimeline,
+  useDeleteProject,
+  useUpdateTask,
+  useStakeholderTree,
+  useProjectStakeholders,
+  useAddStakeholder,
+  useUpdateStakeholder,
+  useDeleteStakeholder,
+} from '@/hooks';
+import type { ProjectDetailTab, TaskStatus, ProjectStakeholder, StakeholderInput } from '@/types';
 import { getUserDisplayName } from '@/types';
 import {
   Button,
@@ -37,6 +47,11 @@ import {
 } from '@/components/common';
 import { TaskList } from '@/components/task';
 import { ProjectTimeline } from '@/components/project';
+import {
+  StakeholderTree,
+  AddStakeholderModal,
+  DeleteStakeholderModal,
+} from '@/components/stakeholders';
 
 const statusConfig = {
   draft: { label: '下書き', variant: 'default' as const },
@@ -64,8 +79,20 @@ export function ProjectDetailPage() {
   const { mutate: deleteProject, isPending: isDeleting } = useDeleteProject();
   const { mutate: updateTask } = useUpdateTask();
 
+  // ステークホルダー関連
+  const { data: stakeholderTree, isLoading: isLoadingStakeholders } = useStakeholderTree(id);
+  const { data: stakeholders } = useProjectStakeholders(id);
+  const { mutate: addStakeholder, isPending: isAddingStakeholder } = useAddStakeholder();
+  const { mutate: updateStakeholder, isPending: isUpdatingStakeholder } = useUpdateStakeholder();
+  const { mutate: deleteStakeholder, isPending: isDeletingStakeholder } = useDeleteStakeholder();
+
   const [activeTab, setActiveTab] = useState<ProjectDetailTab>('overview');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // ステークホルダーモーダル状態
+  const [showAddStakeholderModal, setShowAddStakeholderModal] = useState(false);
+  const [editingStakeholder, setEditingStakeholder] = useState<ProjectStakeholder | null>(null);
+  const [deletingStakeholder, setDeletingStakeholder] = useState<ProjectStakeholder | null>(null);
 
   if (isLoading) {
     return <PageLoading />;
@@ -103,6 +130,53 @@ export function ProjectDetailPage() {
 
   const handleTaskStatusChange = (taskId: string, newStatus: TaskStatus) => {
     updateTask({ id: taskId, data: { status: newStatus } });
+  };
+
+  // ステークホルダー追加/編集ハンドラー
+  const handleAddStakeholder = (data: StakeholderInput) => {
+    if (editingStakeholder) {
+      updateStakeholder(
+        {
+          projectId: project.id,
+          stakeholderId: editingStakeholder.id,
+          data,
+        },
+        {
+          onSuccess: () => {
+            setShowAddStakeholderModal(false);
+            setEditingStakeholder(null);
+          },
+        }
+      );
+    } else {
+      addStakeholder(data, {
+        onSuccess: () => {
+          setShowAddStakeholderModal(false);
+        },
+      });
+    }
+  };
+
+  // ステークホルダー削除ハンドラー
+  const handleDeleteStakeholder = () => {
+    if (!deletingStakeholder) return;
+    deleteStakeholder(
+      {
+        projectId: project.id,
+        stakeholderId: deletingStakeholder.id,
+      },
+      {
+        onSuccess: () => {
+          setDeletingStakeholder(null);
+        },
+      }
+    );
+  };
+
+  // ステークホルダー編集を開く
+  const handleEditStakeholder = (stakeholder: ProjectStakeholder) => {
+    setEditingStakeholder(stakeholder);
+    setShowAddStakeholderModal(true);
   };
 
   const tabs = [
@@ -321,38 +395,19 @@ export function ProjectDetailPage() {
           </div>
         </TabPanel>
 
-        {/* Partners Tab */}
+        {/* Stakeholders Tab */}
         <TabPanel id="members" className="mt-6">
-          {project.partners && project.partners.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {project.partners.map((partner: import('@/types').Partner) => (
-                <div
-                  key={partner.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary-600">
-                        {(partner.companyName || partner.name).charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">
-                        {partner.companyName || partner.name}
-                      </h4>
-                      {partner.companyName && partner.name && (
-                        <p className="text-xs text-gray-500">{partner.name}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              パートナーが登録されていません
-            </div>
-          )}
+          <StakeholderTree
+            tree={stakeholderTree || []}
+            isLoading={isLoadingStakeholders}
+            onAdd={() => {
+              setEditingStakeholder(null);
+              setShowAddStakeholderModal(true);
+            }}
+            onEdit={handleEditStakeholder}
+            onDelete={setDeletingStakeholder}
+            onSelect={handleEditStakeholder}
+          />
         </TabPanel>
 
         {/* Tasks Tab */}
@@ -415,6 +470,29 @@ export function ProjectDetailPage() {
           </Button>
         </ModalFooter>
       </Modal>
+
+      {/* Add/Edit Stakeholder Modal */}
+      <AddStakeholderModal
+        isOpen={showAddStakeholderModal}
+        onClose={() => {
+          setShowAddStakeholderModal(false);
+          setEditingStakeholder(null);
+        }}
+        onSubmit={handleAddStakeholder}
+        projectId={project.id}
+        existingStakeholders={stakeholders || []}
+        editingStakeholder={editingStakeholder}
+        isLoading={isAddingStakeholder || isUpdatingStakeholder}
+      />
+
+      {/* Delete Stakeholder Modal */}
+      <DeleteStakeholderModal
+        isOpen={!!deletingStakeholder}
+        onClose={() => setDeletingStakeholder(null)}
+        onConfirm={handleDeleteStakeholder}
+        stakeholder={deletingStakeholder}
+        isLoading={isDeletingStakeholder}
+      />
     </div>
   );
 }

@@ -2,6 +2,9 @@ import {
   Injectable,
   NotFoundException,
   Logger,
+  Inject,
+  forwardRef,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, In } from 'typeorm';
@@ -14,6 +17,7 @@ import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { ReminderStatus, ReminderType, ReminderChannel } from './enums/reminder-type.enum';
 import { TaskStatus } from '../task/enums/task-status.enum';
 import { ProjectStatus } from '../project/enums/project-status.enum';
+import { NotificationService } from '../notification/services/notification.service';
 
 @Injectable()
 export class ReminderService {
@@ -26,6 +30,8 @@ export class ReminderService {
     private taskRepository: Repository<Task>,
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
+    @Optional()
+    private notificationService?: NotificationService,
   ) {}
 
   async create(
@@ -364,21 +370,31 @@ export class ReminderService {
   }
 
   private async sendReminder(reminder: Reminder): Promise<void> {
-    // Implementation would depend on the notification channel
-    // For now, we just log the action
-    switch (reminder.channel) {
-      case ReminderChannel.EMAIL:
-        // TODO: Implement email sending
-        this.logger.log(`Email reminder would be sent to user: ${reminder.userId}`);
-        break;
-      case ReminderChannel.IN_APP:
-        // In-app notification - just mark as sent
-        this.logger.log(`In-app reminder processed for user: ${reminder.userId}`);
-        break;
-      case ReminderChannel.BOTH:
-        // TODO: Implement both channels
-        this.logger.log(`Both email and in-app reminder for user: ${reminder.userId}`);
-        break;
+    // Use NotificationService to send notifications based on channel
+    if (this.notificationService) {
+      const success = await this.notificationService.sendReminderNotification(
+        reminder,
+        reminder.task,
+      );
+
+      if (!success) {
+        throw new Error('Failed to send notification');
+      }
+
+      this.logger.log(`Notification sent via ${reminder.channel} for reminder: ${reminder.id}`);
+    } else {
+      // Fallback behavior when NotificationService is not available
+      switch (reminder.channel) {
+        case ReminderChannel.EMAIL:
+          this.logger.log(`Email reminder would be sent to user: ${reminder.userId}`);
+          break;
+        case ReminderChannel.IN_APP:
+          this.logger.log(`In-app reminder processed for user: ${reminder.userId}`);
+          break;
+        case ReminderChannel.BOTH:
+          this.logger.log(`Both email and in-app reminder for user: ${reminder.userId}`);
+          break;
+      }
     }
   }
 

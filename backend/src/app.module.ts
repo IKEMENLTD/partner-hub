@@ -6,7 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 // Config
-import { databaseConfig, appConfig, supabaseConfig } from './config';
+import { databaseConfig, appConfig, supabaseConfig, emailConfig, slackConfig } from './config';
 
 // Entities
 import { UserProfile } from './modules/auth/entities/user-profile.entity';
@@ -25,6 +25,8 @@ import { TaskModule } from './modules/task/task.module';
 import { ReminderModule } from './modules/reminder/reminder.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
+import { TemplateModule } from './modules/template/template.module';
+import { EscalationModule } from './modules/escalation/escalation.module';
 
 @Module({
   imports: [
@@ -32,7 +34,7 @@ import { SupabaseModule } from './modules/supabase/supabase.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
-      load: [databaseConfig, appConfig, supabaseConfig],
+      load: [databaseConfig, appConfig, supabaseConfig, emailConfig, slackConfig],
     }),
 
     // Database
@@ -105,6 +107,8 @@ import { SupabaseModule } from './modules/supabase/supabase.module';
     TaskModule,
     ReminderModule,
     DashboardModule,
+    TemplateModule,
+    EscalationModule,
   ],
   providers: [
     // Global Exception Filter
