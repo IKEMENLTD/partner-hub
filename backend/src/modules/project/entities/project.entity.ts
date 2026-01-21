@@ -13,7 +13,7 @@ import {
 import { ProjectStatus, ProjectPriority } from '../enums/project-status.enum';
 import { ProjectType } from '../enums/project-type.enum';
 import { CompanyRole } from '../enums/company-role.enum';
-import { User } from '../../auth/entities/user.entity';
+import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { Partner } from '../../partner/entities/partner.entity';
 
 @Entity('projects')
@@ -79,19 +79,19 @@ export class Project {
   @Column({ name: 'health_score', type: 'int', default: 100 })
   healthScore: number;
 
-  @Column({ name: 'owner_id', nullable: true })
+  @Column({ name: 'owner_id' })
   ownerId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserProfile, { nullable: false })
   @JoinColumn({ name: 'owner_id' })
-  owner: User;
+  owner: UserProfile;
 
   @Column({ name: 'manager_id', nullable: true })
   managerId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserProfile)
   @JoinColumn({ name: 'manager_id' })
-  manager: User;
+  manager: UserProfile;
 
   @ManyToMany(() => Partner)
   @JoinTable({
@@ -110,9 +110,9 @@ export class Project {
   @Column({ name: 'created_by', nullable: true })
   createdById: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserProfile)
   @JoinColumn({ name: 'created_by' })
-  createdBy: User;
+  createdBy: UserProfile;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

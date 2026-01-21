@@ -48,6 +48,8 @@ export class ProjectService {
     const project = this.projectRepository.create({
       ...projectData,
       createdById,
+      // ownerId が指定されていない場合は createdById を使用
+      ownerId: projectData.ownerId || createdById,
     });
 
     // Handle partner associations
@@ -87,72 +89,80 @@ export class ProjectService {
       endDateTo,
     } = queryDto;
 
-    const queryBuilder = this.projectRepository
-      .createQueryBuilder('project')
-      .leftJoinAndSelect('project.owner', 'owner')
-      .leftJoinAndSelect('project.manager', 'manager')
-      .leftJoinAndSelect('project.partners', 'partners')
-      .leftJoinAndSelect('project.createdBy', 'createdBy');
+    try {
+      const queryBuilder = this.projectRepository
+        .createQueryBuilder('project')
+        .leftJoinAndSelect('project.owner', 'owner')
+        .leftJoinAndSelect('project.manager', 'manager')
+        .leftJoinAndSelect('project.partners', 'partners')
+        .leftJoinAndSelect('project.createdBy', 'createdBy');
 
-    // Apply filters
-    if (status) {
-      queryBuilder.andWhere('project.status = :status', { status });
+      // Apply filters
+      if (status) {
+        queryBuilder.andWhere('project.status = :status', { status });
+      }
+
+      if (priority) {
+        queryBuilder.andWhere('project.priority = :priority', { priority });
+      }
+
+      if (search) {
+        queryBuilder.andWhere(
+          '(project.name ILIKE :search OR project.description ILIKE :search)',
+          { search: `%${search}%` },
+        );
+      }
+
+      if (ownerId) {
+        queryBuilder.andWhere('project.ownerId = :ownerId', { ownerId });
+      }
+
+      if (managerId) {
+        queryBuilder.andWhere('project.managerId = :managerId', { managerId });
+      }
+
+      if (partnerId) {
+        queryBuilder.andWhere('partners.id = :partnerId', { partnerId });
+      }
+
+      if (startDateFrom) {
+        queryBuilder.andWhere('project.startDate >= :startDateFrom', {
+          startDateFrom,
+        });
+      }
+
+      if (startDateTo) {
+        queryBuilder.andWhere('project.startDate <= :startDateTo', {
+          startDateTo,
+        });
+      }
+
+      if (endDateFrom) {
+        queryBuilder.andWhere('project.endDate >= :endDateFrom', { endDateFrom });
+      }
+
+      if (endDateTo) {
+        queryBuilder.andWhere('project.endDate <= :endDateTo', { endDateTo });
+      }
+
+      // SECURITY FIX: Validate sortBy against whitelist to prevent SQL injection
+      const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'createdAt';
+      queryBuilder.orderBy(`project.${safeSortBy}`, sortOrder);
+
+      // Apply pagination
+      const skip = (page - 1) * limit;
+      queryBuilder.skip(skip).take(limit);
+
+      // Log the generated SQL for debugging
+      this.logger.debug(`Generated SQL: ${queryBuilder.getSql()}`);
+
+      const [data, total] = await queryBuilder.getManyAndCount();
+
+      return new PaginatedResponseDto(data, total, page, limit);
+    } catch (error) {
+      this.logger.error(`Error in findAll: ${error.message}`, error.stack);
+      throw error;
     }
-
-    if (priority) {
-      queryBuilder.andWhere('project.priority = :priority', { priority });
-    }
-
-    if (search) {
-      queryBuilder.andWhere(
-        '(project.name ILIKE :search OR project.description ILIKE :search)',
-        { search: `%${search}%` },
-      );
-    }
-
-    if (ownerId) {
-      queryBuilder.andWhere('project.ownerId = :ownerId', { ownerId });
-    }
-
-    if (managerId) {
-      queryBuilder.andWhere('project.managerId = :managerId', { managerId });
-    }
-
-    if (partnerId) {
-      queryBuilder.andWhere('partners.id = :partnerId', { partnerId });
-    }
-
-    if (startDateFrom) {
-      queryBuilder.andWhere('project.startDate >= :startDateFrom', {
-        startDateFrom,
-      });
-    }
-
-    if (startDateTo) {
-      queryBuilder.andWhere('project.startDate <= :startDateTo', {
-        startDateTo,
-      });
-    }
-
-    if (endDateFrom) {
-      queryBuilder.andWhere('project.endDate >= :endDateFrom', { endDateFrom });
-    }
-
-    if (endDateTo) {
-      queryBuilder.andWhere('project.endDate <= :endDateTo', { endDateTo });
-    }
-
-    // SECURITY FIX: Validate sortBy against whitelist to prevent SQL injection
-    const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'createdAt';
-    queryBuilder.orderBy(`project.${safeSortBy}`, sortOrder);
-
-    // Apply pagination
-    const skip = (page - 1) * limit;
-    queryBuilder.skip(skip).take(limit);
-
-    const [data, total] = await queryBuilder.getManyAndCount();
-
-    return new PaginatedResponseDto(data, total, page, limit);
   }
 
   async findOne(id: string): Promise<Project> {

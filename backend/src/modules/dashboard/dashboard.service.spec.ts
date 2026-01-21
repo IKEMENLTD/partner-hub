@@ -4,7 +4,7 @@ import { DashboardService } from './dashboard.service';
 import { Project } from '../project/entities/project.entity';
 import { Task } from '../task/entities/task.entity';
 import { Partner } from '../partner/entities/partner.entity';
-import { User } from '../auth/entities/user.entity';
+import { UserProfile } from '../auth/entities/user-profile.entity';
 import { Reminder } from '../reminder/entities/reminder.entity';
 
 describe('DashboardService', () => {
@@ -51,7 +51,7 @@ describe('DashboardService', () => {
           useValue: createMockRepository(),
         },
         {
-          provide: getRepositoryToken(User),
+          provide: getRepositoryToken(UserProfile),
           useValue: createMockRepository(),
         },
         {

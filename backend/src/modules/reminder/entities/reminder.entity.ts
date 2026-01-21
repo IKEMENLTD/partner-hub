@@ -8,7 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { ReminderType, ReminderStatus, ReminderChannel } from '../enums/reminder-type.enum';
-import { User } from '../../auth/entities/user.entity';
+import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { Task } from '../../task/entities/task.entity';
 import { Project } from '../../project/entities/project.entity';
 
@@ -47,9 +47,9 @@ export class Reminder {
   @Column({ name: 'user_id', nullable: true })
   userId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserProfile)
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user: UserProfile;
 
   @Column({ name: 'task_id', nullable: true })
   taskId: string;
@@ -86,9 +86,9 @@ export class Reminder {
   @Column({ name: 'created_by', nullable: true })
   createdById: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserProfile)
   @JoinColumn({ name: 'created_by' })
-  createdBy: User;
+  createdBy: UserProfile;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

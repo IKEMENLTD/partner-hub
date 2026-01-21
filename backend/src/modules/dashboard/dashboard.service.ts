@@ -4,7 +4,7 @@ import { Repository, Between, LessThan, In, Not } from 'typeorm';
 import { Project } from '../project/entities/project.entity';
 import { Task } from '../task/entities/task.entity';
 import { Partner } from '../partner/entities/partner.entity';
-import { User } from '../auth/entities/user.entity';
+import { UserProfile } from '../auth/entities/user-profile.entity';
 import { Reminder } from '../reminder/entities/reminder.entity';
 import { ProjectStatus } from '../project/enums/project-status.enum';
 import { TaskStatus } from '../task/enums/task-status.enum';
@@ -67,8 +67,8 @@ export class DashboardService {
     private taskRepository: Repository<Task>,
     @InjectRepository(Partner)
     private partnerRepository: Repository<Partner>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectRepository(UserProfile)
+    private userRepository: Repository<UserProfile>,
     @InjectRepository(Reminder)
     private reminderRepository: Repository<Reminder>,
   ) {}

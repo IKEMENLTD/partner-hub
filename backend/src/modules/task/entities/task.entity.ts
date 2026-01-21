@@ -9,7 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { TaskStatus, TaskPriority, TaskType } from '../enums/task-status.enum';
-import { User } from '../../auth/entities/user.entity';
+import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { Project } from '../../project/entities/project.entity';
 import { Partner } from '../../partner/entities/partner.entity';
 import { ReminderConfig } from '../interfaces/reminder-config.interface';
@@ -56,9 +56,9 @@ export class Task {
   @Column({ name: 'assignee_id', nullable: true })
   assigneeId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserProfile)
   @JoinColumn({ name: 'assignee_id' })
-  assignee: User;
+  assignee: UserProfile;
 
   @Column({ name: 'partner_id', nullable: true })
   partnerId: string;
@@ -107,9 +107,9 @@ export class Task {
   @Column({ name: 'created_by', nullable: true })
   createdById: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserProfile)
   @JoinColumn({ name: 'created_by' })
-  createdBy: User;
+  createdBy: UserProfile;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

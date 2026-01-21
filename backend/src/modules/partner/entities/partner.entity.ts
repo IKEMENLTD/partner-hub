@@ -9,7 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { PartnerStatus, PartnerType } from '../enums/partner-status.enum';
-import { User } from '../../auth/entities/user.entity';
+import { UserProfile } from '../../auth/entities/user-profile.entity';
 
 @Entity('partners')
 export class Partner {
@@ -72,16 +72,16 @@ export class Partner {
   @Column({ name: 'user_id', nullable: true })
   userId: string;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => UserProfile, { nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user: UserProfile;
 
   @Column({ name: 'created_by', nullable: true })
   createdById: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserProfile)
   @JoinColumn({ name: 'created_by' })
-  createdBy: User;
+  createdBy: UserProfile;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

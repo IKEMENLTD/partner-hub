@@ -1,56 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { AuthService } from './auth.service';
-import { User } from './entities/user.entity';
+import { UserProfile } from './entities/user-profile.entity';
 import { UserRole } from './enums/user-role.enum';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let userRepository: Repository<User>;
-  let jwtService: JwtService;
+  let profileRepository: Repository<UserProfile>;
 
-  const mockUser: Partial<User> = {
+  const mockProfile: Partial<UserProfile> = {
     id: 'test-uuid',
     email: 'test@example.com',
-    password: 'hashedPassword',
     firstName: 'Test',
     lastName: 'User',
     role: UserRole.MEMBER,
     isActive: true,
-    refreshToken: undefined,
+    avatarUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    lastLoginAt: null,
   };
 
-  const mockUserRepository = {
+  const mockProfileRepository = {
     findOne: jest.fn(),
+    find: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     update: jest.fn(),
-    remove: jest.fn(),
-    find: jest.fn(),
-  };
-
-  const mockJwtService = {
-    signAsync: jest.fn(),
-    verify: jest.fn(),
-  };
-
-  const mockConfigService = {
-    get: jest.fn((key: string) => {
-      const config: Record<string, string> = {
-        'jwt.secret': 'test-secret',
-        'jwt.expiresIn': '1d',
-        'jwt.refreshSecret': 'test-refresh-secret',
-        'jwt.refreshExpiresIn': '7d',
-      };
-      return config[key];
-    }),
   };
 
   beforeEach(async () => {
@@ -58,23 +36,16 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         {
-          provide: getRepositoryToken(User),
-          useValue: mockUserRepository,
-        },
-        {
-          provide: JwtService,
-          useValue: mockJwtService,
-        },
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
+          provide: getRepositoryToken(UserProfile),
+          useValue: mockProfileRepository,
         },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
-    jwtService = module.get<JwtService>(JwtService);
+    profileRepository = module.get<Repository<UserProfile>>(
+      getRepositoryToken(UserProfile),
+    );
 
     jest.clearAllMocks();
   });
@@ -83,356 +54,216 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('register', () => {
-    const registerDto = {
-      email: 'new@example.com',
-      password: 'password123',
-      firstName: 'New',
-      lastName: 'User',
-    };
+  describe('findProfileById', () => {
+    it('should return profile when found', async () => {
+      mockProfileRepository.findOne.mockResolvedValue(mockProfile);
 
-    it('should register a new user successfully', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
-      mockUserRepository.create.mockReturnValue({
-        ...mockUser,
-        email: registerDto.email,
+      const result = await service.findProfileById('test-uuid');
+
+      expect(result).toEqual(mockProfile);
+      expect(mockProfileRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'test-uuid' },
       });
-      mockUserRepository.save.mockResolvedValue({
-        ...mockUser,
-        email: registerDto.email,
-      });
-      mockJwtService.signAsync
-        .mockResolvedValueOnce('access-token')
-        .mockResolvedValueOnce('refresh-token');
-
-      const result = await service.register(registerDto);
-
-      expect(result).toHaveProperty('user');
-      expect(result).toHaveProperty('tokens');
-      expect(result.tokens.accessToken).toBe('access-token');
-      expect(mockUserRepository.create).toHaveBeenCalled();
-      expect(mockUserRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw ConflictException if user already exists', async () => {
-      mockUserRepository.findOne.mockResolvedValue(mockUser);
+    it('should throw NotFoundException when profile not found', async () => {
+      mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.register(registerDto)).rejects.toThrow(
-        ConflictException,
+      await expect(service.findProfileById('non-existent')).rejects.toThrow(
+        NotFoundException,
       );
     });
   });
 
-  describe('login', () => {
-    const loginDto = {
-      email: 'test@example.com',
-      password: 'password123',
-    };
+  describe('findAllProfiles', () => {
+    it('should return all profiles', async () => {
+      mockProfileRepository.find.mockResolvedValue([mockProfile]);
 
-    it('should login successfully with valid credentials', async () => {
-      const hashedPassword = await bcrypt.hash(loginDto.password, 10);
-      mockUserRepository.findOne.mockResolvedValue({
-        ...mockUser,
-        password: hashedPassword,
-      });
-      mockUserRepository.save.mockResolvedValue(mockUser);
-      mockJwtService.signAsync
-        .mockResolvedValueOnce('access-token')
-        .mockResolvedValueOnce('refresh-token');
+      const result = await service.findAllProfiles();
 
-      const result = await service.login(loginDto);
-
-      expect(result).toHaveProperty('user');
-      expect(result).toHaveProperty('tokens');
-      expect(result.tokens.accessToken).toBe('access-token');
-    });
-
-    it('should throw UnauthorizedException for invalid email', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-
-    it('should throw UnauthorizedException for invalid password', async () => {
-      mockUserRepository.findOne.mockResolvedValue({
-        ...mockUser,
-        password: 'differentHashedPassword',
-      });
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-
-    it('should throw UnauthorizedException for inactive user', async () => {
-      mockUserRepository.findOne.mockResolvedValue({
-        ...mockUser,
-        isActive: false,
-      });
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-  });
-
-  describe('logout', () => {
-    it('should clear refresh token on logout', async () => {
-      await service.logout('test-uuid');
-
-      expect(mockUserRepository.update).toHaveBeenCalledWith('test-uuid', {
-        refreshToken: undefined,
+      expect(result).toEqual([mockProfile]);
+      expect(mockProfileRepository.find).toHaveBeenCalledWith({
+        order: { createdAt: 'DESC' },
       });
     });
   });
 
-  describe('findUserById', () => {
-    it('should return user when found', async () => {
-      mockUserRepository.findOne.mockResolvedValue(mockUser);
-
-      const result = await service.findUserById('test-uuid');
-
-      expect(result).toEqual(mockUser);
-    });
-
-    it('should throw NotFoundException when user not found', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.findUserById('test-uuid')).rejects.toThrow();
-    });
-  });
-
-  describe('findAllUsers', () => {
-    it('should return all users', async () => {
-      mockUserRepository.find.mockResolvedValue([mockUser]);
-
-      const result = await service.findAllUsers();
-
-      expect(result).toEqual([mockUser]);
-      expect(mockUserRepository.find).toHaveBeenCalled();
-    });
-  });
-
-  describe('updateUser', () => {
+  describe('updateProfile', () => {
     const updateDto = {
       firstName: 'Updated',
       lastName: 'Name',
     };
 
-    it('should successfully update user', async () => {
-      mockUserRepository.findOne.mockResolvedValue(mockUser);
-      mockUserRepository.save.mockResolvedValue({ ...mockUser, ...updateDto });
+    it('should successfully update profile', async () => {
+      mockProfileRepository.findOne.mockResolvedValue({ ...mockProfile });
+      mockProfileRepository.save.mockResolvedValue({
+        ...mockProfile,
+        ...updateDto,
+      });
 
-      const result = await service.updateUser('test-uuid', updateDto);
+      const result = await service.updateProfile('test-uuid', updateDto);
 
       expect(result.firstName).toBe('Updated');
       expect(result.lastName).toBe('Name');
-      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(mockProfileRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException if user not found', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
+    it('should throw NotFoundException if profile not found', async () => {
+      mockProfileRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        service.updateUser('non-existent', updateDto),
-      ).rejects.toThrow();
+        service.updateProfile('non-existent', updateDto),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('changePassword', () => {
-    const changePasswordDto = {
-      currentPassword: 'oldPassword123',
-      newPassword: 'newPassword456',
-    };
-
-    it('should successfully change password', async () => {
-      const hashedPassword = await bcrypt.hash('oldPassword123', 10);
-      mockUserRepository.findOne.mockResolvedValue({
-        ...mockUser,
-        password: hashedPassword,
-      });
-      mockUserRepository.save.mockResolvedValue(mockUser);
-
-      await service.changePassword('test-uuid', changePasswordDto);
-
-      expect(mockUserRepository.save).toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException if user not found', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.changePassword('non-existent', changePasswordDto),
-      ).rejects.toThrow();
-    });
-
-    it('should throw BadRequestException if current password is incorrect', async () => {
-      mockUserRepository.findOne.mockResolvedValue({
-        ...mockUser,
-        password: 'differentHashedPassword',
+  describe('updateUserRole', () => {
+    it('should successfully update user role', async () => {
+      mockProfileRepository.findOne.mockResolvedValue({ ...mockProfile });
+      mockProfileRepository.save.mockResolvedValue({
+        ...mockProfile,
+        role: UserRole.ADMIN,
       });
 
+      const result = await service.updateUserRole('test-uuid', UserRole.ADMIN);
+
+      expect(result.role).toBe(UserRole.ADMIN);
+      expect(mockProfileRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if profile not found', async () => {
+      mockProfileRepository.findOne.mockResolvedValue(null);
+
       await expect(
-        service.changePassword('test-uuid', changePasswordDto),
-      ).rejects.toThrow();
+        service.updateUserRole('non-existent', UserRole.ADMIN),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('deleteUser', () => {
-    it('should successfully delete user', async () => {
-      mockUserRepository.findOne.mockResolvedValue(mockUser);
-      mockUserRepository.remove.mockResolvedValue(mockUser);
-
-      await service.deleteUser('test-uuid');
-
-      expect(mockUserRepository.remove).toHaveBeenCalledWith(mockUser);
-    });
-
-    it('should throw NotFoundException if user not found', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.deleteUser('non-existent')).rejects.toThrow();
-    });
-  });
-
-  describe('refreshTokens', () => {
-    it('should successfully refresh tokens with valid refresh token', async () => {
-      const refreshToken = 'valid-refresh-token';
-      const payload = { sub: 'test-uuid', email: 'test@example.com' };
-      const hashedToken = await bcrypt.hash(refreshToken, 10);
-
-      mockJwtService.verify.mockReturnValue(payload);
-      mockUserRepository.findOne.mockResolvedValue({
-        ...mockUser,
-        refreshToken: hashedToken,
-      });
-      mockJwtService.signAsync
-        .mockResolvedValueOnce('new-access-token')
-        .mockResolvedValueOnce('new-refresh-token');
-
-      const result = await service.refreshTokens(refreshToken);
-
-      expect(result).toHaveProperty('accessToken');
-      expect(result).toHaveProperty('refreshToken');
-      expect(result.accessToken).toBe('new-access-token');
-    });
-
-    it('should throw UnauthorizedException if token is invalid', async () => {
-      mockJwtService.verify.mockImplementation(() => {
-        throw new Error('Invalid token');
+  describe('deactivateUser', () => {
+    it('should successfully deactivate user', async () => {
+      mockProfileRepository.findOne.mockResolvedValue({ ...mockProfile });
+      mockProfileRepository.save.mockResolvedValue({
+        ...mockProfile,
+        isActive: false,
       });
 
-      await expect(service.refreshTokens('invalid-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await service.deactivateUser('test-uuid');
+
+      expect(mockProfileRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw UnauthorizedException if user not found', async () => {
-      const payload = { sub: 'non-existent-user-id' };
-      mockJwtService.verify.mockReturnValue(payload);
-      mockUserRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.refreshTokens('token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+    it('should throw BadRequestException when trying to deactivate own account', async () => {
+      await expect(
+        service.deactivateUser('test-uuid', 'test-uuid'),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw UnauthorizedException if refresh token does not match', async () => {
-      const payload = { sub: 'test-uuid' };
+    it('should throw NotFoundException if profile not found', async () => {
+      mockProfileRepository.findOne.mockResolvedValue(null);
 
-      mockJwtService.verify.mockReturnValue(payload);
-      mockUserRepository.findOne.mockResolvedValue({
-        ...mockUser,
-        refreshToken: 'hashedRefreshToken',
-      });
-
-      await expect(service.refreshTokens('wrong-token')).rejects.toThrow(
-        UnauthorizedException,
+      await expect(service.deactivateUser('non-existent')).rejects.toThrow(
+        NotFoundException,
       );
     });
   });
 
-  describe('Edge cases', () => {
-    it('should handle empty string email', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
+  describe('activateUser', () => {
+    it('should successfully activate user', async () => {
+      mockProfileRepository.findOne.mockResolvedValue({
+        ...mockProfile,
+        isActive: false,
+      });
+      mockProfileRepository.save.mockResolvedValue({
+        ...mockProfile,
+        isActive: true,
+      });
 
-      await expect(
-        service.login({ email: '', password: 'password' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await service.activateUser('test-uuid');
+
+      expect(mockProfileRepository.save).toHaveBeenCalled();
     });
 
-    it('should handle null values gracefully', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
+    it('should throw NotFoundException if profile not found', async () => {
+      mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.login({ email: null as any, password: null as any }),
-      ).rejects.toThrow(UnauthorizedException);
-    });
-
-    it('should handle database errors during registration', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
-      mockUserRepository.create.mockReturnValue(mockUser);
-      mockUserRepository.save.mockRejectedValue(
-        new Error('Database connection error'),
+      await expect(service.activateUser('non-existent')).rejects.toThrow(
+        NotFoundException,
       );
-
-      await expect(
-        service.register({
-          email: 'new@example.com',
-          password: 'password123',
-          firstName: 'New',
-          lastName: 'User',
-        }),
-      ).rejects.toThrow('Database connection error');
     });
   });
 
-  describe('Boundary value tests', () => {
-    it('should handle minimum valid password length during registration', async () => {
-      const minPasswordDto = {
-        email: 'test@example.com',
-        password: '123456',
-        firstName: 'Test',
+  describe('updateLastLogin', () => {
+    it('should update last login timestamp', async () => {
+      mockProfileRepository.update.mockResolvedValue({ affected: 1 });
+
+      await service.updateLastLogin('test-uuid');
+
+      expect(mockProfileRepository.update).toHaveBeenCalledWith('test-uuid', {
+        lastLoginAt: expect.any(Date),
+      });
+    });
+  });
+
+  describe('syncProfile', () => {
+    it('should create new profile if not exists', async () => {
+      mockProfileRepository.findOne.mockResolvedValue(null);
+      mockProfileRepository.create.mockReturnValue({
+        id: 'new-uuid',
+        email: 'new@example.com',
+        firstName: 'New',
         lastName: 'User',
-      };
-
-      mockUserRepository.findOne.mockResolvedValue(null);
-      mockUserRepository.create.mockReturnValue(mockUser);
-      mockUserRepository.save.mockResolvedValue(mockUser);
-      mockJwtService.signAsync.mockResolvedValue('token');
-
-      await service.register(minPasswordDto);
-
-      expect(mockUserRepository.create).toHaveBeenCalled();
-    });
-
-    it('should handle very long email addresses', async () => {
-      const longEmail = 'a'.repeat(100) + '@example.com';
-      mockUserRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.login({ email: longEmail, password: 'password' }),
-      ).rejects.toThrow(UnauthorizedException);
-    });
-
-    it('should handle special characters in password', async () => {
-      const specialPassword = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-      const hashedPassword = await bcrypt.hash(specialPassword, 10);
-      mockUserRepository.findOne.mockResolvedValue({
-        ...mockUser,
-        password: hashedPassword,
       });
-      mockUserRepository.save.mockResolvedValue(mockUser);
-      mockJwtService.signAsync.mockResolvedValue('token');
-
-      const result = await service.login({
-        email: 'test@example.com',
-        password: specialPassword,
+      mockProfileRepository.save.mockResolvedValue({
+        id: 'new-uuid',
+        email: 'new@example.com',
+        firstName: 'New',
+        lastName: 'User',
       });
 
-      expect(result).toHaveProperty('tokens');
+      const result = await service.syncProfile('new-uuid', 'new@example.com', {
+        firstName: 'New',
+        lastName: 'User',
+      });
+
+      expect(mockProfileRepository.create).toHaveBeenCalled();
+      expect(mockProfileRepository.save).toHaveBeenCalled();
+      expect(result.email).toBe('new@example.com');
+    });
+
+    it('should update existing profile', async () => {
+      mockProfileRepository.findOne.mockResolvedValue({ ...mockProfile });
+      mockProfileRepository.save.mockResolvedValue({
+        ...mockProfile,
+        email: 'updated@example.com',
+      });
+
+      const result = await service.syncProfile(
+        'test-uuid',
+        'updated@example.com',
+      );
+
+      expect(mockProfileRepository.save).toHaveBeenCalled();
+      expect(result.email).toBe('updated@example.com');
+    });
+  });
+
+  describe('mapProfileToResponse', () => {
+    it('should map profile to response format', () => {
+      const profile = mockProfile as UserProfile;
+
+      const result = service.mapProfileToResponse(profile);
+
+      expect(result).toEqual({
+        id: profile.id,
+        email: profile.email,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        role: profile.role,
+        isActive: profile.isActive,
+        avatarUrl: profile.avatarUrl,
+        createdAt: profile.createdAt,
+      });
     });
   });
 });
