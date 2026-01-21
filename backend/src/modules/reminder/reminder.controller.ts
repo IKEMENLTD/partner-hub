@@ -22,7 +22,6 @@ import {
 } from '@nestjs/swagger';
 import { ReminderService } from './reminder.service';
 import { CreateReminderDto, UpdateReminderDto, QueryReminderDto } from './dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -30,7 +29,7 @@ import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Reminders')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @Controller('reminders')
 export class ReminderController {
   constructor(private readonly reminderService: ReminderService) {}
