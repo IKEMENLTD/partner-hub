@@ -27,6 +27,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
 import { TemplateModule } from './modules/template/template.module';
 import { EscalationModule } from './modules/escalation/escalation.module';
+import { FileStorageModule } from './modules/file-storage/file-storage.module';
+import { ProgressReportModule } from './modules/progress-report/progress-report.module';
 
 @Module({
   imports: [
@@ -109,6 +111,8 @@ import { EscalationModule } from './modules/escalation/escalation.module';
     DashboardModule,
     TemplateModule,
     EscalationModule,
+    FileStorageModule,
+    ProgressReportModule,
   ],
   providers: [
     // Global Exception Filter

@@ -3,5 +3,8 @@ export { authService } from './authService';
 export { projectService } from './projectService';
 export { taskService } from './taskService';
 export { partnerService } from './partnerService';
+export { partnerEvaluationService } from './partnerEvaluationService';
 export { dashboardService } from './dashboardService';
 export { stakeholderService } from './stakeholderService';
+export { fileService } from './fileService';
+export { progressReportService } from './progressReportService';

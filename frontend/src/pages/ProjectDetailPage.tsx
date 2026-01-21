@@ -26,6 +26,10 @@ import {
   useAddStakeholder,
   useUpdateStakeholder,
   useDeleteStakeholder,
+  useProjectFiles,
+  useUploadFile,
+  useDeleteFile,
+  useGetDownloadUrl,
 } from '@/hooks';
 import type { ProjectDetailTab, TaskStatus, ProjectStakeholder, StakeholderInput } from '@/types';
 import { getUserDisplayName } from '@/types';
@@ -43,7 +47,6 @@ import {
   TabPanel,
   Modal,
   ModalFooter,
-  EmptyState,
 } from '@/components/common';
 import { TaskList } from '@/components/task';
 import { ProjectTimeline } from '@/components/project';
@@ -52,6 +55,7 @@ import {
   AddStakeholderModal,
   DeleteStakeholderModal,
 } from '@/components/stakeholders';
+import { FileUpload, FileList } from '@/components/files';
 
 const statusConfig = {
   draft: { label: '下書き', variant: 'default' as const },
@@ -86,7 +90,14 @@ export function ProjectDetailPage() {
   const { mutate: updateStakeholder, isPending: isUpdatingStakeholder } = useUpdateStakeholder();
   const { mutate: deleteStakeholder, isPending: isDeletingStakeholder } = useDeleteStakeholder();
 
+  // ファイル関連
+  const { data: filesData, isLoading: isLoadingFiles } = useProjectFiles(id);
+  const { mutate: uploadFile, isPending: isUploading } = useUploadFile();
+  const { mutate: deleteFile, isPending: isDeletingFile } = useDeleteFile();
+  const { mutate: getDownloadUrl } = useGetDownloadUrl();
+
   const [activeTab, setActiveTab] = useState<ProjectDetailTab>('overview');
+  const [showFileUpload, setShowFileUpload] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // ステークホルダーモーダル状態
@@ -177,6 +188,35 @@ export function ProjectDetailPage() {
   const handleEditStakeholder = (stakeholder: ProjectStakeholder) => {
     setEditingStakeholder(stakeholder);
     setShowAddStakeholderModal(true);
+  };
+
+  // ファイルアップロードハンドラー
+  const handleFileUpload = (file: File, projectId: string, taskId?: string) => {
+    uploadFile(
+      { file, projectId, taskId },
+      {
+        onSuccess: () => {
+          setShowFileUpload(false);
+        },
+      }
+    );
+  };
+
+  // ファイル削除ハンドラー
+  const handleFileDelete = (fileId: string) => {
+    deleteFile({ fileId, projectId: project.id });
+  };
+
+  // ファイルダウンロードハンドラー
+  const handleFileDownload = (fileId: string) => {
+    getDownloadUrl(
+      { fileId },
+      {
+        onSuccess: (data) => {
+          window.open(data.signedUrl, '_blank');
+        },
+      }
+    );
   };
 
   const tabs = [
@@ -428,25 +468,48 @@ export function ProjectDetailPage() {
 
         {/* Files Tab */}
         <TabPanel id="files" className="mt-6">
-          <Card>
-            <CardHeader
-              action={
-                <Button variant="outline" size="sm" leftIcon={<Upload className="h-4 w-4" />}>
-                  アップロード
-                </Button>
-              }
-            >
-              ファイル一覧
-            </CardHeader>
-            <CardContent>
-              <EmptyState
-                icon={<Paperclip className="h-10 w-10" />}
-                title="ファイルがありません"
-                description="ファイルをアップロードすると、ここに表示されます"
-                className="py-8"
-              />
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            {/* Upload Section */}
+            <Card>
+              <CardHeader
+                action={
+                  <Button
+                    variant={showFileUpload ? 'ghost' : 'outline'}
+                    size="sm"
+                    leftIcon={<Upload className="h-4 w-4" />}
+                    onClick={() => setShowFileUpload(!showFileUpload)}
+                  >
+                    {showFileUpload ? '閉じる' : 'アップロード'}
+                  </Button>
+                }
+              >
+                ファイルアップロード
+              </CardHeader>
+              {showFileUpload && (
+                <CardContent>
+                  <FileUpload
+                    projectId={project.id}
+                    onUpload={handleFileUpload}
+                    isUploading={isUploading}
+                  />
+                </CardContent>
+              )}
+            </Card>
+
+            {/* File List */}
+            <Card>
+              <CardHeader>ファイル一覧</CardHeader>
+              <CardContent>
+                <FileList
+                  files={filesData || []}
+                  isLoading={isLoadingFiles}
+                  onDelete={handleFileDelete}
+                  onDownload={handleFileDownload}
+                  isDeleting={isDeletingFile}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </TabPanel>
       </Tabs>
 

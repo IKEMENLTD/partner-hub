@@ -53,3 +53,18 @@ export {
   useUpdateStakeholder,
   useDeleteStakeholder,
 } from './useStakeholders';
+export {
+  usePartnerEvaluationSummary,
+  usePartnerEvaluationHistory,
+  usePartnerAutoMetrics,
+  useCreatePartnerEvaluation,
+} from './usePartnerEvaluation';
+export {
+  useProjectFiles,
+  useTaskFiles,
+  useFile,
+  useUploadFile,
+  useDeleteFile,
+  useDownloadUrl,
+  useGetDownloadUrl,
+} from './useFiles';

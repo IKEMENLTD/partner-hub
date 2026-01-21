@@ -22,6 +22,7 @@ import {
   SettingsPage,
   ProfilePage,
   NotificationsPage,
+  ProgressReportPage,
 } from '@/pages';
 
 // Create a client
@@ -75,6 +76,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/progress-report/:token" element={<ProgressReportPage />} />
 
           {/* Protected routes */}
           <Route element={<MainLayout />}>

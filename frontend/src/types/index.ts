@@ -428,3 +428,106 @@ export interface ProjectTemplate {
   createdAt: string;
   updatedAt: string;
 }
+
+// パートナー評価関連の型定義
+
+// 自動計算指標
+export interface PartnerAutoMetrics {
+  deadlineComplianceRate: number;
+  reportSubmissionRate: number;
+  averageResponseTime: number;
+  totalTasks: number;
+  completedOnTime: number;
+  totalReportsRequested: number;
+  totalReportsSubmitted: number;
+}
+
+// 手動評価
+export interface PartnerEvaluation {
+  id: string;
+  partnerId: string;
+  evaluatorId: string;
+  evaluator?: User;
+  communication: number;
+  deliverableQuality: number;
+  responseSpeed: number;
+  reliability: number;
+  comment?: string;
+  evaluationPeriodStart?: string;
+  evaluationPeriodEnd?: string;
+  createdAt: string;
+}
+
+// 手動評価の平均値
+export interface ManualEvaluationSummary {
+  communication: number;
+  deliverableQuality: number;
+  responseSpeed: number;
+  reliability: number;
+  averageManualScore: number;
+}
+
+// 評価サマリー
+export interface PartnerEvaluationSummary {
+  partnerId: string;
+  partnerName: string;
+  autoMetrics: PartnerAutoMetrics;
+  manualEvaluation: ManualEvaluationSummary;
+  overallScore: number;
+  evaluationCount: number;
+  lastEvaluationDate: string | null;
+}
+
+// 評価入力
+export interface PartnerEvaluationInput {
+  communication: number;
+  deliverableQuality: number;
+  responseSpeed: number;
+  reliability: number;
+  comment?: string;
+  evaluationPeriodStart?: string;
+  evaluationPeriodEnd?: string;
+}
+
+// 評価履歴クエリパラメータ
+export interface PartnerEvaluationFilter {
+  page?: number;
+  pageSize?: number;
+  fromDate?: string;
+  toDate?: string;
+}
+
+// ファイル関連の型定義
+export type FileCategory = 'document' | 'image' | 'other';
+
+export interface ProjectFile {
+  id: string;
+  projectId: string;
+  taskId?: string;
+  uploaderId: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  fileSize: number;
+  storagePath: string;
+  publicUrl?: string;
+  category: FileCategory;
+  createdAt: string;
+  uploader?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+export interface FileUploadInput {
+  projectId: string;
+  taskId?: string;
+  category?: FileCategory;
+}
+
+export interface SignedUrlResponse {
+  signedUrl: string;
+  expiresIn: number;
+}
