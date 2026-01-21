@@ -653,6 +653,134 @@ export class DashboardService {
     return { success: true };
   }
 
+  /**
+   * Calculate task summary with overdue count and completion rate
+   */
+  private async calculateTaskSummary(taskSummary: {
+    byStatus: Record<string, number>;
+    byPriority: Record<string, number>;
+    byType: Record<string, number>;
+  }): Promise<{
+    total: number;
+    completed: number;
+    inProgress: number;
+    pending: number;
+    overdue: number;
+    completionRate: number;
+  }> {
+    const today = new Date();
+    const overdue = await this.taskRepository
+      .createQueryBuilder('task')
+      .where('task.dueDate < :today', { today })
+      .andWhere('task.status NOT IN (:...completedStatuses)', {
+        completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
+      })
+      .getCount();
+
+    const total = Object.values(taskSummary.byStatus).reduce((a, b) => a + b, 0);
+    const completed = taskSummary.byStatus[TaskStatus.COMPLETED] || 0;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return {
+      total,
+      completed,
+      inProgress: taskSummary.byStatus[TaskStatus.IN_PROGRESS] || 0,
+      pending: taskSummary.byStatus[TaskStatus.TODO] || 0,
+      overdue,
+      completionRate,
+    };
+  }
+
+  /**
+   * Calculate partner performance with project counts
+   */
+  private async calculatePartnerPerformance(partners: PartnerPerformance[]): Promise<any[]> {
+    const result = [];
+    for (const p of partners) {
+      // Calculate active projects for this partner
+      const activeProjects = await this.projectRepository
+        .createQueryBuilder('project')
+        .leftJoin('project.partners', 'partner')
+        .where('partner.id = :partnerId', { partnerId: p.id })
+        .andWhere('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
+        .getCount();
+
+      // Calculate on-time delivery rate
+      const completedTasks = await this.taskRepository.find({
+        where: { partnerId: p.id, status: TaskStatus.COMPLETED },
+        select: ['id', 'dueDate', 'completedAt'],
+      });
+
+      let onTimeCount = 0;
+      for (const task of completedTasks) {
+        if (task.dueDate && task.completedAt) {
+          const dueDate = new Date(task.dueDate);
+          dueDate.setHours(23, 59, 59, 999);
+          if (new Date(task.completedAt) <= dueDate) {
+            onTimeCount++;
+          }
+        }
+      }
+      const onTimeDeliveryRate = completedTasks.length > 0
+        ? Math.round((onTimeCount / completedTasks.length) * 100)
+        : 100;
+
+      result.push({
+        partnerId: p.id,
+        partnerName: p.name,
+        activeProjects,
+        tasksCompleted: p.completedTasks,
+        tasksTotal: p.activeTasks + p.completedTasks,
+        onTimeDeliveryRate,
+        rating: p.rating,
+      });
+    }
+    return result;
+  }
+
+  /**
+   * Calculate budget overview for all projects
+   */
+  private async calculateBudgetOverview(): Promise<{
+    totalBudget: number;
+    totalSpent: number;
+    utilizationRate: number;
+    projectBudgets: any[];
+  }> {
+    const projects = await this.projectRepository.find({
+      where: { status: Not(ProjectStatus.CANCELLED) },
+      select: ['id', 'name', 'budget', 'actualCost'],
+    });
+
+    let totalBudget = 0;
+    let totalSpent = 0;
+    const projectBudgets = [];
+
+    for (const project of projects) {
+      const budget = project.budget || 0;
+      const spent = project.actualCost || 0;
+      totalBudget += budget;
+      totalSpent += spent;
+
+      if (budget > 0) {
+        projectBudgets.push({
+          projectId: project.id,
+          projectName: project.name,
+          budget,
+          spent,
+          utilizationRate: Math.round((spent / budget) * 100),
+        });
+      }
+    }
+
+    return {
+      totalBudget,
+      totalSpent,
+      utilizationRate: totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0,
+      projectBudgets,
+    };
+  }
+
   async getManagerDashboard(period: string = 'month'): Promise<any> {
     const today = new Date();
     let periodStart = new Date();
@@ -696,35 +824,9 @@ export class DashboardService {
         onTrack: projectSummary.onTrack,
         atRisk: projectSummary.atRisk,
       },
-      taskSummary: {
-        total: Object.values(taskSummary.byStatus).reduce((a, b) => a + b, 0),
-        completed: taskSummary.byStatus[TaskStatus.COMPLETED] || 0,
-        inProgress: taskSummary.byStatus[TaskStatus.IN_PROGRESS] || 0,
-        pending: taskSummary.byStatus[TaskStatus.TODO] || 0,
-        overdue: 0, // TODO: Calculate properly
-        completionRate: 0, // TODO: Calculate properly
-      },
-      partnerPerformance: partnerPerformance.map(p => ({
-        partnerId: p.id,
-        partnerName: p.name,
-        activeProjects: 0, // TODO: Calculate from relations
-        tasksCompleted: p.completedTasks,
-        tasksTotal: p.activeTasks + p.completedTasks,
-        onTimeDeliveryRate: 90, // TODO: Calculate properly
-        rating: p.rating,
-      })),
-      projectsAtRisk: projectsAtRisk.map(p => ({
-        id: p.id,
-        name: p.name,
-        status: p.status,
-        progress: p.progress,
-        daysRemaining: Math.floor(
-          (new Date(p.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-        ),
-        overdueTaskCount: 0, // TODO: Calculate properly
-        riskLevel: 'high',
-        riskReasons: ['進捗率が予定より遅れています'],
-      })),
+      taskSummary: await this.calculateTaskSummary(taskSummary),
+      partnerPerformance: await this.calculatePartnerPerformance(partnerPerformance),
+      projectsAtRisk: await this.enrichProjectsAtRisk(projectsAtRisk),
       recentActivities: recentActivities.map(a => ({
         id: a.entityId,
         type: a.type === 'task' ? 'task_completed' : 'project_updated',
@@ -735,13 +837,104 @@ export class DashboardService {
         userName: a.userName,
         createdAt: a.timestamp,
       })),
-      budgetOverview: {
-        totalBudget: 0, // TODO: Calculate from projects
-        totalSpent: 0,
-        utilizationRate: 0,
-        projectBudgets: [],
-      },
-      upcomingDeadlines: [], // TODO: Implement
+      budgetOverview: await this.calculateBudgetOverview(),
+      upcomingDeadlines: await this.getUpcomingDeadlinesForManager(),
     };
+  }
+
+  /**
+   * Enrich projects at risk with overdue task counts
+   */
+  private async enrichProjectsAtRisk(projects: Project[]): Promise<any[]> {
+    const today = new Date();
+    const result = [];
+
+    for (const p of projects) {
+      const overdueTaskCount = await this.taskRepository
+        .createQueryBuilder('task')
+        .where('task.projectId = :projectId', { projectId: p.id })
+        .andWhere('task.dueDate < :today', { today })
+        .andWhere('task.status NOT IN (:...completedStatuses)', {
+          completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
+        })
+        .getCount();
+
+      const daysRemaining = Math.floor(
+        (new Date(p.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      );
+
+      // Determine risk level based on multiple factors
+      let riskLevel = 'medium';
+      const riskReasons = [];
+
+      if (p.progress < 30 && daysRemaining < 14) {
+        riskLevel = 'critical';
+        riskReasons.push('進捗が大幅に遅れています');
+      } else if (p.progress < 50 && daysRemaining < 30) {
+        riskLevel = 'high';
+        riskReasons.push('進捗率が予定より遅れています');
+      }
+
+      if (overdueTaskCount > 5) {
+        riskLevel = 'critical';
+        riskReasons.push(`${overdueTaskCount}件のタスクが期限超過`);
+      } else if (overdueTaskCount > 0) {
+        riskReasons.push(`${overdueTaskCount}件のタスクが期限超過`);
+      }
+
+      if (daysRemaining < 7) {
+        riskReasons.push('期限まで1週間以内');
+      }
+
+      result.push({
+        id: p.id,
+        name: p.name,
+        status: p.status,
+        progress: p.progress,
+        daysRemaining,
+        overdueTaskCount,
+        riskLevel,
+        riskReasons: riskReasons.length > 0 ? riskReasons : ['進捗の確認が必要です'],
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Get upcoming deadlines for manager dashboard
+   */
+  private async getUpcomingDeadlinesForManager(): Promise<any[]> {
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+
+    const tasks = await this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.project', 'project')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .where('task.dueDate BETWEEN :today AND :nextWeek', { today, nextWeek })
+      .andWhere('task.status NOT IN (:...completedStatuses)', {
+        completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
+      })
+      .orderBy('task.dueDate', 'ASC')
+      .take(10)
+      .getMany();
+
+    return tasks.map(t => ({
+      id: t.id,
+      title: t.title,
+      projectId: t.projectId,
+      projectName: t.project?.name,
+      assigneeId: t.assigneeId,
+      assigneeName: t.assignee?.firstName
+        ? `${t.assignee.firstName} ${t.assignee.lastName}`
+        : undefined,
+      dueDate: t.dueDate,
+      priority: t.priority,
+      daysRemaining: Math.floor(
+        (new Date(t.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      ),
+    }));
   }
 }

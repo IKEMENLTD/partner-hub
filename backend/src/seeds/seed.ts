@@ -3,15 +3,18 @@ import * as bcrypt from 'bcrypt';
 
 // This script creates initial demo data
 async function seed() {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required');
+  }
+
   const dataSource = new DataSource({
     type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USERNAME || 'partner',
-    password: process.env.DB_PASSWORD || 'partner123',
-    database: process.env.DB_DATABASE || 'partner_hub',
+    url: databaseUrl,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     synchronize: true,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
   });
 
   await dataSource.initialize();

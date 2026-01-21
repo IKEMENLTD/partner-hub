@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout';
+import { ToastProvider } from '@/components/common';
 import { useUIStore, useAuthStore } from '@/store';
 import { useAuthListener } from '@/hooks';
 import {
@@ -68,9 +69,10 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
+      <ToastProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -111,9 +113,10 @@ function App() {
             {/* Catch all - redirect to today */}
             <Route path="*" element={<Navigate to="/today" replace />} />
           </Route>
-        </Routes>
-        </AuthProvider>
-      </BrowserRouter>
+          </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

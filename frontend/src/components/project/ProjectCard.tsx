@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Calendar, Users, FolderKanban, MoreHorizontal } from 'lucide-react';
 import type { Project } from '@/types';
-import { Badge, AvatarGroup, Card } from '@/components/common';
+import { Badge, AvatarGroup, Card, HealthScoreBadge } from '@/components/common';
 import clsx from 'clsx';
 
 interface ProjectCardProps {
@@ -55,9 +55,6 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
             >
               {project.name}
             </Link>
-            {project.description && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{project.description}</p>
-            )}
           </div>
         </div>
         <button
@@ -78,9 +75,12 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <Badge variant={status.variant}>{status.label}</Badge>
         <Badge variant={priority.variant}>{priority.label}</Badge>
+        {project.healthScore !== undefined && (
+          <HealthScoreBadge score={project.healthScore} showLabel={false} />
+        )}
         {project.tags?.slice(0, 2).map((tag) => (
           <Badge key={tag} variant="default">
             {tag}

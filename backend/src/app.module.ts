@@ -15,6 +15,7 @@ import { UserProfile } from './modules/auth/entities/user-profile.entity';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard';
 
 // Modules
@@ -29,6 +30,7 @@ import { TemplateModule } from './modules/template/template.module';
 import { EscalationModule } from './modules/escalation/escalation.module';
 import { FileStorageModule } from './modules/file-storage/file-storage.module';
 import { ProgressReportModule } from './modules/progress-report/progress-report.module';
+import { AuditModule } from './modules/audit/audit.module';
 
 @Module({
   imports: [
@@ -54,7 +56,7 @@ import { ProgressReportModule } from './modules/progress-report/progress-report.
             synchronize: !isProduction,
             logging: !isProduction,
             autoLoadEntities: true,
-            ssl: isProduction ? { rejectUnauthorized: false } : false,
+            ssl: isProduction ? { rejectUnauthorized: true } : false,
           };
         }
 
@@ -113,6 +115,7 @@ import { ProgressReportModule } from './modules/progress-report/progress-report.
     EscalationModule,
     FileStorageModule,
     ProgressReportModule,
+    AuditModule,
   ],
   providers: [
     // Global Exception Filter
@@ -139,6 +142,11 @@ import { ProgressReportModule } from './modules/progress-report/progress-report.
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
+    },
+    // Global Audit Interceptor for logging all CRUD operations
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
   ],
 })

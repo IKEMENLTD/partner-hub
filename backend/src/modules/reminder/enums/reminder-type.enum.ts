@@ -3,6 +3,7 @@ export enum ReminderType {
   PROJECT_DEADLINE = 'project_deadline',
   TASK_OVERDUE = 'task_overdue',
   PROJECT_OVERDUE = 'project_overdue',
+  PROJECT_STAGNANT = 'project_stagnant',
   STATUS_UPDATE_REQUEST = 'status_update_request',
   PARTNER_ACTIVITY = 'partner_activity',
   CUSTOM = 'custom',

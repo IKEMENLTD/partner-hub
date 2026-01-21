@@ -1,31 +1,27 @@
 import { registerAs } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
+/**
+ * Supabase PostgreSQL データベース設定
+ * DATABASE_URL 環境変数を使用して接続
+ */
 export default registerAs('database', (): TypeOrmModuleOptions => {
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (databaseUrl) {
-    return {
-      type: 'postgres',
-      url: databaseUrl,
-      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-      synchronize: process.env.NODE_ENV !== 'production',
-      logging: process.env.NODE_ENV === 'development',
-      autoLoadEntities: true,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    };
+  if (!databaseUrl) {
+    throw new Error(
+      'DATABASE_URL is required. Set it in your .env file. ' +
+      'Get it from: Supabase Dashboard > Project Settings > Database > Connection string'
+    );
   }
 
   return {
     type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'password',
-    database: process.env.DB_DATABASE || 'partner_platform',
+    url: databaseUrl,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV === 'development',
     autoLoadEntities: true,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
   };
 });

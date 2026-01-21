@@ -398,6 +398,64 @@ export class ReminderService {
     }
   }
 
+  /**
+   * Scheduled task to detect stagnant projects (no updates in N days)
+   * Sends reminders to managers about projects that haven't been updated
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_9AM)
+  async createStagnantProjectReminders(): Promise<void> {
+    const stagnantDays = 7; // Configurable: days without updates
+    const stagnantDate = new Date();
+    stagnantDate.setDate(stagnantDate.getDate() - stagnantDays);
+
+    const stagnantProjects = await this.projectRepository
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.manager', 'manager')
+      .leftJoinAndSelect('project.owner', 'owner')
+      .where('project.updatedAt < :stagnantDate', { stagnantDate })
+      .andWhere('project.status NOT IN (:...completedStatuses)', {
+        completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED, ProjectStatus.ON_HOLD],
+      })
+      .getMany();
+
+    this.logger.log(`Found ${stagnantProjects.length} stagnant projects`);
+
+    for (const project of stagnantProjects) {
+      const recipientId = project.managerId || project.ownerId;
+      if (!recipientId) continue;
+
+      // Check if a stagnant reminder was sent this week
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+
+      const existingReminder = await this.reminderRepository.findOne({
+        where: {
+          projectId: project.id,
+          type: ReminderType.PROJECT_STAGNANT,
+          createdAt: LessThanOrEqual(weekAgo),
+        },
+      });
+
+      if (!existingReminder) {
+        const daysSinceUpdate = Math.floor(
+          (Date.now() - new Date(project.updatedAt).getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        await this.reminderRepository.save({
+          title: `案件が停滞しています: ${project.name}`,
+          message: `案件「${project.name}」は${daysSinceUpdate}日間更新がありません。状況を確認してください。`,
+          type: ReminderType.PROJECT_STAGNANT,
+          channel: ReminderChannel.IN_APP,
+          userId: recipientId,
+          projectId: project.id,
+          scheduledAt: new Date(),
+        });
+
+        this.logger.log(`Stagnant project reminder created for: ${project.name} (${daysSinceUpdate} days)`);
+      }
+    }
+  }
+
   async getReminderStatistics(): Promise<{
     total: number;
     byStatus: Record<string, number>;

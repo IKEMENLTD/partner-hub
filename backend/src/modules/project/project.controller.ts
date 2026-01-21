@@ -62,8 +62,12 @@ export class ProjectController {
   @Get()
   @ApiOperation({ summary: 'Get all projects with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of projects' })
-  async findAll(@Query() queryDto: QueryProjectDto) {
-    return this.projectService.findAll(queryDto);
+  async findAll(
+    @Query() queryDto: QueryProjectDto,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    return this.projectService.findAll(queryDto, userId, userRole);
   }
 
   @Get('statistics')
@@ -127,8 +131,12 @@ export class ProjectController {
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Project details' })
   @ApiResponse({ status: 404, description: 'Project not found' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.projectService.findOne(id);
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.projectService.findOne(id, userId);
   }
 
   @Patch(':id')

@@ -7,6 +7,8 @@ import {
   User,
   Shield,
   Save,
+  Mail,
+  Clock,
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 import { getUserDisplayName } from '@/types';
@@ -28,6 +30,10 @@ export function SettingsPage() {
   const [notificationPush, setNotificationPush] = useState(true);
   const [notificationDeadline, setNotificationDeadline] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Digest email settings
+  const [digestEnabled, setDigestEnabled] = useState(true);
+  const [digestTime, setDigestTime] = useState('07:00');
 
   const handleSavePreferences = async () => {
     setIsSaving(true);
@@ -154,6 +160,66 @@ export function SettingsPage() {
                     }`}
                   />
                 </button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Digest Email Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-gray-500" />
+                <span>ダイジェストメール</span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">デイリーダイジェスト</p>
+                  <p className="text-sm text-gray-500">
+                    毎日のタスクサマリーをメールで受け取ります
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={digestEnabled}
+                  onClick={() => setDigestEnabled(!digestEnabled)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                    digestEnabled ? 'bg-primary-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      digestEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {digestEnabled && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-400" />
+                    <p className="text-sm font-medium text-gray-900">配信時刻</p>
+                  </div>
+                  <Select
+                    value={digestTime}
+                    onChange={(e) => setDigestTime(e.target.value)}
+                    options={[
+                      { value: '06:00', label: '6:00' },
+                      { value: '07:00', label: '7:00' },
+                      { value: '08:00', label: '8:00' },
+                      { value: '09:00', label: '9:00' },
+                    ]}
+                  />
+                </div>
+              )}
+
+              <div className="rounded-lg bg-blue-50 p-3">
+                <p className="text-xs text-blue-700">
+                  ダイジェストメールには、本日のタスク、期限超過タスク、未読通知のサマリーが含まれます。
+                </p>
               </div>
             </CardContent>
           </Card>

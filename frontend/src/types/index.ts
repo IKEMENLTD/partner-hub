@@ -76,6 +76,9 @@ export interface Project {
   actualCost?: number;
   progress?: number;
   healthScore?: number;
+  onTimeRate?: number;
+  completionRate?: number;
+  budgetHealth?: number;
   ownerId?: string;
   owner?: User;
   managerId?: string;

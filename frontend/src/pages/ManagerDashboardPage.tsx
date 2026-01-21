@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FolderKanban,
@@ -6,6 +7,9 @@ import {
   AlertTriangle,
   ArrowRight,
   Building,
+  FileText,
+  Download,
+  Calendar,
 } from 'lucide-react';
 import { useDashboardStats, useProjects, usePartners } from '@/hooks';
 import {
@@ -17,10 +21,15 @@ import {
   PageLoading,
   ErrorMessage,
   EmptyState,
+  Modal,
+  ModalFooter,
+  Select,
+  useToast,
 } from '@/components/common';
 import { ProjectCard } from '@/components/project';
 
 export function ManagerDashboardPage() {
+  const { addToast } = useToast();
   const { data: statsData, isLoading: isLoadingStats, error: statsError, refetch: refetchStats } = useDashboardStats();
   const { data: projectsData, isLoading: isLoadingProjects } = useProjects({
     page: 1,
@@ -32,6 +41,12 @@ export function ManagerDashboardPage() {
     page: 1,
     pageSize: 5,
   });
+
+  // Report generation state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportType, setReportType] = useState('weekly');
+  const [reportFormat, setReportFormat] = useState('pdf');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   const isLoading = isLoadingStats || isLoadingProjects || isLoadingPartners;
 
@@ -60,14 +75,49 @@ export function ManagerDashboardPage() {
     ? Math.round((stats.completedTasks / stats.totalTasks) * 100)
     : 0;
 
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      // Simulate report generation API call
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // In real implementation, this would call the backend API
+      // const response = await api.post('/reports/generate', { type: reportType, format: reportFormat });
+      // window.open(response.data.downloadUrl, '_blank');
+      const reportName = reportType === 'weekly' ? '週次' : reportType === 'monthly' ? '月次' : 'カスタム';
+      addToast({
+        type: 'success',
+        title: 'レポートを生成しました',
+        message: `${reportName}レポート（${reportFormat.toUpperCase()}形式）のダウンロードが開始されます`,
+      });
+      setShowReportModal(false);
+    } catch (error) {
+      console.error('Report generation failed:', error);
+      addToast({
+        type: 'error',
+        title: 'レポート生成に失敗しました',
+        message: 'もう一度お試しください',
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">マネージャーダッシュボード</h1>
-        <p className="mt-1 text-gray-600">
-          チームの進捗状況とKPIを確認できます
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">マネージャーダッシュボード</h1>
+          <p className="mt-1 text-gray-600">
+            チームの進捗状況とKPIを確認できます
+          </p>
+        </div>
+        <Button
+          leftIcon={<FileText className="h-4 w-4" />}
+          onClick={() => setShowReportModal(true)}
+        >
+          レポート生成
+        </Button>
       </div>
 
       {/* Stats Grid */}
@@ -370,6 +420,79 @@ export function ManagerDashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Report Generation Modal */}
+      <Modal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        title="レポート生成"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            レポートの種類と形式を選択して、ダウンロードしてください。
+          </p>
+
+          <Select
+            label="レポート種類"
+            value={reportType}
+            onChange={(e) => setReportType(e.target.value)}
+            options={[
+              { value: 'weekly', label: '週次レポート' },
+              { value: 'monthly', label: '月次レポート' },
+              { value: 'custom', label: 'カスタム期間' },
+            ]}
+          />
+
+          <Select
+            label="出力形式"
+            value={reportFormat}
+            onChange={(e) => setReportFormat(e.target.value)}
+            options={[
+              { value: 'pdf', label: 'PDF' },
+              { value: 'excel', label: 'Excel' },
+              { value: 'csv', label: 'CSV' },
+            ]}
+          />
+
+          <div className="rounded-lg bg-gray-50 p-4">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">
+              レポート内容
+            </h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4 text-green-500" />
+                案件進捗サマリー
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4 text-green-500" />
+                タスク完了率
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4 text-green-500" />
+                パートナー稼働状況
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4 text-green-500" />
+                期限超過タスク一覧
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setShowReportModal(false)}>
+            キャンセル
+          </Button>
+          <Button
+            leftIcon={<Download className="h-4 w-4" />}
+            onClick={handleGenerateReport}
+            isLoading={isGeneratingReport}
+          >
+            レポートを生成
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

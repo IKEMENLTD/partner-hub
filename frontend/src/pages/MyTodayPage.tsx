@@ -10,10 +10,12 @@ import {
   Plus,
   Briefcase,
   Users,
+  FolderKanban,
+  Hourglass,
 } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { getUserDisplayName } from '@/types';
-import { useTodayStats, useMarkAlertAsRead, useMarkAllAlertsAsRead } from '@/hooks';
+import { useTodayStats, useMarkAlertAsRead, useMarkAllAlertsAsRead, useProjects } from '@/hooks';
 import {
   Card,
   CardHeader,
@@ -22,6 +24,7 @@ import {
   PageLoading,
   ErrorMessage,
   EmptyState,
+  Badge,
 } from '@/components/common';
 import { TaskCard, AlertList } from '@/components/dashboard';
 
@@ -31,7 +34,17 @@ export function MyTodayPage() {
   const { mutate: markAsRead } = useMarkAlertAsRead();
   const { mutate: markAllAsRead } = useMarkAllAlertsAsRead();
 
-  if (isLoading) {
+  // Fetch recent projects
+  const { data: recentProjectsData, isLoading: isLoadingProjects } = useProjects({
+    page: 1,
+    pageSize: 5,
+    sortField: 'updatedAt',
+    sortOrder: 'desc',
+  });
+
+  const recentProjects = recentProjectsData?.data || [];
+
+  if (isLoading || isLoadingProjects) {
     return <PageLoading />;
   }
 
@@ -60,6 +73,11 @@ export function MyTodayPage() {
   const overdueCount = upcomingDeadlines.filter(
     (t) => t.dueDate && new Date(t.dueDate) < today && t.status !== 'completed'
   ).length;
+
+  // Pending action tasks (tasks waiting for user's action)
+  const pendingActionTasks = tasksForToday.filter(
+    (t) => t.status === 'pending' || t.status === 'in_review'
+  );
 
   return (
     <div className="space-y-6">
@@ -229,6 +247,114 @@ export function MyTodayPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Additional Sections */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Pending Action Tasks */}
+        <Card padding="none">
+          <CardHeader
+            className="px-6 pt-6"
+            action={
+              pendingActionTasks.length > 0 && (
+                <Badge variant="warning">{pendingActionTasks.length}</Badge>
+              )
+            }
+          >
+            <div className="flex items-center gap-2">
+              <Hourglass className="h-5 w-5 text-orange-500" />
+              <span>対応待ち</span>
+            </div>
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
+            {pendingActionTasks.length === 0 ? (
+              <EmptyState
+                title="対応待ちのタスクはありません"
+                description="すべてのタスクが処理済みです"
+                className="py-8"
+              />
+            ) : (
+              <div className="space-y-3">
+                {pendingActionTasks.slice(0, 5).map((task) => (
+                  <TaskCard key={task.id} task={task} compact />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Projects */}
+        <Card padding="none">
+          <CardHeader
+            className="px-6 pt-6"
+            action={
+              <Link
+                to="/projects"
+                className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
+              >
+                すべて表示
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            }
+          >
+            <div className="flex items-center gap-2">
+              <FolderKanban className="h-5 w-5 text-primary-500" />
+              <span>最近使った案件</span>
+            </div>
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
+            {recentProjects.length === 0 ? (
+              <EmptyState
+                icon={<FolderKanban className="h-10 w-10" />}
+                title="最近の案件がありません"
+                description="案件を作成または閲覧すると、ここに表示されます"
+                className="py-8"
+              />
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {recentProjects.map((project) => (
+                  <Link
+                    key={project.id}
+                    to={`/projects/${project.id}`}
+                    className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-primary-100 p-2">
+                        <FolderKanban className="h-4 w-4 text-primary-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">
+                          {project.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          更新: {format(new Date(project.updatedAt || project.startDate), 'M/d', { locale: ja })}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={
+                        project.status === 'completed'
+                          ? 'success'
+                          : project.status === 'in_progress'
+                          ? 'primary'
+                          : 'default'
+                      }
+                      className="text-xs"
+                    >
+                      {project.status === 'completed'
+                        ? '完了'
+                        : project.status === 'in_progress'
+                        ? '進行中'
+                        : project.status === 'planning'
+                        ? '計画中'
+                        : project.status}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

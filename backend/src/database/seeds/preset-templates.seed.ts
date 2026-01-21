@@ -130,15 +130,18 @@ const presetTemplates: Array<{
 ];
 
 export async function runSeed(): Promise<void> {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required');
+  }
+
   const dataSource = new DataSource({
     type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USERNAME || 'partner',
-    password: process.env.DB_PASSWORD || 'partner123',
-    database: process.env.DB_DATABASE || 'partner_hub',
+    url: databaseUrl,
     entities: [ProjectTemplate],
     synchronize: false,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
   });
 
   try {

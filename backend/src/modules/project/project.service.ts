@@ -3,6 +3,7 @@ import {
   NotFoundException,
   Logger,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -69,8 +70,16 @@ export class ProjectService {
     return this.findOne(project.id);
   }
 
+  /**
+   * Find all projects with access control filtering
+   * @param queryDto Query parameters
+   * @param userId Current user ID for access control (optional, if null shows all - for admin)
+   * @param userRole Current user role for access control
+   */
   async findAll(
     queryDto: QueryProjectDto,
+    userId?: string,
+    userRole?: string,
   ): Promise<PaginatedResponseDto<Project>> {
     const {
       page = 1,
@@ -95,7 +104,16 @@ export class ProjectService {
         .leftJoinAndSelect('project.owner', 'owner')
         .leftJoinAndSelect('project.manager', 'manager')
         .leftJoinAndSelect('project.partners', 'partners')
-        .leftJoinAndSelect('project.createdBy', 'createdBy');
+        .leftJoinAndSelect('project.createdBy', 'createdBy')
+        .leftJoin('project.stakeholders', 'stakeholder');
+
+      // Apply access control filtering for non-admin users
+      if (userId && userRole !== 'admin') {
+        queryBuilder.andWhere(
+          '(project.ownerId = :userId OR project.managerId = :userId OR project.createdById = :userId OR stakeholder.userId = :userId)',
+          { userId }
+        );
+      }
 
       // Apply filters
       if (status) {
@@ -165,17 +183,50 @@ export class ProjectService {
     }
   }
 
-  async findOne(id: string): Promise<Project> {
+  async findOne(id: string, userId?: string): Promise<Project> {
     const project = await this.projectRepository.findOne({
       where: { id },
-      relations: ['owner', 'manager', 'partners', 'createdBy'],
+      relations: ['owner', 'manager', 'partners', 'createdBy', 'stakeholders'],
     });
 
     if (!project) {
       throw new NotFoundException(`Project with ID "${id}" not found`);
     }
 
+    // If userId is provided, check access control
+    if (userId) {
+      const hasAccess = this.checkProjectAccess(project, userId);
+      if (!hasAccess) {
+        throw new ForbiddenException('You do not have permission to access this project');
+      }
+    }
+
     return project;
+  }
+
+  /**
+   * Check if a user has access to a project
+   * @param project Project entity
+   * @param userId User ID to check
+   * @returns true if user has access
+   */
+  private checkProjectAccess(project: Project, userId: string): boolean {
+    // Owner has access
+    if (project.ownerId === userId) return true;
+
+    // Manager has access
+    if (project.managerId === userId) return true;
+
+    // Creator has access
+    if (project.createdById === userId) return true;
+
+    // Stakeholder has access
+    if (project.stakeholders?.some(s => s.userId === userId)) return true;
+
+    // Partner organization member has access (simplified check)
+    // In a full implementation, you'd check if the user belongs to a partner organization
+
+    return false;
   }
 
   async update(id: string, updateProjectDto: UpdateProjectDto): Promise<Project> {
@@ -265,8 +316,24 @@ export class ProjectService {
 
   async remove(id: string): Promise<void> {
     const project = await this.findOne(id);
+    // Use soft delete instead of hard delete
+    await this.projectRepository.softRemove(project);
+    this.logger.log(`Project soft deleted: ${project.name} (${id})`);
+  }
+
+  /**
+   * Permanently delete a project (admin only)
+   */
+  async forceRemove(id: string): Promise<void> {
+    const project = await this.projectRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!project) {
+      throw new NotFoundException(`Project with ID "${id}" not found`);
+    }
     await this.projectRepository.remove(project);
-    this.logger.log(`Project deleted: ${project.name} (${id})`);
+    this.logger.log(`Project permanently deleted: ${project.name} (${id})`);
   }
 
   async getProjectsByPartner(partnerId: string): Promise<Project[]> {

@@ -47,6 +47,7 @@ import {
   TabPanel,
   Modal,
   ModalFooter,
+  HealthScoreDetail,
 } from '@/components/common';
 import { TaskList } from '@/components/task';
 import { ProjectTimeline } from '@/components/project';
@@ -353,6 +354,21 @@ export function ProjectDetailPage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* Health Score */}
+              {project.healthScore !== undefined && (
+                <Card>
+                  <CardHeader>案件ヘルススコア</CardHeader>
+                  <CardContent>
+                    <HealthScoreDetail
+                      onTimeRate={project.onTimeRate ?? 0}
+                      completionRate={project.completionRate ?? 0}
+                      budgetHealth={project.budgetHealth ?? 0}
+                      overallScore={project.healthScore}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Manager */}
               {project.manager && (
                 <Card>

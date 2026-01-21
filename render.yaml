@@ -1,8 +1,5 @@
-databases:
-  - name: partner-hub-db
-    plan: free
-    databaseName: partner_hub
-    user: partner_hub_user
+# Supabase を使用するため、Render Database は使用しません
+# databases セクションは削除済み
 
 services:
   - type: web
@@ -18,34 +15,18 @@ services:
         value: 3000
       - key: API_PREFIX
         value: api/v1
-      - key: DB_HOST
-        fromDatabase:
-          name: partner-hub-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: partner-hub-db
-          property: port
-      - key: DB_USERNAME
-        fromDatabase:
-          name: partner-hub-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: partner-hub-db
-          property: password
-      - key: DB_DATABASE
-        fromDatabase:
-          name: partner-hub-db
-          property: database
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_REFRESH_SECRET
-        generateValue: true
-      - key: JWT_EXPIRES_IN
-        value: 1d
-      - key: JWT_REFRESH_EXPIRES_IN
-        value: 7d
+      # Supabase Configuration (Render Dashboard で設定)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      # Database URL (Supabase PostgreSQL 接続文字列)
+      - key: DATABASE_URL
+        sync: false
       - key: LOG_LEVEL
         value: info
       - key: CORS_ORIGIN
