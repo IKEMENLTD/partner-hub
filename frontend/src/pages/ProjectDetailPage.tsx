@@ -139,7 +139,7 @@ export function ProjectDetailPage() {
 
   const status = statusConfig[project.status];
   const priority = priorityConfig[project.priority];
-  const timeline: import('@/types').TimelineEvent[] = timelineData || [];
+  const timeline: import('@/types').TimelineEvent[] = Array.isArray(timelineData) ? timelineData : [];
 
   const progress = project.progress ?? 0;
 

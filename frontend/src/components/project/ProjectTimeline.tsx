@@ -65,7 +65,10 @@ const eventTypeConfig: Record<
 };
 
 export function ProjectTimeline({ events }: ProjectTimelineProps) {
-  if (events.length === 0) {
+  // 配列チェック - events が配列でない場合は空配列として扱う
+  const safeEvents = Array.isArray(events) ? events : [];
+
+  if (safeEvents.length === 0) {
     return (
       <EmptyState
         title="アクティビティがありません"
@@ -76,7 +79,7 @@ export function ProjectTimeline({ events }: ProjectTimelineProps) {
 
   // Group events by date
   const groupedEvents: Record<string, TimelineEvent[]> = {};
-  events.forEach((event) => {
+  safeEvents.forEach((event) => {
     const dateKey = format(new Date(event.createdAt), 'yyyy-MM-dd');
     if (!groupedEvents[dateKey]) {
       groupedEvents[dateKey] = [];
