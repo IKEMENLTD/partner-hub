@@ -225,6 +225,25 @@ export class ProjectService {
     return false;
   }
 
+  /**
+   * Public method to check if a user has access to a project
+   * @param projectId Project ID
+   * @param userId User ID to check
+   * @returns true if user has access, false otherwise
+   */
+  async checkAccess(projectId: string, userId: string): Promise<boolean> {
+    const project = await this.projectRepository.findOne({
+      where: { id: projectId },
+      relations: ['partners'],
+    });
+
+    if (!project) {
+      return false;
+    }
+
+    return this.checkProjectAccess(project, userId);
+  }
+
   async update(id: string, updateProjectDto: UpdateProjectDto): Promise<Project> {
     const project = await this.findOne(id);
     const { partnerIds, ...updateData } = updateProjectDto;

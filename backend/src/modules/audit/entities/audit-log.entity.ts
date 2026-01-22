@@ -8,6 +8,7 @@ import {
 
 export enum AuditAction {
   CREATE = 'CREATE',
+  READ = 'READ',
   UPDATE = 'UPDATE',
   DELETE = 'DELETE',
   SOFT_DELETE = 'SOFT_DELETE',

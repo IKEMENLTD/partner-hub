@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -47,16 +47,16 @@ import {
   TabPanel,
   Modal,
   ModalFooter,
-  HealthScoreDetail,
 } from '@/components/common';
 import { TaskList } from '@/components/task';
-import { ProjectTimeline } from '@/components/project';
+import { ProjectTimeline, HealthScoreCardDisplay, HealthScoreBreakdown } from '@/components/project';
 import {
   StakeholderTree,
   AddStakeholderModal,
   DeleteStakeholderModal,
 } from '@/components/stakeholders';
 import { FileUpload, FileList } from '@/components/files';
+import { addToRecentProjects } from '@/hooks/useRecentProjects';
 
 const statusConfig = {
   draft: { label: '下書き', variant: 'default' as const },
@@ -105,6 +105,13 @@ export function ProjectDetailPage() {
   const [showAddStakeholderModal, setShowAddStakeholderModal] = useState(false);
   const [editingStakeholder, setEditingStakeholder] = useState<ProjectStakeholder | null>(null);
   const [deletingStakeholder, setDeletingStakeholder] = useState<ProjectStakeholder | null>(null);
+
+  // Add to recent projects when page is viewed
+  useEffect(() => {
+    if (id) {
+      addToRecentProjects(id);
+    }
+  }, [id]);
 
   if (isLoading) {
     return <PageLoading />;
@@ -276,18 +283,18 @@ export function ProjectDetailPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <Card className="text-center">
           <Calendar className="h-5 w-5 mx-auto text-gray-400 mb-2" />
-          <p className="text-xs text-gray-500">開始日</p>
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-xs text-gray-500 dark:text-gray-400">開始日</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {format(new Date(project.startDate), 'yyyy/M/d', { locale: ja })}
           </p>
         </Card>
         <Card className="text-center">
           <Clock className="h-5 w-5 mx-auto text-gray-400 mb-2" />
-          <p className="text-xs text-gray-500">終了日</p>
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-xs text-gray-500 dark:text-gray-400">終了日</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {project.endDate
               ? format(new Date(project.endDate), 'yyyy/M/d', { locale: ja })
               : '未設定'}
@@ -295,18 +302,23 @@ export function ProjectDetailPage() {
         </Card>
         <Card className="text-center">
           <Users className="h-5 w-5 mx-auto text-gray-400 mb-2" />
-          <p className="text-xs text-gray-500">パートナー</p>
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-xs text-gray-500 dark:text-gray-400">パートナー</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {project.partners?.length || 0} 社
           </p>
         </Card>
         <Card className="text-center">
           <CheckSquare className="h-5 w-5 mx-auto text-gray-400 mb-2" />
-          <p className="text-xs text-gray-500">進捗</p>
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-xs text-gray-500 dark:text-gray-400">進捗</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {progress}%
           </p>
         </Card>
+        {project.healthScore !== undefined && (
+          <Card className="text-center">
+            <HealthScoreCardDisplay score={project.healthScore} />
+          </Card>
+        )}
       </div>
 
       {/* Tabs */}
@@ -354,12 +366,12 @@ export function ProjectDetailPage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Health Score */}
+              {/* Health Score Breakdown */}
               {project.healthScore !== undefined && (
                 <Card>
                   <CardHeader>案件ヘルススコア</CardHeader>
                   <CardContent>
-                    <HealthScoreDetail
+                    <HealthScoreBreakdown
                       onTimeRate={project.onTimeRate ?? 0}
                       completionRate={project.completionRate ?? 0}
                       budgetHealth={project.budgetHealth ?? 0}

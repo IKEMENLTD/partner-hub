@@ -8,7 +8,9 @@ import {
   ArrowRight,
   Building,
   FileText,
-  Download,
+  FileDown,
+  Calendar,
+  Settings,
 } from 'lucide-react';
 import { useDashboardStats, useProjects, usePartners } from '@/hooks';
 import {
@@ -45,7 +47,7 @@ export function ManagerDashboardPage() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportType, setReportType] = useState('weekly');
   const [reportFormat, setReportFormat] = useState('pdf');
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const isLoading = isLoadingStats || isLoadingProjects || isLoadingPartners;
 
@@ -75,7 +77,7 @@ export function ManagerDashboardPage() {
     : 0;
 
   const handleGenerateReport = async () => {
-    setIsGeneratingReport(true);
+    setIsGenerating(true);
     try {
       // Simulate report generation API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -97,7 +99,7 @@ export function ManagerDashboardPage() {
         message: 'もう一度お試しください',
       });
     } finally {
-      setIsGeneratingReport(false);
+      setIsGenerating(false);
     }
   };
 
@@ -454,6 +456,30 @@ export function ManagerDashboardPage() {
             ]}
           />
 
+          {/* 定期配信設定への導線 */}
+          <div className="rounded-lg border border-primary-200 bg-primary-50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary-100 p-2">
+                <Calendar className="h-5 w-5 text-primary-600" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-gray-900">
+                  定期配信を設定
+                </h4>
+                <p className="text-xs text-gray-600">
+                  レポートを自動生成してメールで配信できます
+                </p>
+              </div>
+              <Link
+                to="/settings/reports"
+                className="flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
+              >
+                <Settings className="h-4 w-4" />
+                設定
+              </Link>
+            </div>
+          </div>
+
           <div className="rounded-lg bg-gray-50 p-4">
             <h4 className="text-sm font-medium text-gray-900 mb-2">
               レポート内容
@@ -484,11 +510,11 @@ export function ManagerDashboardPage() {
             キャンセル
           </Button>
           <Button
-            leftIcon={<Download className="h-4 w-4" />}
+            leftIcon={<FileDown className="h-4 w-4" />}
             onClick={handleGenerateReport}
-            isLoading={isGeneratingReport}
+            isLoading={isGenerating}
           >
-            レポートを生成
+            {isGenerating ? '生成中...' : 'ダウンロード'}
           </Button>
         </ModalFooter>
       </Modal>

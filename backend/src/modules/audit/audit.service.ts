@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, FindOptionsWhere } from 'typeorm';
 import { AuditLog, AuditAction } from './entities/audit-log.entity';
 
 export interface CreateAuditLogDto {
@@ -14,6 +14,24 @@ export interface CreateAuditLogDto {
   metadata?: Record<string, any>;
   ipAddress?: string;
   userAgent?: string;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface FindAllOptions {
+  page?: number;
+  limit?: number;
+  userId?: string;
+  action?: AuditAction;
+  entityName?: string;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 @Injectable()
@@ -33,6 +51,54 @@ export class AuditService {
       this.logger.error(`Failed to create audit log: ${error.message}`, error.stack);
       throw error;
     }
+  }
+
+  /**
+   * Alias for createLog - matches the required interface
+   */
+  async createAuditLog(dto: CreateAuditLogDto): Promise<AuditLog> {
+    return this.createLog(dto);
+  }
+
+  /**
+   * Find all audit logs with pagination and filtering
+   */
+  async findAll(options: FindAllOptions = {}): Promise<PaginatedResult<AuditLog>> {
+    const { page = 1, limit = 20, userId, action, entityName, startDate, endDate } = options;
+    const skip = (page - 1) * limit;
+
+    const where: FindOptionsWhere<AuditLog> = {};
+
+    if (userId) {
+      where.userId = userId;
+    }
+
+    if (action) {
+      where.action = action;
+    }
+
+    if (entityName) {
+      where.entityName = entityName;
+    }
+
+    if (startDate && endDate) {
+      where.createdAt = Between(startDate, endDate);
+    }
+
+    const [data, total] = await this.auditLogRepository.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findByEntity(entityName: string, entityId: string): Promise<AuditLog[]> {

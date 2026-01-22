@@ -32,6 +32,7 @@ import {
   AssignPartnerDto,
 } from './dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { TaskAccessGuard } from './guards/task-access.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
@@ -108,27 +109,33 @@ export class TaskController {
   }
 
   @Get(':id/subtasks')
+  @UseGuards(TaskAccessGuard)
   @ApiOperation({ summary: 'Get subtasks of a task' })
   @ApiParam({ name: 'id', description: 'Parent Task ID' })
   @ApiResponse({ status: 200, description: 'List of subtasks' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async getSubtasks(@Param('id', ParseUUIDPipe) id: string) {
     return this.taskService.getSubtasks(id);
   }
 
   @Get(':id')
+  @UseGuards(TaskAccessGuard)
   @ApiOperation({ summary: 'Get task by ID' })
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiResponse({ status: 200, description: 'Task details' })
   @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.taskService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(TaskAccessGuard)
   @ApiOperation({ summary: 'Update task' })
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiResponse({ status: 200, description: 'Task updated successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTaskDto: UpdateTaskDto,
@@ -137,11 +144,13 @@ export class TaskController {
   }
 
   @Patch(':id/status')
+  @UseGuards(TaskAccessGuard)
   @ApiOperation({ summary: 'Update task status' })
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiResponse({ status: 200, description: 'Task status updated' })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Invalid status value' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: UpdateTaskStatusDto,
@@ -150,11 +159,13 @@ export class TaskController {
   }
 
   @Patch(':id/progress')
+  @UseGuards(TaskAccessGuard)
   @ApiOperation({ summary: 'Update task progress' })
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiResponse({ status: 200, description: 'Task progress updated' })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Invalid progress value (must be 0-100)' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async updateProgress(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProgressDto: UpdateTaskProgressDto,
@@ -163,12 +174,14 @@ export class TaskController {
   }
 
   @Patch(':id/assign')
+  @UseGuards(TaskAccessGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Assign task to user' })
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiResponse({ status: 200, description: 'Task assigned successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Invalid assignee ID' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async assignTask(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() assignTaskDto: AssignTaskDto,
@@ -177,12 +190,14 @@ export class TaskController {
   }
 
   @Patch(':id/assign-partner')
+  @UseGuards(TaskAccessGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Assign task to partner' })
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiResponse({ status: 200, description: 'Task assigned to partner successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Invalid partner ID' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async assignToPartner(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() assignPartnerDto: AssignPartnerDto,
@@ -191,12 +206,14 @@ export class TaskController {
   }
 
   @Delete(':id')
+  @UseGuards(TaskAccessGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete task' })
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiResponse({ status: 204, description: 'Task deleted successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.taskService.remove(id);
   }

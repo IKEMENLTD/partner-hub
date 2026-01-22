@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThan, In, Not } from 'typeorm';
 import { Project } from '../project/entities/project.entity';
@@ -11,6 +11,7 @@ import { TaskStatus } from '../task/enums/task-status.enum';
 import { PartnerStatus } from '../partner/enums/partner-status.enum';
 import { ReminderStatus } from '../reminder/enums/reminder-type.enum';
 import { DashboardQueryDto } from './dto';
+import { HealthScoreService } from '../project/services/health-score.service';
 
 export interface DashboardOverview {
   totalProjects: number;
@@ -71,6 +72,8 @@ export class DashboardService {
     private userRepository: Repository<UserProfile>,
     @InjectRepository(Reminder)
     private reminderRepository: Repository<Reminder>,
+    @Inject(forwardRef(() => HealthScoreService))
+    private healthScoreService: HealthScoreService,
   ) {}
 
   async getOverview(userId?: string): Promise<DashboardOverview> {
@@ -392,6 +395,20 @@ export class DashboardService {
     onTrack: number;
     atRisk: number;
     delayed: number;
+    healthScoreStats: {
+      averageScore: number;
+      scoreDistribution: {
+        excellent: number;
+        good: number;
+        fair: number;
+        poor: number;
+      };
+      projectsAtRisk: number;
+      totalProjects: number;
+      averageOnTimeRate: number;
+      averageCompletionRate: number;
+      averageBudgetHealth: number;
+    };
   }> {
     const today = new Date();
 
@@ -441,13 +458,63 @@ export class DashboardService {
       byStatus[item.status] = parseInt(item.count, 10);
     });
 
+    // Get health score statistics from HealthScoreService
+    const healthScoreStats = await this.healthScoreService.getHealthScoreStatistics();
+
     return {
       byStatus,
       averageProgress: parseFloat(avgProgress?.avg || '0'),
       onTrack,
       atRisk,
       delayed,
+      healthScoreStats,
     };
+  }
+
+  /**
+   * Get health score statistics for all projects
+   * Uses the new health score calculation formula:
+   * HealthScore = (50 * OnTimeRate + 30 * CompletionRate + 20 * BudgetHealth) / 100
+   */
+  async getHealthScoreStatistics(): Promise<{
+    averageScore: number;
+    scoreDistribution: {
+      excellent: number;
+      good: number;
+      fair: number;
+      poor: number;
+    };
+    projectsAtRisk: number;
+    totalProjects: number;
+    averageOnTimeRate: number;
+    averageCompletionRate: number;
+    averageBudgetHealth: number;
+  }> {
+    return this.healthScoreService.getHealthScoreStatistics();
+  }
+
+  /**
+   * Get detailed health score breakdown for all active projects
+   */
+  async getAllProjectsHealthScores(): Promise<Array<{
+    projectId: string;
+    projectName: string;
+    healthScore: number;
+    breakdown: {
+      onTimeRate: number;
+      completionRate: number;
+      budgetHealth: number;
+      totalScore: number;
+      details: {
+        totalTasks: number;
+        completedTasks: number;
+        onTimeCompletedTasks: number;
+        budget: number;
+        actualCost: number;
+      };
+    };
+  }>> {
+    return this.healthScoreService.getAllProjectsHealthScores();
   }
 
   async getUserDashboard(userId: string): Promise<{

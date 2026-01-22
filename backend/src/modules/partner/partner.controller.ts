@@ -28,6 +28,7 @@ import {
   UpdatePartnerRatingDto,
 } from './dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { PartnerAccessGuard } from './guards/partner-access.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
@@ -82,29 +83,35 @@ export class PartnerController {
   }
 
   @Get(':id/projects')
+  @UseGuards(PartnerAccessGuard)
   @ApiOperation({ summary: 'Get projects associated with a partner' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'List of projects for the partner' })
   @ApiResponse({ status: 404, description: 'Partner not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async getPartnerProjects(@Param('id', ParseUUIDPipe) id: string) {
     return this.partnerService.getProjectsByPartner(id);
   }
 
   @Get(':id')
+  @UseGuards(PartnerAccessGuard)
   @ApiOperation({ summary: 'Get partner by ID' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'Partner details' })
   @ApiResponse({ status: 404, description: 'Partner not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.partnerService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(PartnerAccessGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Update partner' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'Partner updated successfully' })
   @ApiResponse({ status: 404, description: 'Partner not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePartnerDto: UpdatePartnerDto,
@@ -113,12 +120,14 @@ export class PartnerController {
   }
 
   @Patch(':id/status')
+  @UseGuards(PartnerAccessGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Update partner status' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'Partner status updated' })
   @ApiResponse({ status: 404, description: 'Partner not found' })
   @ApiResponse({ status: 400, description: 'Invalid status value' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: UpdatePartnerStatusDto,
@@ -127,12 +136,14 @@ export class PartnerController {
   }
 
   @Patch(':id/rating')
+  @UseGuards(PartnerAccessGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Update partner rating' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'Partner rating updated' })
   @ApiResponse({ status: 404, description: 'Partner not found' })
   @ApiResponse({ status: 400, description: 'Invalid rating value (must be 1-5)' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async updateRating(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateRatingDto: UpdatePartnerRatingDto,
@@ -141,11 +152,13 @@ export class PartnerController {
   }
 
   @Delete(':id')
+  @UseGuards(PartnerAccessGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete partner' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'Partner deleted successfully' })
   @ApiResponse({ status: 404, description: 'Partner not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.partnerService.remove(id);
     return { message: 'Partner deleted successfully' };

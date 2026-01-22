@@ -534,3 +534,56 @@ export interface SignedUrlResponse {
   signedUrl: string;
   expiresIn: number;
 }
+
+// 通知設定関連の型定義
+
+// 通知の種別
+export type NotificationType =
+  | 'deadline'        // 期限通知
+  | 'assignee_change' // 担当者変更通知
+  | 'mention'         // メンション通知
+  | 'status_change';  // ステータス変更通知
+
+// ダイジェスト配信時間の選択肢
+export type DigestTime =
+  | '06:00'
+  | '07:00'
+  | '08:00'
+  | '09:00'
+  | '10:00'
+  | '11:00'
+  | '12:00';
+
+// 通知設定
+export interface NotificationSettings {
+  id: string;
+  userId: string;
+  // ダイジェスト配信設定
+  digestEnabled: boolean;
+  digestTime: DigestTime;
+  // 通知種別ごとの設定
+  deadlineNotification: boolean;
+  assigneeChangeNotification: boolean;
+  mentionNotification: boolean;
+  statusChangeNotification: boolean;
+  // リマインド上限設定
+  reminderMaxCount: number; // 1-10
+  // 基本通知設定
+  emailNotification: boolean;
+  pushNotification: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 通知設定の更新入力
+export interface NotificationSettingsInput {
+  digestEnabled?: boolean;
+  digestTime?: DigestTime;
+  deadlineNotification?: boolean;
+  assigneeChangeNotification?: boolean;
+  mentionNotification?: boolean;
+  statusChangeNotification?: boolean;
+  reminderMaxCount?: number;
+  emailNotification?: boolean;
+  pushNotification?: boolean;
+}

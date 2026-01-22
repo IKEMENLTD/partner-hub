@@ -8,3 +8,4 @@ export { dashboardService } from './dashboardService';
 export { stakeholderService } from './stakeholderService';
 export { fileService } from './fileService';
 export { progressReportService } from './progressReportService';
+export { notificationSettingsService } from './notificationSettingsService';

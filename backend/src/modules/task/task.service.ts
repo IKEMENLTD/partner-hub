@@ -274,8 +274,30 @@ export class TaskService {
   async remove(id: string): Promise<void> {
     const task = await this.findOne(id);
     const projectId = task.projectId;
+    // Use soft delete instead of hard delete
+    await this.taskRepository.softRemove(task);
+    this.logger.log(`Task soft deleted: ${task.title} (${id})`);
+
+    // Update project health score if task belonged to a project
+    if (projectId) {
+      await this.healthScoreService.onTaskChanged(projectId);
+    }
+  }
+
+  /**
+   * Permanently delete a task (admin only)
+   */
+  async forceRemove(id: string): Promise<void> {
+    const task = await this.taskRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!task) {
+      throw new NotFoundException(`Task with ID "${id}" not found`);
+    }
+    const projectId = task.projectId;
     await this.taskRepository.remove(task);
-    this.logger.log(`Task deleted: ${task.title} (${id})`);
+    this.logger.log(`Task permanently deleted: ${task.title} (${id})`);
 
     // Update project health score if task belonged to a project
     if (projectId) {

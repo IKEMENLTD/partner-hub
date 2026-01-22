@@ -25,8 +25,8 @@ interface ProjectTemplateData {
 const templates: ProjectTemplateData[] = [
   {
     name: '補助金営業テンプレート',
-    description: '補助金申請支援プロジェクトの標準テンプレート',
-    projectType: 'subsidy_consulting',
+    description: '補助金申請支援プロジェクトの標準テンプレート。ヒアリングから申請フォローまでの一連のプロセスを管理します。',
+    projectType: 'consulting',
     isActive: true,
     phases: [
       {
@@ -126,8 +126,8 @@ const templates: ProjectTemplateData[] = [
   },
   {
     name: 'ASP案件テンプレート',
-    description: 'ASP/SaaSサービス提供プロジェクトの標準テンプレート',
-    projectType: 'asp_service',
+    description: 'ASP/SaaSサービス提供プロジェクトの標準テンプレート。要件定義から本番導入までの一連のプロセスを管理します。',
+    projectType: 'other',
     isActive: true,
     phases: [
       {
@@ -227,8 +227,8 @@ const templates: ProjectTemplateData[] = [
   },
   {
     name: '開発案件テンプレート',
-    description: 'カスタム開発プロジェクトの標準テンプレート',
-    projectType: 'custom_development',
+    description: 'カスタム開発プロジェクトの標準テンプレート。要件定義から本番リリースまでの開発プロセスを管理します。',
+    projectType: 'joint_development',
     isActive: true,
     phases: [
       {
@@ -333,32 +333,55 @@ export async function seedProjectTemplates(dataSource: DataSource): Promise<void
   await queryRunner.connect();
 
   try {
-    // Check if templates already exist
+    // Check if templates already exist in project_templates table
     const existingCount = await queryRunner.query(
-      `SELECT COUNT(*) as count FROM templates`
+      `SELECT COUNT(*) as count FROM project_templates WHERE name IN ($1, $2, $3)`,
+      ['補助金営業テンプレート', 'ASP案件テンプレート', '開発案件テンプレート']
     );
 
-    if (parseInt(existingCount[0].count, 10) > 0) {
+    if (parseInt(existingCount[0].count, 10) >= 3) {
       console.log('Project templates already exist, skipping seed...');
       return;
     }
 
     for (const template of templates) {
-      // Insert template
-      const result = await queryRunner.query(
-        `INSERT INTO templates (id, name, description, project_type, is_active, phases, created_at, updated_at)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW(), NOW())
-         RETURNING id`,
-        [
-          template.name,
-          template.description,
-          template.projectType,
-          template.isActive,
-          JSON.stringify(template.phases),
-        ]
+      // Check if this specific template exists
+      const existing = await queryRunner.query(
+        `SELECT id FROM project_templates WHERE name = $1`,
+        [template.name]
       );
 
-      console.log(`Created template: ${template.name} (${result[0].id})`);
+      if (existing.length > 0) {
+        // Update existing template
+        await queryRunner.query(
+          `UPDATE project_templates
+           SET description = $1, project_type = $2, is_active = $3, phases = $4, updated_at = NOW()
+           WHERE name = $5`,
+          [
+            template.description,
+            template.projectType,
+            template.isActive,
+            JSON.stringify(template.phases),
+            template.name,
+          ]
+        );
+        console.log(`Updated template: ${template.name} (${existing[0].id})`);
+      } else {
+        // Insert new template
+        const result = await queryRunner.query(
+          `INSERT INTO project_templates (id, name, description, project_type, is_active, phases, created_at, updated_at)
+           VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW(), NOW())
+           RETURNING id`,
+          [
+            template.name,
+            template.description,
+            template.projectType,
+            template.isActive,
+            JSON.stringify(template.phases),
+          ]
+        );
+        console.log(`Created template: ${template.name} (${result[0].id})`);
+      }
     }
 
     console.log('Project templates seeded successfully!');

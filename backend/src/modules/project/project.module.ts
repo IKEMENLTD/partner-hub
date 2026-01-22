@@ -5,6 +5,7 @@ import { ProjectService } from './project.service';
 import { StakeholderController } from './stakeholder.controller';
 import { StakeholderService } from './stakeholder.service';
 import { HealthScoreService } from './services/health-score.service';
+import { ProjectAccessGuard } from './guards/project-access.guard';
 import { Project } from './entities/project.entity';
 import { ProjectStakeholder } from './entities/project-stakeholder.entity';
 import { ProjectTemplate } from './entities/project-template.entity';
@@ -18,7 +19,7 @@ import { TaskModule } from '../task/task.module';
     forwardRef(() => TaskModule),
   ],
   controllers: [ProjectController, StakeholderController],
-  providers: [ProjectService, StakeholderService, HealthScoreService],
-  exports: [ProjectService, StakeholderService, HealthScoreService],
+  providers: [ProjectService, StakeholderService, HealthScoreService, ProjectAccessGuard],
+  exports: [ProjectService, StakeholderService, HealthScoreService, ProjectAccessGuard],
 })
 export class ProjectModule {}

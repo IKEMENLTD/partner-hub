@@ -190,8 +190,24 @@ export class PartnerService {
 
   async remove(id: string): Promise<void> {
     const partner = await this.findOne(id);
+    // Use soft delete instead of hard delete
+    await this.partnerRepository.softRemove(partner);
+    this.logger.log(`Partner soft deleted: ${partner.name} (${id})`);
+  }
+
+  /**
+   * Permanently delete a partner (admin only)
+   */
+  async forceRemove(id: string): Promise<void> {
+    const partner = await this.partnerRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!partner) {
+      throw new NotFoundException(`Partner with ID "${id}" not found`);
+    }
     await this.partnerRepository.remove(partner);
-    this.logger.log(`Partner deleted: ${partner.name} (${id})`);
+    this.logger.log(`Partner permanently deleted: ${partner.name} (${id})`);
   }
 
   async getActivePartners(): Promise<Partner[]> {

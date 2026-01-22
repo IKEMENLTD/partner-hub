@@ -6,15 +6,18 @@ import { Task } from '../task/entities/task.entity';
 import { Partner } from '../partner/entities/partner.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { Reminder } from '../reminder/entities/reminder.entity';
+import { HealthScoreService } from '../project/services/health-score.service';
 
 describe('DashboardService', () => {
   let service: DashboardService;
 
   const mockQueryBuilder = {
     leftJoinAndSelect: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
+    addOrderBy: jest.fn().mockReturnThis(),
     take: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
     getMany: jest.fn().mockResolvedValue([]),
@@ -32,7 +35,26 @@ describe('DashboardService', () => {
     find: jest.fn().mockResolvedValue([]),
     findOne: jest.fn().mockResolvedValue(null),
     createQueryBuilder: jest.fn(() => mockQueryBuilder),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
   });
+
+  const mockHealthScoreService = {
+    getHealthScoreStatistics: jest.fn().mockResolvedValue({
+      averageScore: 75,
+      scoreDistribution: {
+        excellent: 2,
+        good: 3,
+        fair: 1,
+        poor: 0,
+      },
+      projectsAtRisk: 1,
+      totalProjects: 6,
+      averageOnTimeRate: 80,
+      averageCompletionRate: 70,
+      averageBudgetHealth: 85,
+    }),
+    getAllProjectsHealthScores: jest.fn().mockResolvedValue([]),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -58,6 +80,10 @@ describe('DashboardService', () => {
           provide: getRepositoryToken(Reminder),
           useValue: createMockRepository(),
         },
+        {
+          provide: HealthScoreService,
+          useValue: mockHealthScoreService,
+        },
       ],
     }).compile();
 
@@ -72,18 +98,23 @@ describe('DashboardService', () => {
     it('should return dashboard overview', async () => {
       const result = await service.getOverview();
 
-      expect(result).toHaveProperty('projects');
-      expect(result).toHaveProperty('tasks');
-      expect(result).toHaveProperty('partners');
-      expect(result).toHaveProperty('users');
-      expect(result).toHaveProperty('reminders');
+      expect(result).toHaveProperty('totalProjects');
+      expect(result).toHaveProperty('activeProjects');
+      expect(result).toHaveProperty('completedProjects');
+      expect(result).toHaveProperty('totalTasks');
+      expect(result).toHaveProperty('completedTasks');
+      expect(result).toHaveProperty('pendingTasks');
+      expect(result).toHaveProperty('overdueTasks');
+      expect(result).toHaveProperty('totalPartners');
+      expect(result).toHaveProperty('activePartners');
     });
 
-    it('should return overview with user-specific reminders', async () => {
+    it('should return overview with proper counts', async () => {
       const result = await service.getOverview('user-uuid');
 
-      expect(result).toHaveProperty('reminders');
-      expect(result.reminders).toHaveProperty('unread');
+      expect(typeof result.totalProjects).toBe('number');
+      expect(typeof result.totalTasks).toBe('number');
+      expect(typeof result.totalPartners).toBe('number');
     });
   });
 
@@ -148,6 +179,36 @@ describe('DashboardService', () => {
       expect(result).toHaveProperty('onTrack');
       expect(result).toHaveProperty('atRisk');
       expect(result).toHaveProperty('delayed');
+      expect(result).toHaveProperty('healthScoreStats');
+    });
+
+    it('should include health score statistics', async () => {
+      const result = await service.getProjectProgress();
+
+      expect(result.healthScoreStats).toHaveProperty('averageScore');
+      expect(result.healthScoreStats).toHaveProperty('scoreDistribution');
+      expect(result.healthScoreStats).toHaveProperty('projectsAtRisk');
+      expect(result.healthScoreStats).toHaveProperty('averageOnTimeRate');
+      expect(result.healthScoreStats).toHaveProperty('averageCompletionRate');
+      expect(result.healthScoreStats).toHaveProperty('averageBudgetHealth');
+    });
+  });
+
+  describe('getHealthScoreStatistics', () => {
+    it('should return health score statistics', async () => {
+      const result = await service.getHealthScoreStatistics();
+
+      expect(result).toHaveProperty('averageScore');
+      expect(result).toHaveProperty('scoreDistribution');
+      expect(result.scoreDistribution).toHaveProperty('excellent');
+      expect(result.scoreDistribution).toHaveProperty('good');
+      expect(result.scoreDistribution).toHaveProperty('fair');
+      expect(result.scoreDistribution).toHaveProperty('poor');
+      expect(result).toHaveProperty('projectsAtRisk');
+      expect(result).toHaveProperty('totalProjects');
+      expect(result).toHaveProperty('averageOnTimeRate');
+      expect(result).toHaveProperty('averageCompletionRate');
+      expect(result).toHaveProperty('averageBudgetHealth');
     });
   });
 

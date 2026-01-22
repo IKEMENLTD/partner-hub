@@ -68,3 +68,13 @@ export {
   useDownloadUrl,
   useGetDownloadUrl,
 } from './useFiles';
+export {
+  useRecentProjects,
+  addToRecentProjects,
+  getRecentProjects,
+  removeFromRecentProjects,
+} from './useRecentProjects';
+export {
+  useNotificationSettings,
+  useUpdateNotificationSettings,
+} from './useNotificationSettings';

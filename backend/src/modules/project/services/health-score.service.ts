@@ -9,31 +9,28 @@ import { TaskStatus } from '../../task/enums/task-status.enum';
 import { ProjectStatus } from '../enums/project-status.enum';
 
 /**
- * Health Score calculation breakdown:
- * - Task completion rate: 40 points (completed / total * 40)
- * - On-time completion rate: 30 points (on-time completed / completed * 30)
- * - Overdue tasks penalty: -20 points max (-5 per overdue task)
- * - Activity: 10 points (task updates in last 7 days)
- * - Stakeholder coverage: 20 points
- *   - Tier1 exists: +5, Tier2 exists: +5, Tier3 exists: +5
- *   - Tier1 has 2+ members: +5
+ * Health Score calculation formula:
+ * - OnTimeRate = (完了時期限内タスク数 / 完了タスク総数) * 100
+ * - CompletionRate = (完了タスク数 / 全タスク数) * 100
+ * - BudgetHealth = MIN(100, (予算 - 実績費用) / 予算 * 100)
+ * - HealthScore = (50 * OnTimeRate + 30 * CompletionRate + 20 * BudgetHealth) / 100
+ *
+ * Weight breakdown:
+ * - OnTimeRate: 50% (期限遵守率)
+ * - CompletionRate: 30% (完了率)
+ * - BudgetHealth: 20% (予算健全性)
  */
 export interface HealthScoreBreakdown {
-  taskCompletionScore: number;
-  onTimeCompletionScore: number;
-  overdueTasksPenalty: number;
-  activityScore: number;
-  stakeholderScore: number;
+  onTimeRate: number;
+  completionRate: number;
+  budgetHealth: number;
   totalScore: number;
   details: {
     totalTasks: number;
     completedTasks: number;
     onTimeCompletedTasks: number;
-    overdueTasks: number;
-    hasRecentActivity: boolean;
-    tier1Count: number;
-    tier2Count: number;
-    tier3Count: number;
+    budget: number;
+    actualCost: number;
   };
 }
 
@@ -51,7 +48,72 @@ export class HealthScoreService {
   ) {}
 
   /**
+   * Calculate OnTimeRate: 完了タスクのうち期限内に完了した割合
+   * @param completedOnTimeTasks 期限内完了タスク数
+   * @param totalCompletedTasks 完了タスク総数
+   * @returns OnTimeRate (0-100)
+   */
+  private calculateOnTimeRate(completedOnTimeTasks: number, totalCompletedTasks: number): number {
+    if (totalCompletedTasks === 0) {
+      return 100; // タスクがない場合は100%とする
+    }
+    return (completedOnTimeTasks / totalCompletedTasks) * 100;
+  }
+
+  /**
+   * Calculate CompletionRate: 全タスクのうち完了したタスクの割合
+   * @param completedTasks 完了タスク数
+   * @param totalTasks 全タスク数
+   * @returns CompletionRate (0-100)
+   */
+  private calculateCompletionRate(completedTasks: number, totalTasks: number): number {
+    if (totalTasks === 0) {
+      return 100; // タスクがない場合は100%とする
+    }
+    return (completedTasks / totalTasks) * 100;
+  }
+
+  /**
+   * Calculate BudgetHealth: 予算の健全性
+   * BudgetHealth = MIN(100, (予算 - 実績費用) / 予算 * 100)
+   * @param budget 予算
+   * @param actualCost 実績費用
+   * @returns BudgetHealth (0-100)
+   */
+  private calculateBudgetHealth(budget: number, actualCost: number): number {
+    if (!budget || budget <= 0) {
+      return 100; // 予算が設定されていない場合は100%とする
+    }
+    const remaining = budget - actualCost;
+    const health = (remaining / budget) * 100;
+    return Math.min(100, Math.max(0, health));
+  }
+
+  /**
+   * Calculate final HealthScore using weighted formula:
+   * HealthScore = (50 * OnTimeRate + 30 * CompletionRate + 20 * BudgetHealth) / 100
+   * @param onTimeRate 期限遵守率 (0-100)
+   * @param completionRate 完了率 (0-100)
+   * @param budgetHealth 予算健全性 (0-100)
+   * @returns HealthScore (0-100)
+   */
+  private calculateWeightedHealthScore(
+    onTimeRate: number,
+    completionRate: number,
+    budgetHealth: number,
+  ): number {
+    const score = (50 * onTimeRate + 30 * completionRate + 20 * budgetHealth) / 100;
+    return Math.round(Math.min(100, Math.max(0, score)));
+  }
+
+  /**
    * Calculate health score for a specific project
+   * Formula:
+   * - OnTimeRate = (完了時期限内タスク数 / 完了タスク総数) * 100
+   * - CompletionRate = (完了タスク数 / 全タスク数) * 100
+   * - BudgetHealth = MIN(100, (予算 - 実績費用) / 予算 * 100)
+   * - HealthScore = (50 * OnTimeRate + 30 * CompletionRate + 20 * BudgetHealth) / 100
+   *
    * @param projectId Project ID to calculate score for
    * @returns Health score breakdown with total score (0-100)
    */
@@ -65,24 +127,19 @@ export class HealthScoreService {
       throw new NotFoundException(`Project with ID "${projectId}" not found`);
     }
 
-    // Skip calculation for completed or cancelled projects
+    // Skip calculation for completed or cancelled projects - return current score
     if (project.status === ProjectStatus.COMPLETED || project.status === ProjectStatus.CANCELLED) {
       return {
-        taskCompletionScore: 40,
-        onTimeCompletionScore: 30,
-        overdueTasksPenalty: 0,
-        activityScore: 0,
-        stakeholderScore: 20,
+        onTimeRate: 100,
+        completionRate: 100,
+        budgetHealth: 100,
         totalScore: project.healthScore,
         details: {
           totalTasks: 0,
           completedTasks: 0,
           onTimeCompletedTasks: 0,
-          overdueTasks: 0,
-          hasRecentActivity: false,
-          tier1Count: 0,
-          tier2Count: 0,
-          tier3Count: 0,
+          budget: Number(project.budget) || 0,
+          actualCost: Number(project.actualCost) || 0,
         },
       };
     }
@@ -92,99 +149,50 @@ export class HealthScoreService {
       where: { projectId },
     });
 
-    // Calculate task completion score (40 points max)
+    // Count total tasks and completed tasks
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(
       (t) => t.status === TaskStatus.COMPLETED,
     ).length;
-    const taskCompletionScore =
-      totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 40) : 40;
 
-    // Calculate on-time completion score (30 points max)
-    const completedTasksWithDue = tasks.filter(
-      (t) => t.status === TaskStatus.COMPLETED && t.dueDate,
-    );
-    const onTimeCompletedTasks = completedTasksWithDue.filter((t) => {
+    // Count on-time completed tasks (completed before or on due date)
+    const onTimeCompletedTasks = tasks.filter((t) => {
+      if (t.status !== TaskStatus.COMPLETED) return false;
+      if (!t.dueDate) return true; // No due date = always on time
       const dueDate = new Date(t.dueDate);
+      dueDate.setHours(23, 59, 59, 999); // End of due date
       const completedAt = t.completedAt ? new Date(t.completedAt) : new Date();
       return completedAt <= dueDate;
     }).length;
 
-    const onTimeCompletionScore =
-      completedTasksWithDue.length > 0
-        ? Math.round((onTimeCompletedTasks / completedTasksWithDue.length) * 30)
-        : 30;
+    // Calculate rates
+    const onTimeRate = this.calculateOnTimeRate(onTimeCompletedTasks, completedTasks);
+    const completionRate = this.calculateCompletionRate(completedTasks, totalTasks);
+    const budgetHealth = this.calculateBudgetHealth(
+      Number(project.budget) || 0,
+      Number(project.actualCost) || 0,
+    );
 
-    // Calculate overdue tasks penalty (-20 points max, -5 per task)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Calculate final weighted score
+    const totalScore = this.calculateWeightedHealthScore(onTimeRate, completionRate, budgetHealth);
 
-    const overdueTasks = tasks.filter((t) => {
-      if (!t.dueDate) return false;
-      if (t.status === TaskStatus.COMPLETED || t.status === TaskStatus.CANCELLED) return false;
-      const dueDate = new Date(t.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-      return dueDate < today;
-    }).length;
-
-    const overdueTasksPenalty = Math.min(overdueTasks * 5, 20);
-
-    // Calculate activity score (10 points if activity in last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const recentTasks = tasks.filter((t) => {
-      const updatedAt = new Date(t.updatedAt);
-      return updatedAt >= sevenDaysAgo;
-    });
-
-    const hasRecentActivity = recentTasks.length > 0;
-    const activityScore = hasRecentActivity ? 10 : 0;
-
-    // Calculate stakeholder score (20 points max)
-    const stakeholders = await this.stakeholderRepository.find({
-      where: { projectId },
-    });
-
-    const tier1Count = stakeholders.filter((s) => s.tier === 1).length;
-    const tier2Count = stakeholders.filter((s) => s.tier === 2).length;
-    const tier3Count = stakeholders.filter((s) => s.tier === 3).length;
-
-    let stakeholderScore = 0;
-    if (tier1Count > 0) stakeholderScore += 5;
-    if (tier2Count > 0) stakeholderScore += 5;
-    if (tier3Count > 0) stakeholderScore += 5;
-    if (tier1Count >= 2) stakeholderScore += 5;
-
-    // Calculate total score (0-100)
-    const totalScore = Math.max(
-      0,
-      Math.min(
-        100,
-        taskCompletionScore +
-          onTimeCompletionScore -
-          overdueTasksPenalty +
-          activityScore +
-          stakeholderScore,
-      ),
+    this.logger.debug(
+      `Health score calculated for project ${projectId}: ` +
+      `OnTimeRate=${onTimeRate.toFixed(1)}%, CompletionRate=${completionRate.toFixed(1)}%, ` +
+      `BudgetHealth=${budgetHealth.toFixed(1)}%, Total=${totalScore}`,
     );
 
     return {
-      taskCompletionScore,
-      onTimeCompletionScore,
-      overdueTasksPenalty,
-      activityScore,
-      stakeholderScore,
+      onTimeRate: Math.round(onTimeRate * 100) / 100,
+      completionRate: Math.round(completionRate * 100) / 100,
+      budgetHealth: Math.round(budgetHealth * 100) / 100,
       totalScore,
       details: {
         totalTasks,
         completedTasks,
         onTimeCompletedTasks,
-        overdueTasks,
-        hasRecentActivity,
-        tier1Count,
-        tier2Count,
-        tier3Count,
+        budget: Number(project.budget) || 0,
+        actualCost: Number(project.actualCost) || 0,
       },
     };
   }
@@ -291,6 +299,11 @@ export class HealthScoreService {
 
   /**
    * Get health score statistics across all projects
+   * Returns comprehensive statistics including:
+   * - Average score
+   * - Score distribution (excellent/good/fair/poor)
+   * - Projects at risk count
+   * - Average component scores (onTimeRate, completionRate, budgetHealth)
    */
   async getHealthScoreStatistics(): Promise<{
     averageScore: number;
@@ -301,12 +314,16 @@ export class HealthScoreService {
       poor: number; // 0-39
     };
     projectsAtRisk: number; // score < 50
+    totalProjects: number;
+    averageOnTimeRate: number;
+    averageCompletionRate: number;
+    averageBudgetHealth: number;
   }> {
     const projects = await this.projectRepository.find({
       where: {
         status: Not(In([ProjectStatus.COMPLETED, ProjectStatus.CANCELLED])),
       },
-      select: ['id', 'healthScore'],
+      select: ['id', 'healthScore', 'budget', 'actualCost'],
     });
 
     if (projects.length === 0) {
@@ -319,7 +336,27 @@ export class HealthScoreService {
           poor: 0,
         },
         projectsAtRisk: 0,
+        totalProjects: 0,
+        averageOnTimeRate: 0,
+        averageCompletionRate: 0,
+        averageBudgetHealth: 0,
       };
+    }
+
+    // Calculate average scores from individual project breakdowns
+    let totalOnTimeRate = 0;
+    let totalCompletionRate = 0;
+    let totalBudgetHealth = 0;
+
+    for (const project of projects) {
+      try {
+        const breakdown = await this.calculateHealthScore(project.id);
+        totalOnTimeRate += breakdown.onTimeRate;
+        totalCompletionRate += breakdown.completionRate;
+        totalBudgetHealth += breakdown.budgetHealth;
+      } catch (error) {
+        this.logger.warn(`Failed to calculate breakdown for project ${project.id}: ${error.message}`);
+      }
     }
 
     const scores = projects.map((p) => p.healthScore);
@@ -340,6 +377,47 @@ export class HealthScoreService {
       averageScore,
       scoreDistribution,
       projectsAtRisk,
+      totalProjects: projects.length,
+      averageOnTimeRate: Math.round((totalOnTimeRate / projects.length) * 100) / 100,
+      averageCompletionRate: Math.round((totalCompletionRate / projects.length) * 100) / 100,
+      averageBudgetHealth: Math.round((totalBudgetHealth / projects.length) * 100) / 100,
     };
+  }
+
+  /**
+   * Get health score breakdown for all active projects
+   * Useful for dashboard display and reporting
+   */
+  async getAllProjectsHealthScores(): Promise<Array<{
+    projectId: string;
+    projectName: string;
+    healthScore: number;
+    breakdown: HealthScoreBreakdown;
+  }>> {
+    const projects = await this.projectRepository.find({
+      where: {
+        status: Not(In([ProjectStatus.COMPLETED, ProjectStatus.CANCELLED])),
+      },
+      select: ['id', 'name', 'healthScore'],
+      order: { healthScore: 'ASC' },
+    });
+
+    const results = [];
+
+    for (const project of projects) {
+      try {
+        const breakdown = await this.calculateHealthScore(project.id);
+        results.push({
+          projectId: project.id,
+          projectName: project.name,
+          healthScore: breakdown.totalScore,
+          breakdown,
+        });
+      } catch (error) {
+        this.logger.warn(`Failed to get breakdown for project ${project.id}: ${error.message}`);
+      }
+    }
+
+    return results;
   }
 }
