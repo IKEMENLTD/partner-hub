@@ -235,64 +235,61 @@ export function MyTodayPage() {
         </CardContent>
       </Card>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {/* Main Content - Today's Tasks and Upcoming Deadlines */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Today's Tasks */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card padding="none">
-            <CardHeader className="px-6 pt-6">
-              今日のタスク
-              {tasksForToday.length > 0 && (
-                <span className="ml-2 text-sm font-normal text-gray-500">
-                  ({tasksForToday.length}件)
-                </span>
-              )}
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              {tasksForToday.length === 0 ? (
-                <EmptyState
-                  title="今日のタスクはありません"
-                  description="新しいタスクを追加するか、明日の予定を確認してください"
-                  className="py-8"
-                />
-              ) : (
-                <div className="space-y-3">
-                  {tasksForToday.map((task) => (
-                    <TaskCard key={task.id} task={task} compact />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <Card padding="none">
+          <CardHeader className="px-6 pt-6">
+            今日のタスク
+            {tasksForToday.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-gray-500">
+                ({tasksForToday.length}件)
+              </span>
+            )}
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
+            {tasksForToday.length === 0 ? (
+              <EmptyState
+                title="今日のタスクはありません"
+                description="新しいタスクを追加するか、明日の予定を確認してください"
+                className="py-8"
+              />
+            ) : (
+              <div className="space-y-3">
+                {tasksForToday.map((task) => (
+                  <TaskCard key={task.id} task={task} compact />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Upcoming Deadlines */}
-          <Card padding="none">
-            <CardHeader className="px-6 pt-6">
-              今後の期限
-              {upcomingDeadlines.length > 0 && (
-                <span className="ml-2 text-sm font-normal text-gray-500">
-                  ({upcomingDeadlines.length}件)
-                </span>
-              )}
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              {upcomingDeadlines.length === 0 ? (
-                <EmptyState
-                  title="今後の期限はありません"
-                  description="期限が設定されたタスクがここに表示されます"
-                  className="py-8"
-                />
-              ) : (
-                <div className="space-y-3">
-                  {upcomingDeadlines.map((task) => (
-                    <TaskCard key={task.id} task={task} compact />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
+        {/* Upcoming Deadlines */}
+        <Card padding="none">
+          <CardHeader className="px-6 pt-6">
+            今後の期限
+            {upcomingDeadlines.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-gray-500">
+                ({upcomingDeadlines.length}件)
+              </span>
+            )}
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
+            {upcomingDeadlines.length === 0 ? (
+              <EmptyState
+                title="今後の期限はありません"
+                description="期限が設定されたタスクがここに表示されます"
+                className="py-8"
+              />
+            ) : (
+              <div className="space-y-3">
+                {upcomingDeadlines.map((task) => (
+                  <TaskCard key={task.id} task={task} compact />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Additional Sections */}
