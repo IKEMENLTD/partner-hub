@@ -46,10 +46,10 @@ export class ProjectService {
   ): Promise<Project> {
     const { partnerIds, tags, ...projectData } = createProjectDto;
 
-    // Handle tags - convert empty string or invalid values to null
+    // Handle tags - convert empty string or invalid values to undefined
     const sanitizedTags = Array.isArray(tags) && tags.length > 0
       ? tags.filter(t => t && typeof t === 'string' && t.trim() !== '')
-      : null;
+      : undefined;
 
     const project = this.projectRepository.create({
       ...projectData,
