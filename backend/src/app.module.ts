@@ -47,14 +47,17 @@ import { NotificationModule } from './modules/notification/notification.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         const databaseUrl = configService.get<string>('database.url');
-        const isProduction = configService.get<string>('app.nodeEnv') === 'production';
+        const nodeEnv = configService.get<string>('app.nodeEnv') || 'production';
+        const isProduction = nodeEnv === 'production';
+        // IMPORTANT: synchronize should NEVER be true in production to prevent data loss
+        const shouldSynchronize = configService.get<boolean>('database.synchronize') ?? false;
 
         if (databaseUrl) {
           return {
             type: 'postgres' as const,
             url: databaseUrl,
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: !isProduction,
+            synchronize: isProduction ? false : shouldSynchronize,
             logging: !isProduction,
             autoLoadEntities: true,
             ssl: isProduction ? { rejectUnauthorized: false } : false,
@@ -69,7 +72,7 @@ import { NotificationModule } from './modules/notification/notification.module';
           password: configService.get<string>('database.password'),
           database: configService.get<string>('database.database'),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: !isProduction,
+          synchronize: isProduction ? false : shouldSynchronize,
           logging: !isProduction,
           autoLoadEntities: true,
         };
