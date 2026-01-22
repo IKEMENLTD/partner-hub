@@ -31,6 +31,7 @@ import { EscalationModule } from './modules/escalation/escalation.module';
 import { FileStorageModule } from './modules/file-storage/file-storage.module';
 import { ProgressReportModule } from './modules/progress-report/progress-report.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -116,6 +117,7 @@ import { AuditModule } from './modules/audit/audit.module';
     FileStorageModule,
     ProgressReportModule,
     AuditModule,
+    NotificationModule,
   ],
   providers: [
     // Global Exception Filter
