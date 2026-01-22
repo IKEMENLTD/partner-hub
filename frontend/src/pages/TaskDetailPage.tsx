@@ -410,12 +410,12 @@ export function TaskDetailPage() {
           )}
 
           {/* Tags */}
-          {task.tags && task.tags.length > 0 && (
+          {Array.isArray(task.tags) && task.tags.length > 0 && (
             <Card>
               <CardHeader>タグ</CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {task.tags.map((tag) => (
+                  {task.tags.map((tag: string) => (
                     <Badge key={tag} variant="default">
                       {tag}
                     </Badge>

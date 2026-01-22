@@ -157,10 +157,10 @@ export function TaskCard({ task, onStatusChange, compact = false }: TaskCardProp
             )}
           </div>
 
-          {(task.tags.length > 0 || task.assignee) && (
+          {((Array.isArray(task.tags) && task.tags.length > 0) || task.assignee) && (
             <div className="mt-3 flex items-center justify-between">
               <div className="flex flex-wrap gap-1">
-                {task.tags.map((tag) => (
+                {(Array.isArray(task.tags) ? task.tags : []).map((tag) => (
                   <span
                     key={tag}
                     className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-slate-700 dark:text-gray-400"

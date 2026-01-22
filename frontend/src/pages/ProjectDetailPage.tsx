@@ -449,7 +449,7 @@ export function ProjectDetailPage() {
               )}
 
               {/* Tags */}
-              {project.tags && project.tags.length > 0 && (
+              {Array.isArray(project.tags) && project.tags.length > 0 && (
                 <Card>
                   <CardHeader>タグ</CardHeader>
                   <CardContent>

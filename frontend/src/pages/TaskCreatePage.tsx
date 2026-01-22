@@ -78,7 +78,7 @@ export function TaskCreatePage() {
         assigneeId: taskData.assigneeId,
         dueDate: taskData.dueDate?.split('T')[0],
         estimatedHours: taskData.estimatedHours,
-        tags: taskData.tags || [],
+        tags: Array.isArray(taskData.tags) ? taskData.tags : [],
       });
     }
   }, [isEditMode, taskData]);
@@ -150,8 +150,9 @@ export function TaskCreatePage() {
 
   const handleAddTag = () => {
     const tag = tagInput.trim();
-    if (tag && !formData.tags.includes(tag)) {
-      setFormData((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
+    const currentTags = Array.isArray(formData.tags) ? formData.tags : [];
+    if (tag && !currentTags.includes(tag)) {
+      setFormData((prev) => ({ ...prev, tags: [...(Array.isArray(prev.tags) ? prev.tags : []), tag] }));
       setTagInput('');
     }
   };
@@ -159,7 +160,7 @@ export function TaskCreatePage() {
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
+      tags: (Array.isArray(prev.tags) ? prev.tags : []).filter((tag) => tag !== tagToRemove),
     }));
   };
 
@@ -311,9 +312,9 @@ export function TaskCreatePage() {
                   追加
                 </Button>
               </div>
-              {formData.tags.length > 0 && (
+              {Array.isArray(formData.tags) && formData.tags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {formData.tags.map((tag) => (
+                  {formData.tags.map((tag: string) => (
                     <span
                       key={tag}
                       className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
