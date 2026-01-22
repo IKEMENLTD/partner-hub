@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Bell, Search, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 import { getUserDisplayName, Alert, Project, Partner } from '@/types';
@@ -7,20 +7,9 @@ import { useLogout, useAlerts, useProjects, usePartners } from '@/hooks';
 import { Avatar, Badge } from '@/components/common';
 import clsx from 'clsx';
 
-// 検索対象の型定義
-type SearchTarget = 'all' | 'projects' | 'partners' | 'tasks';
-
-// 検索対象のラベル
-const searchTargetLabels: Record<SearchTarget, string> = {
-  all: 'すべて',
-  projects: 'プロジェクト',
-  partners: 'パートナー',
-  tasks: 'タスク',
-};
-
 // サジェストアイテムの型定義
 interface SuggestItem {
-  type: 'project' | 'partner' | 'task';
+  type: 'project' | 'partner';
   id: string;
   name: string;
   path: string;
@@ -28,6 +17,7 @@ interface SuggestItem {
 
 export function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuthStore();
   const { sidebarOpen } = useUIStore();
   const { mutate: logout } = useLogout();
@@ -42,8 +32,6 @@ export function Header() {
 
   // 検索機能の状態
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchTarget, setSearchTarget] = useState<SearchTarget>('all');
-  const [isSearchTargetOpen, setIsSearchTargetOpen] = useState(false);
   const [isSuggestOpen, setIsSuggestOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestItem[]>([]);
   const [selectedSuggestIndex, setSelectedSuggestIndex] = useState(-1);
@@ -58,86 +46,80 @@ export function Header() {
     logout();
   };
 
-  // 検索実行関数
-  const executeSearch = useCallback((query: string, target: SearchTarget) => {
+  // 現在のページに基づいて検索コンテキストを取得
+  const getSearchContext = useCallback(() => {
+    const path = location.pathname;
+    if (path.startsWith('/partners')) {
+      return 'partners';
+    }
+    // デフォルトはプロジェクト（すべて検索）
+    return 'projects';
+  }, [location.pathname]);
+
+  // 検索実行関数（シンプル化：常にプロジェクト一覧で全体検索）
+  const executeSearch = useCallback((query: string) => {
     if (!query.trim()) return;
 
     const encodedQuery = encodeURIComponent(query.trim());
+    const context = getSearchContext();
 
-    switch (target) {
-      case 'projects':
-        navigate(`/projects?search=${encodedQuery}`);
-        break;
-      case 'partners':
-        navigate(`/partners?search=${encodedQuery}`);
-        break;
-      case 'tasks':
-        // タスクはプロジェクト内で検索
-        navigate(`/projects?taskSearch=${encodedQuery}`);
-        break;
-      case 'all':
-      default:
-        // すべての場合はプロジェクト一覧に遷移（全体検索として）
-        navigate(`/projects?search=${encodedQuery}&searchAll=true`);
-        break;
+    // 現在のページに基づいて適切な検索先へ遷移
+    if (context === 'partners') {
+      navigate(`/partners?search=${encodedQuery}`);
+    } else {
+      // デフォルトはプロジェクト検索
+      navigate(`/projects?search=${encodedQuery}`);
     }
 
     setSearchQuery('');
     setIsSuggestOpen(false);
-  }, [navigate]);
+  }, [navigate, getSearchContext]);
 
-  // サジェスト候補を生成
-  const generateSuggestions = useCallback((query: string, target: SearchTarget): SuggestItem[] => {
+  // サジェスト候補を生成（プロジェクトとパートナー両方から）
+  const generateSuggestions = useCallback((query: string): SuggestItem[] => {
     if (!query.trim() || query.length < 2) return [];
 
     const lowerQuery = query.toLowerCase();
     const items: SuggestItem[] = [];
 
     // プロジェクトからサジェスト
-    if (target === 'all' || target === 'projects') {
-      const projects = (projectsData && 'data' in projectsData ? projectsData.data : projectsData) || [];
-      (projects as Project[])
-        .filter((p: Project) => p.name.toLowerCase().includes(lowerQuery))
-        .slice(0, 3)
-        .forEach((p: Project) => {
-          items.push({
-            type: 'project',
-            id: p.id,
-            name: p.name,
-            path: `/projects/${p.id}`,
-          });
+    const projects = (projectsData && 'data' in projectsData ? projectsData.data : projectsData) || [];
+    (projects as Project[])
+      .filter((p: Project) => p.name.toLowerCase().includes(lowerQuery))
+      .slice(0, 4)
+      .forEach((p: Project) => {
+        items.push({
+          type: 'project',
+          id: p.id,
+          name: p.name,
+          path: `/projects/${p.id}`,
         });
-    }
+      });
 
     // パートナーからサジェスト
-    if (target === 'all' || target === 'partners') {
-      const partners = (partnersData && 'data' in partnersData ? partnersData.data : partnersData) || [];
-      (partners as Partner[])
-        .filter((p: Partner) => p.name.toLowerCase().includes(lowerQuery))
-        .slice(0, 3)
-        .forEach((p: Partner) => {
-          items.push({
-            type: 'partner',
-            id: p.id,
-            name: p.name,
-            path: `/partners/${p.id}`,
-          });
+    const partners = (partnersData && 'data' in partnersData ? partnersData.data : partnersData) || [];
+    (partners as Partner[])
+      .filter((p: Partner) => p.name.toLowerCase().includes(lowerQuery))
+      .slice(0, 4)
+      .forEach((p: Partner) => {
+        items.push({
+          type: 'partner',
+          id: p.id,
+          name: p.name,
+          path: `/partners/${p.id}`,
         });
-    }
+      });
 
-    // タスク検索は検索結果ページで行う（サジェストには含めない）
-    // タスク検索時は /projects?taskSearch=xxx に遷移
-
-    return items.slice(0, 8); // 最大8件まで
+    return items.slice(0, 6); // 最大6件まで
   }, [projectsData, partnersData]);
 
   // 検索クエリ変更時にサジェストを更新
   useEffect(() => {
-    const newSuggestions = generateSuggestions(searchQuery, searchTarget);
+    const newSuggestions = generateSuggestions(searchQuery);
     setSuggestions(newSuggestions);
     setSelectedSuggestIndex(-1);
     setIsSuggestOpen(newSuggestions.length > 0 && searchQuery.length >= 2);
-  }, [searchQuery, searchTarget, generateSuggestions]);
+  }, [searchQuery, generateSuggestions]);
 
   // クリック外でサジェストを閉じる
   useEffect(() => {
@@ -162,7 +144,7 @@ export function Header() {
         setIsSuggestOpen(false);
       } else {
         // 通常の検索実行
-        executeSearch(searchQuery, searchTarget);
+        executeSearch(searchQuery);
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -187,7 +169,7 @@ export function Header() {
 
   // 検索アイコンクリック
   const handleSearchIconClick = () => {
-    executeSearch(searchQuery, searchTarget);
+    executeSearch(searchQuery);
   };
 
   // サジェストアイテムのタイプラベル
@@ -197,9 +179,16 @@ export function Header() {
         return 'プロジェクト';
       case 'partner':
         return 'パートナー';
-      case 'task':
-        return 'タスク';
     }
+  };
+
+  // プレースホルダーテキスト
+  const getPlaceholder = () => {
+    const context = getSearchContext();
+    if (context === 'partners') {
+      return 'パートナーを検索...';
+    }
+    return '検索...';
   };
 
   return (
@@ -211,115 +200,69 @@ export function Header() {
       )}
     >
       {/* Search */}
-      <div className="flex-1 max-w-lg" ref={suggestRef}>
-        <div className="relative flex items-center gap-2">
-          {/* 検索対象ドロップダウン */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsSearchTargetOpen(!isSearchTargetOpen)}
-              className="flex items-center gap-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
-            >
-              <span className="whitespace-nowrap">{searchTargetLabels[searchTarget]}</span>
-              <ChevronDown className="h-3 w-3" />
-            </button>
+      <div className="flex-1 max-w-md" ref={suggestRef}>
+        <div className="relative">
+          <input
+            ref={searchInputRef}
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            onFocus={() => {
+              if (suggestions.length > 0 && searchQuery.length >= 2) {
+                setIsSuggestOpen(true);
+              }
+            }}
+            placeholder={getPlaceholder()}
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 py-2 pl-10 pr-4 text-sm placeholder:text-gray-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 dark:placeholder:text-gray-400 dark:focus:bg-slate-800"
+          />
+          <button
+            type="button"
+            onClick={handleSearchIconClick}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label="検索"
+          >
+            <Search className="h-4 w-4" />
+          </button>
 
-            {isSearchTargetOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsSearchTargetOpen(false)}
-                />
-                <div className="absolute left-0 top-full z-50 mt-1 w-36 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                  {(Object.keys(searchTargetLabels) as SearchTarget[]).map((target) => (
-                    <button
-                      key={target}
-                      type="button"
-                      onClick={() => {
-                        setSearchTarget(target);
-                        setIsSearchTargetOpen(false);
-                        searchInputRef.current?.focus();
-                      }}
-                      className={clsx(
-                        'w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700',
-                        searchTarget === target
-                          ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
-                          : 'text-gray-700 dark:text-gray-300'
-                      )}
-                    >
-                      {searchTargetLabels[target]}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* 検索入力フィールド */}
-          <div className="relative flex-1">
-            <input
-              ref={searchInputRef}
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              onFocus={() => {
-                if (suggestions.length > 0 && searchQuery.length >= 2) {
-                  setIsSuggestOpen(true);
-                }
-              }}
-              placeholder={`${searchTargetLabels[searchTarget]}を検索...`}
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 py-2 pl-4 pr-10 text-sm placeholder:text-gray-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 dark:placeholder:text-gray-400 dark:focus:bg-slate-800"
-            />
-            <button
-              type="button"
-              onClick={handleSearchIconClick}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-              aria-label="検索"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-
-            {/* サジェスト候補 */}
-            {isSuggestOpen && suggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                {suggestions.map((item, index) => (
-                  <button
-                    key={`${item.type}-${item.id}`}
-                    type="button"
-                    onClick={() => handleSuggestClick(item)}
+          {/* サジェスト候補 */}
+          {isSuggestOpen && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+              {suggestions.map((item, index) => (
+                <button
+                  key={`${item.type}-${item.id}`}
+                  type="button"
+                  onClick={() => handleSuggestClick(item)}
+                  className={clsx(
+                    'flex w-full items-center gap-3 px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700',
+                    selectedSuggestIndex === index && 'bg-gray-100 dark:bg-slate-700'
+                  )}
+                >
+                  <span
                     className={clsx(
-                      'flex w-full items-center gap-3 px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700',
-                      selectedSuggestIndex === index && 'bg-gray-100 dark:bg-slate-700'
+                      'rounded px-2 py-0.5 text-xs font-medium',
+                      item.type === 'project' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                      item.type === 'partner' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                     )}
                   >
-                    <span
-                      className={clsx(
-                        'rounded px-2 py-0.5 text-xs font-medium',
-                        item.type === 'project' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-                        item.type === 'partner' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                        item.type === 'task' && 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                      )}
-                    >
-                      {getSuggestTypeLabel(item.type)}
-                    </span>
-                    <span className="flex-1 truncate text-gray-900 dark:text-gray-100">
-                      {item.name}
-                    </span>
-                  </button>
-                ))}
-                <div className="border-t border-gray-200 px-4 py-2 dark:border-slate-700">
-                  <button
-                    type="button"
-                    onClick={() => executeSearch(searchQuery, searchTarget)}
-                    className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-                  >
-                    「{searchQuery}」で{searchTargetLabels[searchTarget]}を検索
-                  </button>
-                </div>
+                    {getSuggestTypeLabel(item.type)}
+                  </span>
+                  <span className="flex-1 truncate text-gray-900 dark:text-gray-100">
+                    {item.name}
+                  </span>
+                </button>
+              ))}
+              <div className="border-t border-gray-200 px-4 py-2 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => executeSearch(searchQuery)}
+                  className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                >
+                  「{searchQuery}」を検索
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
