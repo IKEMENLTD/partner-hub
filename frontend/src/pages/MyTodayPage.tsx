@@ -241,19 +241,13 @@ export function MyTodayPage() {
         {/* Today's Tasks */}
         <div className="lg:col-span-2 space-y-6">
           <Card padding="none">
-            <CardHeader
-              className="px-6 pt-6"
-              action={
-                <Link
-                  to="/today"
-                  className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
-                >
-                  すべて表示
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              }
-            >
+            <CardHeader className="px-6 pt-6">
               今日のタスク
+              {tasksForToday.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  ({tasksForToday.length}件)
+                </span>
+              )}
             </CardHeader>
             <CardContent className="px-6 pb-6">
               {tasksForToday.length === 0 ? (
@@ -274,19 +268,13 @@ export function MyTodayPage() {
 
           {/* Upcoming Deadlines */}
           <Card padding="none">
-            <CardHeader
-              className="px-6 pt-6"
-              action={
-                <Link
-                  to="/today"
-                  className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
-                >
-                  すべて表示
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              }
-            >
+            <CardHeader className="px-6 pt-6">
               今後の期限
+              {upcomingDeadlines.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  ({upcomingDeadlines.length}件)
+                </span>
+              )}
             </CardHeader>
             <CardContent className="px-6 pb-6">
               {upcomingDeadlines.length === 0 ? (
@@ -297,7 +285,7 @@ export function MyTodayPage() {
                 />
               ) : (
                 <div className="space-y-3">
-                  {upcomingDeadlines.slice(0, 5).map((task) => (
+                  {upcomingDeadlines.map((task) => (
                     <TaskCard key={task.id} task={task} compact />
                   ))}
                 </div>
@@ -306,10 +294,23 @@ export function MyTodayPage() {
           </Card>
         </div>
 
-        {/* Alerts Sidebar */}
+        {/* Notifications Sidebar */}
         <div>
           <Card padding="none">
-            <CardHeader className="px-6 pt-6">アラート</CardHeader>
+            <CardHeader
+              className="px-6 pt-6"
+              action={
+                <Link
+                  to="/notifications"
+                  className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
+                >
+                  すべて表示
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              }
+            >
+              通知
+            </CardHeader>
             <CardContent className="px-6 pb-6">
               <AlertList
                 alerts={recentAlerts}

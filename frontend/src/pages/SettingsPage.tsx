@@ -5,7 +5,6 @@ import {
   Bell,
   Moon,
   User,
-  Shield,
   Save,
   Mail,
   Clock,
@@ -26,7 +25,6 @@ import {
   Card,
   CardHeader,
   CardContent,
-  Button,
   Select,
 } from '@/components/common';
 import {
@@ -38,7 +36,6 @@ import {
   ContactModal,
   TermsModal,
   PrivacyPolicyModal,
-  PasswordChangeModal,
 } from '@/components/settings';
 
 // トグルスイッチコンポーネント
@@ -113,7 +110,6 @@ export function SettingsPage() {
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
-  const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
 
   // 通知設定フック
   const { data: notificationSettings, isLoading: isLoadingSettings } =
@@ -533,29 +529,6 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Security */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-gray-500" />
-                <span>セキュリティ</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-gray-500">
-                セキュリティ設定は管理者にお問い合わせください。
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => setIsPasswordChangeOpen(true)}
-              >
-                パスワードを変更
-              </Button>
-            </CardContent>
-          </Card>
-
           {/* Help */}
           <Card>
             <CardHeader>
@@ -614,10 +587,6 @@ export function SettingsPage() {
       <PrivacyPolicyModal
         isOpen={isPrivacyOpen}
         onClose={() => setIsPrivacyOpen(false)}
-      />
-      <PasswordChangeModal
-        isOpen={isPasswordChangeOpen}
-        onClose={() => setIsPasswordChangeOpen(false)}
       />
     </div>
   );

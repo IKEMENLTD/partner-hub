@@ -58,37 +58,37 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
       <div className="space-y-6 max-h-[70vh] overflow-y-auto">
         {/* Contact Info */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
+          <div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4 overflow-hidden">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
               <Mail className="h-5 w-5 text-primary-600 dark:text-primary-400" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-gray-500 dark:text-gray-400">メール</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                 support@example.com
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
+          <div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4 overflow-hidden">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
               <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-gray-500 dark:text-gray-400">電話</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                 03-1234-5678
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+          <div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4 overflow-hidden">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
               <MapPin className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-gray-500 dark:text-gray-400">所在地</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                 東京都渋谷区
               </p>
             </div>

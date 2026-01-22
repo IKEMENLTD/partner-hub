@@ -42,6 +42,13 @@ export function Header() {
   const alerts: Alert[] = alertsData || [];
   const unreadCount = alerts.filter((a) => !a.isRead).length;
 
+  // 画面遷移時にドロップダウンを閉じる
+  useEffect(() => {
+    setIsNotificationOpen(false);
+    setIsProfileOpen(false);
+    setIsSuggestOpen(false);
+  }, [location.pathname]);
+
   const handleLogout = () => {
     logout();
   };

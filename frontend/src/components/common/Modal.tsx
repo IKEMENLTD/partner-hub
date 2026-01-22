@@ -1,4 +1,5 @@
-import { Fragment, type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { X } from 'lucide-react';
 
@@ -39,18 +40,19 @@ export function Modal({
 
   if (!isOpen) return null;
 
-  return (
-    <Fragment>
+  // createPortalでdocument.bodyに直接描画し、ヘッダーより上に表示
+  return createPortal(
+    <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/50 dark:bg-black/70 transition-opacity"
+        className="fixed inset-0 z-[100] bg-black/50 dark:bg-black/70 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-[101] flex items-center justify-center p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
@@ -84,7 +86,8 @@ export function Modal({
           <div className={clsx(!title && 'pt-6', 'px-6 py-4')}>{children}</div>
         </div>
       </div>
-    </Fragment>
+    </>,
+    document.body
   );
 }
 
