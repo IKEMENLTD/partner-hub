@@ -16,54 +16,76 @@ interface FAQItem {
 
 type GuideType = 'beginner' | 'quickstart' | 'advanced' | 'troubleshooting' | null;
 
+// カテゴリの表示順序を定義
+const categoryOrder = [
+  'プロジェクト管理',
+  'タスク管理',
+  'ファイル管理',
+  'パートナー管理',
+  '通知',
+  '設定',
+];
+
 const faqItems: FAQItem[] = [
+  // プロジェクト管理
   {
     id: '1',
-    question: 'タスクを作成するにはどうすればよいですか？',
-    answer: 'プロジェクト詳細ページの「タスク」タブに移動し、「+ タスクを追加」ボタンをクリックしてください。タスク名、担当者、期限などを入力して作成できます。',
-    category: 'タスク管理',
-  },
-  {
-    id: '2',
     question: 'プロジェクトメンバーを招待する方法は？',
     answer: 'プロジェクト詳細ページの「メンバー」タブから、「メンバーを追加」ボタンをクリックし、招待したいユーザーのメールアドレスを入力してください。',
     category: 'プロジェクト管理',
   },
   {
+    id: '2',
+    question: 'プロジェクトの進捗を確認するには？',
+    answer: 'プロジェクト詳細ページの「概要」タブでプロジェクト全体の進捗を確認できます。また、ダッシュボードでは担当プロジェクト一覧と進捗状況を一目で確認できます。',
+    category: 'プロジェクト管理',
+  },
+  // タスク管理
+  {
     id: '3',
+    question: 'タスクを作成するにはどうすればよいですか？',
+    answer: 'プロジェクト詳細ページの「タスク」タブに移動し、「+ タスクを追加」ボタンをクリックしてください。タスク名、担当者、期限などを入力して作成できます。',
+    category: 'タスク管理',
+  },
+  {
+    id: '4',
+    question: 'タスクの進捗状況を更新するには？',
+    answer: 'タスク一覧からタスクをクリックして詳細を開き、ステータスを「未着手」「進行中」「完了」などに変更できます。',
+    category: 'タスク管理',
+  },
+  // ファイル管理
+  {
+    id: '5',
+    question: 'ファイルをアップロードするにはどうすればよいですか？',
+    answer: 'プロジェクト詳細ページの「ファイル」タブに移動し、「ファイルをアップロード」ボタンをクリックするか、ファイルをドラッグ&ドロップしてください。',
+    category: 'ファイル管理',
+  },
+  // パートナー管理
+  {
+    id: '6',
+    question: 'パートナー企業を登録するには？',
+    answer: 'パートナー管理ページから「パートナーを追加」ボタンをクリックし、企業情報を入力して登録してください。',
+    category: 'パートナー管理',
+  },
+  // 通知
+  {
+    id: '7',
+    question: 'ダイジェストメールとは何ですか？',
+    answer: 'ダイジェストメールは、毎日のタスクサマリー、期限超過タスク、未読通知などをまとめてお知らせするメールです。設定ページで配信時刻を設定できます。',
+    category: '通知',
+  },
+  // 設定
+  {
+    id: '8',
     question: '通知設定を変更するには？',
     answer: '設定ページの「通知設定」セクションから、メール通知やプッシュ通知のオン/オフを切り替えることができます。',
     category: '設定',
   },
   {
-    id: '4',
-    question: 'ファイルをアップロードするにはどうすればよいですか？',
-    answer: 'プロジェクト詳細ページの「ファイル」タブに移動し、「ファイルをアップロード」ボタンをクリックするか、ファイルをドラッグ&ドロップしてください。',
-    category: 'ファイル管理',
-  },
-  {
-    id: '5',
-    question: 'タスクの進捗状況を更新するには？',
-    answer: 'タスク一覧からタスクをクリックして詳細を開き、ステータスを「未着手」「進行中」「完了」などに変更できます。',
-    category: 'タスク管理',
-  },
-  {
-    id: '6',
+    id: '9',
     question: 'ダークモードを有効にするには？',
     answer: '設定ページの「表示設定」セクションで「ダークモード」をオンにしてください。',
     category: '設定',
-  },
-  {
-    id: '7',
-    question: 'パートナー企業を登録するには？',
-    answer: 'パートナー管理ページから「パートナーを追加」ボタンをクリックし、企業情報を入力して登録してください。',
-    category: 'パートナー管理',
-  },
-  {
-    id: '8',
-    question: 'ダイジェストメールとは何ですか？',
-    answer: 'ダイジェストメールは、毎日のタスクサマリー、期限超過タスク、未読通知などをまとめてお知らせするメールです。設定ページで配信時刻を設定できます。',
-    category: '通知',
   },
 ];
 
@@ -313,42 +335,83 @@ export function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProps) {
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
             よくある質問
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {filteredFAQs.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                 該当する質問が見つかりませんでした
               </p>
-            ) : (
-              filteredFAQs.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden"
-                >
-                  <button
-                    onClick={() => toggleExpand(item.id)}
-                    className="flex w-full items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-slate-700"
+            ) : searchQuery ? (
+              // 検索時はフラットに表示
+              <div className="space-y-2">
+                {filteredFAQs.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
-                        {item.category}
-                      </span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {item.question}
-                      </span>
-                    </div>
-                    {expandedId === item.id ? (
-                      <ChevronUp className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <button
+                      onClick={() => toggleExpand(item.id)}
+                      className="flex w-full items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-slate-700"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                          {item.category}
+                        </span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {item.question}
+                        </span>
+                      </div>
+                      {expandedId === item.id ? (
+                        <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      )}
+                    </button>
+                    {expandedId === item.id && (
+                      <div className="border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-4 py-3">
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{item.answer}</p>
+                      </div>
                     )}
-                  </button>
-                  {expandedId === item.id && (
-                    <div className="border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-4 py-3">
-                      <p className="text-sm text-gray-600 dark:text-gray-300">{item.answer}</p>
-                    </div>
-                  )}
-                </div>
-              ))
+                  </div>
+                ))}
+              </div>
+            ) : (
+              // 通常時はカテゴリ別にグループ化
+              categoryOrder.map((category) => {
+                const categoryFAQs = filteredFAQs.filter((item) => item.category === category);
+                if (categoryFAQs.length === 0) return null;
+                return (
+                  <div key={category} className="space-y-2">
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-1">
+                      {category}
+                    </h4>
+                    {categoryFAQs.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden"
+                      >
+                        <button
+                          onClick={() => toggleExpand(item.id)}
+                          className="flex w-full items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-slate-700"
+                        >
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {item.question}
+                          </span>
+                          {expandedId === item.id ? (
+                            <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          )}
+                        </button>
+                        {expandedId === item.id && (
+                          <div className="border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-4 py-3">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">{item.answer}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

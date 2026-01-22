@@ -221,12 +221,17 @@ export function SettingsPage() {
                 onChange={(e) => setLanguage(e.target.value)}
                 options={[
                   { value: 'ja', label: '日本語' },
-                  { value: 'en', label: 'English' },
+                  { value: 'en', label: 'English（未実装）', disabled: true },
                 ]}
               />
               <p className="text-sm text-gray-500">
-                アプリケーションの表示言語を選択します。変更は次回ログイン時に適用されます。
+                アプリケーションの表示言語を選択します。
               </p>
+              <div className="rounded-lg bg-amber-50 p-3">
+                <p className="text-xs text-amber-700">
+                  英語版は現在開発中です。対応次第、選択可能になります。
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -369,15 +374,10 @@ export function SettingsPage() {
                     onChange={(e) =>
                       handleSettingChange('digestTime', e.target.value as DigestTime)
                     }
-                    options={[
-                      { value: '06:00', label: '6:00' },
-                      { value: '07:00', label: '7:00' },
-                      { value: '08:00', label: '8:00' },
-                      { value: '09:00', label: '9:00' },
-                      { value: '10:00', label: '10:00' },
-                      { value: '11:00', label: '11:00' },
-                      { value: '12:00', label: '12:00' },
-                    ]}
+                    options={Array.from({ length: 24 }, (_, i) => ({
+                      value: `${String(i).padStart(2, '0')}:00`,
+                      label: `${i}:00`,
+                    }))}
                     disabled={isLoadingSettings}
                   />
                 </div>
@@ -421,11 +421,6 @@ export function SettingsPage() {
 
               {/* リマインド上限のスライダー表示 */}
               <div className="space-y-2">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>1回</span>
-                  <span>5回</span>
-                  <span>10回</span>
-                </div>
                 <input
                   type="range"
                   min="1"
@@ -437,6 +432,13 @@ export function SettingsPage() {
                   disabled={isLoadingSettings}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
+                {/* 目盛りラベル - スライダーの値(1-10)に正確に対応 */}
+                {/* 1=0%, 5=44.44% ((5-1)/(10-1)), 10=100% */}
+                <div className="relative w-full h-4 text-xs text-gray-500">
+                  <span className="absolute left-0 -translate-x-0">1回</span>
+                  <span className="absolute -translate-x-1/2" style={{ left: '44.44%' }}>5回</span>
+                  <span className="absolute right-0 translate-x-0">10回</span>
+                </div>
                 <p className="text-center text-sm font-medium text-primary-600">
                   現在の設定: {localSettings.reminderMaxCount}回
                 </p>

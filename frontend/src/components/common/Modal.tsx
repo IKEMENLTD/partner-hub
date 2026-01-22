@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type ReactNode, useEffect } from 'react';
 import clsx from 'clsx';
 import { X } from 'lucide-react';
 
@@ -26,6 +26,17 @@ export function Modal({
   size = 'md',
   className,
 }: ModalProps) {
+  // モーダル表示時に背景スクロールを禁止
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
