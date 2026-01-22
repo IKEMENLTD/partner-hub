@@ -382,16 +382,7 @@ export function MyTodayPage() {
             ) : (
               <div className="space-y-3">
                 {waitingForOthersTasks.slice(0, 5).map((task) => (
-                  <div key={task.id} className="relative">
-                    <TaskCard task={task} compact />
-                    <div className="absolute top-2 right-2">
-                      {task.dueDate && (
-                        <span className="text-xs text-gray-500">
-                          期限: {format(new Date(task.dueDate), 'M/d', { locale: ja })}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  <TaskCard key={task.id} task={task} compact />
                 ))}
               </div>
             )}

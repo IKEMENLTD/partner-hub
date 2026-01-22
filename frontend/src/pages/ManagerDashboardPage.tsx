@@ -10,7 +10,6 @@ import {
   FileText,
   FileDown,
   Calendar,
-  Settings,
 } from 'lucide-react';
 import { useDashboardStats, useProjects, usePartners } from '@/hooks';
 import {
@@ -473,13 +472,9 @@ export function ManagerDashboardPage() {
                   レポートを自動生成してメールで配信できます
                 </p>
               </div>
-              <Link
-                to="/settings/reports"
-                className="flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
-              >
-                <Settings className="h-4 w-4" />
-                設定
-              </Link>
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
+                開発中
+              </span>
             </div>
           </div>
 
