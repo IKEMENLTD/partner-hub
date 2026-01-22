@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, X } from 'lucide-react';
-import { useCreateProject, usePartners } from '@/hooks';
+import { useCreateProject, useUpdateProject, useProject, usePartners } from '@/hooks';
 import type { ProjectInput, ProjectStatus, Priority } from '@/types';
 import {
   Button,
@@ -13,6 +13,7 @@ import {
   CardContent,
   CardFooter,
   Alert,
+  PageLoading,
 } from '@/components/common';
 
 const STATUS_OPTIONS = [
@@ -38,8 +39,16 @@ interface FormErrors {
 
 export function ProjectCreatePage() {
   const navigate = useNavigate();
-  const { mutate: createProject, isPending, error } = useCreateProject();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = !!id;
+
+  const { data: projectData, isLoading: isLoadingProject } = useProject(id);
+  const { mutate: createProject, isPending: isCreating, error: createError } = useCreateProject();
+  const { mutate: updateProject, isPending: isUpdating, error: updateError } = useUpdateProject();
   const { data: partnersData } = usePartners({ pageSize: 100 });
+
+  const isPending = isCreating || isUpdating;
+  const error = createError || updateError;
 
   const [formData, setFormData] = useState<ProjectInput>({
     name: '',
@@ -55,6 +64,27 @@ export function ProjectCreatePage() {
 
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Load existing project data when editing
+  useEffect(() => {
+    if (isEditMode && projectData) {
+      setFormData({
+        name: projectData.name,
+        description: projectData.description || '',
+        status: projectData.status,
+        priority: projectData.priority,
+        projectType: projectData.projectType,
+        companyRole: projectData.companyRole,
+        startDate: projectData.startDate?.split('T')[0] || '',
+        endDate: projectData.endDate?.split('T')[0],
+        budget: projectData.budget,
+        ownerId: projectData.ownerId,
+        managerId: projectData.managerId,
+        partnerIds: projectData.partners?.map((p: any) => p.id) || [],
+        tags: Array.isArray(projectData.tags) ? projectData.tags : [],
+      });
+    }
+  }, [isEditMode, projectData]);
 
   const partners = partnersData?.data || [];
   const partnerOptions = [
@@ -85,16 +115,24 @@ export function ProjectCreatePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!validateForm()) {
-      return;
+    if (isEditMode && id) {
+      updateProject(
+        { id, data: formData },
+        {
+          onSuccess: (response) => {
+            navigate(`/projects/${response.id}`);
+          },
+        }
+      );
+    } else {
+      createProject(formData, {
+        onSuccess: (response) => {
+          navigate(`/projects/${response.id}`);
+        },
+      });
     }
-
-    createProject(formData, {
-      onSuccess: (response) => {
-        navigate(`/projects/${response.id}`);
-      },
-    });
   };
 
   const handleChange = (
@@ -130,6 +168,10 @@ export function ProjectCreatePage() {
     }
   };
 
+  if (isEditMode && isLoadingProject) {
+    return <PageLoading />;
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
@@ -142,14 +184,20 @@ export function ProjectCreatePage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">新規案件作成</h1>
-          <p className="text-gray-600">案件の基本情報を入力してください</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEditMode ? '案件編集' : '新規案件作成'}
+          </h1>
+          <p className="text-gray-600">
+            {isEditMode ? '案件の情報を更新してください' : '案件の基本情報を入力してください'}
+          </p>
         </div>
       </div>
 
       {error && (
         <Alert variant="error">
-          案件の作成に失敗しました。入力内容を確認してください。
+          {isEditMode
+            ? '案件の更新に失敗しました。入力内容を確認してください。'
+            : '案件の作成に失敗しました。入力内容を確認してください。'}
         </Alert>
       )}
 
@@ -309,7 +357,7 @@ export function ProjectCreatePage() {
               isLoading={isPending}
               leftIcon={<Save className="h-4 w-4" />}
             >
-              作成
+              {isEditMode ? '更新' : '作成'}
             </Button>
           </CardFooter>
         </Card>
