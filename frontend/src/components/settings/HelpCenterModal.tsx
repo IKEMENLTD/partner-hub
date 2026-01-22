@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Search, BookOpen, HelpCircle, Zap, Settings, ArrowLeft } from 'lucide-react';
-import { Modal, Button, Input } from '@/components/common';
+import { Modal, Input } from '@/components/common';
 
 interface HelpCenterModalProps {
   isOpen: boolean;
@@ -199,6 +199,15 @@ export function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedGuide, setSelectedGuide] = useState<GuideType>(null);
 
+  // モーダルが開かれたときに状態をリセット
+  useEffect(() => {
+    if (isOpen) {
+      setSearchQuery('');
+      setExpandedId(null);
+      setSelectedGuide(null);
+    }
+  }, [isOpen]);
+
   const filteredFAQs = faqItems.filter(
     (item) =>
       item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -251,15 +260,6 @@ export function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProps) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-6 flex justify-between">
-          <Button variant="outline" onClick={handleBackToMain}>
-            戻る
-          </Button>
-          <Button variant="outline" onClick={onClose}>
-            閉じる
-          </Button>
-        </div>
       </Modal>
     );
   }
@@ -352,13 +352,6 @@ export function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProps) {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-6 flex justify-end">
-        <Button variant="outline" onClick={onClose}>
-          閉じる
-        </Button>
       </div>
     </Modal>
   );

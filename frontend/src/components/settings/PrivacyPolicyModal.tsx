@@ -1,4 +1,4 @@
-import { Modal, Button } from '@/components/common';
+import { Modal } from '@/components/common';
 
 interface PrivacyPolicyModalProps {
   isOpen: boolean;
@@ -206,13 +206,6 @@ export function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyModalProps)
             </div>
           </div>
         </section>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-6 flex justify-end border-t border-gray-200 dark:border-slate-700 pt-4">
-        <Button variant="outline" onClick={onClose}>
-          閉じる
-        </Button>
       </div>
     </Modal>
   );
