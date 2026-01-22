@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS "notification_settings" (
   "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
   CONSTRAINT "PK_notification_settings" PRIMARY KEY ("id"),
   CONSTRAINT "UQ_notification_settings_user_id" UNIQUE ("user_id"),
-  CONSTRAINT "FK_notification_settings_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE
+  CONSTRAINT "FK_notification_settings_user" FOREIGN KEY ("user_id") REFERENCES "profiles"("id") ON DELETE CASCADE
 );
 
 -- Create notification_channels table
@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS "notification_channels" (
   "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
   CONSTRAINT "PK_notification_channels" PRIMARY KEY ("id"),
   CONSTRAINT "FK_notification_channels_project" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE,
-  CONSTRAINT "FK_notification_channels_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL,
-  CONSTRAINT "FK_notification_channels_created_by" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL
+  CONSTRAINT "FK_notification_channels_user" FOREIGN KEY ("user_id") REFERENCES "profiles"("id") ON DELETE SET NULL,
+  CONSTRAINT "FK_notification_channels_created_by" FOREIGN KEY ("created_by") REFERENCES "profiles"("id") ON DELETE SET NULL
 );
 
 -- Create notification_logs table
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS "notification_logs" (
   "metadata" jsonb,
   "created_at" TIMESTAMP NOT NULL DEFAULT now(),
   CONSTRAINT "PK_notification_logs" PRIMARY KEY ("id"),
-  CONSTRAINT "FK_notification_logs_recipient" FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE SET NULL,
+  CONSTRAINT "FK_notification_logs_recipient" FOREIGN KEY ("recipient_id") REFERENCES "profiles"("id") ON DELETE SET NULL,
   CONSTRAINT "FK_notification_logs_channel" FOREIGN KEY ("channel_id") REFERENCES "notification_channels"("id") ON DELETE SET NULL
 );
 
