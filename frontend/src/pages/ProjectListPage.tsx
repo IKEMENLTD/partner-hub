@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   List,
   LayoutGrid,
@@ -52,6 +52,7 @@ const VIEW_OPTIONS: { value: ViewType; icon: typeof List; label: string }[] = [
 
 export function ProjectListPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { projectListView, setProjectListView } = useUIStore();
 
   const [page, setPage] = useState(1);
@@ -60,6 +61,15 @@ export function ProjectListPage() {
   const [sortField, setSortField] = useState<string>('startDate');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [showFilters, setShowFilters] = useState(false);
+
+  // URLからpartnerIdを取得してフィルターに適用
+  const partnerIdFromUrl = searchParams.get('partnerId');
+
+  useEffect(() => {
+    if (partnerIdFromUrl) {
+      setFilters((prev) => ({ ...prev, partnerId: partnerIdFromUrl }));
+    }
+  }, [partnerIdFromUrl]);
 
   const { data, isLoading, error, refetch } = useProjects({
     page,
