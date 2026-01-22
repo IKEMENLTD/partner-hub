@@ -44,10 +44,16 @@ export class ProjectService {
     createProjectDto: CreateProjectDto,
     createdById: string,
   ): Promise<Project> {
-    const { partnerIds, ...projectData } = createProjectDto;
+    const { partnerIds, tags, ...projectData } = createProjectDto;
+
+    // Handle tags - convert empty string or invalid values to null
+    const sanitizedTags = Array.isArray(tags) && tags.length > 0
+      ? tags.filter(t => t && typeof t === 'string' && t.trim() !== '')
+      : null;
 
     const project = this.projectRepository.create({
       ...projectData,
+      tags: sanitizedTags,
       createdById,
       // ownerId が指定されていない場合は createdById を使用
       ownerId: projectData.ownerId || createdById,
