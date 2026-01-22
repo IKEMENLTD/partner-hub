@@ -3,7 +3,6 @@ import {
   Get,
   Patch,
   Body,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -11,7 +10,6 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import { NotificationSettingsService } from './services/notification-settings.service';
 import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -19,7 +17,6 @@ import { ApiResponseDto } from '../../common/dto/api-response.dto';
 
 @ApiTags('Notification Settings')
 @Controller('users/me/notification-settings')
-@UseGuards(AuthGuard('supabase-jwt'))
 @ApiBearerAuth()
 export class NotificationSettingsController {
   constructor(

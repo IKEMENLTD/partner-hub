@@ -17,7 +17,6 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserProfile } from './entities/user-profile.entity';
@@ -33,10 +32,10 @@ import { UserRole } from './enums/user-role.enum';
  * これらはフロントエンドからSupabase Authに直接リクエストされる。
  *
  * このコントローラーはプロファイル管理のみを担当。
+ * 認証はグローバルSupabaseAuthGuardで処理される。
  */
 @ApiTags('Auth')
 @Controller('auth')
-@UseGuards(AuthGuard('supabase-jwt'))
 @ApiBearerAuth()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
