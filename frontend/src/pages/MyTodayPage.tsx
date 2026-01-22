@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { getUserDisplayName } from '@/types';
-import { useTodayStats, useMarkAlertAsRead, useMarkAllAlertsAsRead } from '@/hooks';
+import { useTodayStats } from '@/hooks';
 import { useRecentProjects } from '@/hooks/useRecentProjects';
 import {
   Card,
@@ -28,13 +28,11 @@ import {
   EmptyState,
   Badge,
 } from '@/components/common';
-import { TaskCard, AlertList } from '@/components/dashboard';
+import { TaskCard } from '@/components/dashboard';
 
 export function MyTodayPage() {
   const { user } = useAuthStore();
   const { data, isLoading, error, refetch } = useTodayStats();
-  const { mutate: markAsRead } = useMarkAlertAsRead();
-  const { mutate: markAllAsRead } = useMarkAllAlertsAsRead();
 
   // Fetch recent projects from localStorage
   const { projects: recentProjects, isLoading: isLoadingProjects } = useRecentProjects();
@@ -57,7 +55,6 @@ export function MyTodayPage() {
 
   const tasksForToday = todayStats?.tasksForToday || [];
   const upcomingDeadlines = todayStats?.upcomingDeadlines || [];
-  const recentAlerts = todayStats?.recentAlerts || [];
 
   const completedTodayCount = tasksForToday.filter(
     (t) => t.status === 'completed'
@@ -87,7 +84,9 @@ export function MyTodayPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            おはようございます、{getUserDisplayName(user)}さん
+            {getUserDisplayName(user)
+              ? `おはようございます、${getUserDisplayName(user)}さん`
+              : 'おはようございます'}
           </h1>
           <p className="mt-1 text-gray-600">
             {format(today, 'yyyy年M月d日 (EEEE)', { locale: ja })}
@@ -294,33 +293,6 @@ export function MyTodayPage() {
           </Card>
         </div>
 
-        {/* Notifications Sidebar */}
-        <div>
-          <Card padding="none">
-            <CardHeader
-              className="px-6 pt-6"
-              action={
-                <Link
-                  to="/notifications"
-                  className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
-                >
-                  すべて表示
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              }
-            >
-              通知
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              <AlertList
-                alerts={recentAlerts}
-                onMarkAsRead={(id) => markAsRead(id)}
-                onMarkAllAsRead={() => markAllAsRead()}
-                showMarkAll
-              />
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Additional Sections */}

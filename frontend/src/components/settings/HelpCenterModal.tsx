@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Search, BookOpen, HelpCircle, Zap, Settings, ArrowLeft } from 'lucide-react';
-import { Modal, Input } from '@/components/common';
+import { ChevronDown, ChevronUp, BookOpen, HelpCircle, Zap, Settings, ArrowLeft } from 'lucide-react';
+import { Modal } from '@/components/common';
 
 interface HelpCenterModalProps {
   isOpen: boolean;
@@ -217,25 +217,16 @@ const guideItems = [
 ];
 
 export function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProps) {
-  const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedGuide, setSelectedGuide] = useState<GuideType>(null);
 
   // モーダルが開かれたときに状態をリセット
   useEffect(() => {
     if (isOpen) {
-      setSearchQuery('');
       setExpandedId(null);
       setSelectedGuide(null);
     }
   }, [isOpen]);
-
-  const filteredFAQs = faqItems.filter(
-    (item) =>
-      item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -290,45 +281,31 @@ export function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="ヘルプセンター" size="lg">
       <div className="space-y-6 max-h-[70vh] overflow-y-auto">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="質問を検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
         {/* Quick Guides */}
-        {!searchQuery && (
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              使い方ガイド
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {guideItems.map((guide) => (
-                <button
-                  key={guide.title}
-                  onClick={() => handleGuideClick(guide.key)}
-                  className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors group"
-                >
-                  <guide.icon className="h-5 w-5 text-primary-500 mt-0.5 group-hover:text-primary-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">
-                      {guide.title}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {guide.description}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+            使い方ガイド
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {guideItems.map((guide) => (
+              <button
+                key={guide.title}
+                onClick={() => handleGuideClick(guide.key)}
+                className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors group"
+              >
+                <guide.icon className="h-5 w-5 text-primary-500 mt-0.5 group-hover:text-primary-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                    {guide.title}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {guide.description}
+                  </p>
+                </div>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* FAQ */}
         <div>
@@ -336,83 +313,42 @@ export function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProps) {
             よくある質問
           </h3>
           <div className="space-y-4">
-            {filteredFAQs.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                該当する質問が見つかりませんでした
-              </p>
-            ) : searchQuery ? (
-              // 検索時はフラットに表示
-              <div className="space-y-2">
-                {filteredFAQs.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden"
-                  >
-                    <button
-                      onClick={() => toggleExpand(item.id)}
-                      className="flex w-full items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-slate-700"
+            {categoryOrder.map((category) => {
+              const categoryFAQs = faqItems.filter((item) => item.category === category);
+              if (categoryFAQs.length === 0) return null;
+              return (
+                <div key={category} className="space-y-2">
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-1">
+                    {category}
+                  </h4>
+                  {categoryFAQs.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
-                          {item.category}
-                        </span>
+                      <button
+                        onClick={() => toggleExpand(item.id)}
+                        className="flex w-full items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-slate-700"
+                      >
                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {item.question}
                         </span>
-                      </div>
-                      {expandedId === item.id ? (
-                        <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      )}
-                    </button>
-                    {expandedId === item.id && (
-                      <div className="border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-4 py-3">
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{item.answer}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              // 通常時はカテゴリ別にグループ化
-              categoryOrder.map((category) => {
-                const categoryFAQs = filteredFAQs.filter((item) => item.category === category);
-                if (categoryFAQs.length === 0) return null;
-                return (
-                  <div key={category} className="space-y-2">
-                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-1">
-                      {category}
-                    </h4>
-                    {categoryFAQs.map((item) => (
-                      <div
-                        key={item.id}
-                        className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden"
-                      >
-                        <button
-                          onClick={() => toggleExpand(item.id)}
-                          className="flex w-full items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-slate-700"
-                        >
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {item.question}
-                          </span>
-                          {expandedId === item.id ? (
-                            <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          )}
-                        </button>
-                        {expandedId === item.id && (
-                          <div className="border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-4 py-3">
-                            <p className="text-sm text-gray-600 dark:text-gray-300">{item.answer}</p>
-                          </div>
+                        {expandedId === item.id ? (
+                          <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
                         )}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })
-            )}
+                      </button>
+                      {expandedId === item.id && (
+                        <div className="border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-4 py-3">
+                          <p className="text-sm text-gray-600 dark:text-gray-300">{item.answer}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
