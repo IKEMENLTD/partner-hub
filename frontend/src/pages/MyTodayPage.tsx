@@ -76,7 +76,7 @@ export function MyTodayPage() {
 
   // Pending action tasks (tasks waiting for user's action)
   const pendingActionTasks = tasksForToday.filter(
-    (t) => t.status === 'pending' || t.status === 'in_review'
+    (t) => t.status === 'todo' || t.status === 'in_review'
   );
 
   return (
