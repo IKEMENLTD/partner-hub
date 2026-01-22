@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject, forwardRef, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThan, In, Not } from 'typeorm';
 import { Project } from '../project/entities/project.entity';
@@ -10,7 +10,7 @@ import { ProjectStatus } from '../project/enums/project-status.enum';
 import { TaskStatus } from '../task/enums/task-status.enum';
 import { PartnerStatus } from '../partner/enums/partner-status.enum';
 import { ReminderStatus } from '../reminder/enums/reminder-type.enum';
-import { DashboardQueryDto } from './dto';
+import { DashboardQueryDto, GenerateReportDto, ReportType, ReportFormat, ReportGenerationResult } from './dto';
 import { HealthScoreService } from '../project/services/health-score.service';
 
 export interface DashboardOverview {
@@ -1003,5 +1003,335 @@ export class DashboardService {
         (new Date(t.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       ),
     }));
+  }
+
+  /**
+   * Generate dashboard report
+   * Supports weekly, monthly, and custom date range reports
+   * Output formats: PDF, Excel, CSV
+   */
+  async generateReport(dto: GenerateReportDto): Promise<ReportGenerationResult> {
+    this.logger.log(`Generating ${dto.reportType} report in ${dto.format} format`);
+
+    // Calculate date range based on report type
+    const { startDate, endDate } = this.calculateDateRange(dto);
+
+    // Gather report data
+    const reportData = await this.gatherReportData(startDate, endDate);
+
+    // Generate file based on format
+    const { fileName, fileContent, mimeType } = await this.generateReportFile(
+      reportData,
+      dto.reportType,
+      dto.format,
+      startDate,
+      endDate,
+    );
+
+    return {
+      success: true,
+      fileName,
+      fileContent,
+      mimeType,
+    };
+  }
+
+  /**
+   * Calculate date range based on report type
+   */
+  private calculateDateRange(dto: GenerateReportDto): { startDate: Date; endDate: Date } {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    let startDate: Date;
+    let endDate: Date = today;
+
+    switch (dto.reportType) {
+      case ReportType.WEEKLY:
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+
+      case ReportType.MONTHLY:
+        startDate = new Date(today);
+        startDate.setMonth(today.getMonth() - 1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+
+      case ReportType.CUSTOM:
+        if (!dto.startDate || !dto.endDate) {
+          throw new BadRequestException(
+            'カスタムレポートには開始日と終了日が必要です',
+          );
+        }
+        startDate = new Date(dto.startDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(dto.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+
+      default:
+        throw new BadRequestException('無効なレポートタイプです');
+    }
+
+    return { startDate, endDate };
+  }
+
+  /**
+   * Gather all data needed for the report
+   */
+  private async gatherReportData(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{
+    overview: DashboardOverview;
+    projectSummaries: ProjectSummary[];
+    partnerPerformance: PartnerPerformance[];
+    taskDistribution: any;
+    overdueItems: any;
+    periodStart: string;
+    periodEnd: string;
+  }> {
+    const [overview, projectSummaries, partnerPerformance, taskDistribution, overdueItems] =
+      await Promise.all([
+        this.getOverview(),
+        this.getProjectSummaries(20),
+        this.getPartnerPerformance(20),
+        this.getTaskDistribution(),
+        this.getOverdueItems(),
+      ]);
+
+    return {
+      overview,
+      projectSummaries,
+      partnerPerformance,
+      taskDistribution,
+      overdueItems,
+      periodStart: startDate.toISOString().split('T')[0],
+      periodEnd: endDate.toISOString().split('T')[0],
+    };
+  }
+
+  /**
+   * Generate report file in the specified format
+   */
+  private async generateReportFile(
+    data: any,
+    reportType: ReportType,
+    format: ReportFormat,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{ fileName: string; fileContent: Buffer; mimeType: string }> {
+    const reportTypeName =
+      reportType === ReportType.WEEKLY
+        ? '週次'
+        : reportType === ReportType.MONTHLY
+        ? '月次'
+        : 'カスタム';
+
+    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const baseFileName = `ダッシュボード${reportTypeName}レポート_${dateStr}`;
+
+    switch (format) {
+      case ReportFormat.CSV:
+        return this.generateCsvReport(data, baseFileName);
+
+      case ReportFormat.EXCEL:
+        return this.generateExcelReport(data, baseFileName);
+
+      case ReportFormat.PDF:
+      default:
+        return this.generatePdfReport(data, baseFileName, reportTypeName, startDate, endDate);
+    }
+  }
+
+  /**
+   * Generate CSV report
+   */
+  private generateCsvReport(
+    data: any,
+    baseFileName: string,
+  ): { fileName: string; fileContent: Buffer; mimeType: string } {
+    const lines: string[] = [];
+
+    // BOM for Excel compatibility
+    const bom = '\uFEFF';
+
+    // Overview section
+    lines.push('=== ダッシュボード概要 ===');
+    lines.push(`期間,${data.periodStart},${data.periodEnd}`);
+    lines.push('');
+    lines.push('項目,値');
+    lines.push(`総案件数,${data.overview.totalProjects}`);
+    lines.push(`進行中案件,${data.overview.activeProjects}`);
+    lines.push(`完了案件,${data.overview.completedProjects}`);
+    lines.push(`総タスク数,${data.overview.totalTasks}`);
+    lines.push(`完了タスク,${data.overview.completedTasks}`);
+    lines.push(`未完了タスク,${data.overview.pendingTasks}`);
+    lines.push(`期限超過タスク,${data.overview.overdueTasks}`);
+    lines.push(`総パートナー数,${data.overview.totalPartners}`);
+    lines.push(`アクティブパートナー,${data.overview.activePartners}`);
+    lines.push('');
+
+    // Project summaries
+    lines.push('=== 案件サマリー ===');
+    lines.push('案件名,ステータス,進捗率,終了日,タスク数,完了タスク,期限超過タスク');
+    for (const project of data.projectSummaries) {
+      lines.push(
+        `"${project.name}",${project.status},${project.progress}%,${
+          project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '-'
+        },${project.tasksCount},${project.completedTasksCount},${project.overdueTasksCount}`,
+      );
+    }
+    lines.push('');
+
+    // Partner performance
+    lines.push('=== パートナーパフォーマンス ===');
+    lines.push('パートナー名,評価,総案件数,完了案件,アクティブタスク,完了タスク');
+    for (const partner of data.partnerPerformance) {
+      lines.push(
+        `"${partner.name}",${partner.rating},${partner.totalProjects},${partner.completedProjects},${partner.activeTasks},${partner.completedTasks}`,
+      );
+    }
+    lines.push('');
+
+    // Task distribution
+    lines.push('=== タスク分布 ===');
+    lines.push('ステータス別:');
+    for (const [status, count] of Object.entries(data.taskDistribution.byStatus)) {
+      lines.push(`${status},${count}`);
+    }
+    lines.push('');
+    lines.push('優先度別:');
+    for (const [priority, count] of Object.entries(data.taskDistribution.byPriority)) {
+      lines.push(`${priority},${count}`);
+    }
+
+    const csvContent = bom + lines.join('\n');
+
+    return {
+      fileName: `${baseFileName}.csv`,
+      fileContent: Buffer.from(csvContent, 'utf-8'),
+      mimeType: 'text/csv; charset=utf-8',
+    };
+  }
+
+  /**
+   * Generate Excel report (simplified as CSV with .xlsx extension for now)
+   * In production, use a library like exceljs
+   */
+  private generateExcelReport(
+    data: any,
+    baseFileName: string,
+  ): { fileName: string; fileContent: Buffer; mimeType: string } {
+    // For simplicity, generate CSV format that Excel can open
+    // In production, use exceljs or similar library
+    const csvResult = this.generateCsvReport(data, baseFileName);
+
+    return {
+      fileName: `${baseFileName}.xlsx`,
+      fileContent: csvResult.fileContent,
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+  }
+
+  /**
+   * Generate PDF report (simplified as text for now)
+   * In production, use a library like pdfkit or puppeteer
+   */
+  private generatePdfReport(
+    data: any,
+    baseFileName: string,
+    reportTypeName: string,
+    startDate: Date,
+    endDate: Date,
+  ): { fileName: string; fileContent: Buffer; mimeType: string } {
+    // For simplicity, generate a text-based report
+    // In production, use pdfkit, puppeteer, or similar library
+    const lines: string[] = [];
+
+    lines.push('=====================================');
+    lines.push(`    ダッシュボード${reportTypeName}レポート`);
+    lines.push('=====================================');
+    lines.push('');
+    lines.push(`期間: ${data.periodStart} 〜 ${data.periodEnd}`);
+    lines.push(`生成日時: ${new Date().toLocaleString('ja-JP')}`);
+    lines.push('');
+    lines.push('-------------------------------------');
+    lines.push('  概要');
+    lines.push('-------------------------------------');
+    lines.push(`  総案件数:           ${data.overview.totalProjects}`);
+    lines.push(`  進行中案件:         ${data.overview.activeProjects}`);
+    lines.push(`  完了案件:           ${data.overview.completedProjects}`);
+    lines.push(`  総タスク数:         ${data.overview.totalTasks}`);
+    lines.push(`  完了タスク:         ${data.overview.completedTasks}`);
+    lines.push(`  未完了タスク:       ${data.overview.pendingTasks}`);
+    lines.push(`  期限超過タスク:     ${data.overview.overdueTasks}`);
+    lines.push(`  総パートナー数:     ${data.overview.totalPartners}`);
+    lines.push(`  アクティブパートナー: ${data.overview.activePartners}`);
+    lines.push('');
+
+    // Completion rates
+    const projectCompletionRate = data.overview.totalProjects > 0
+      ? Math.round((data.overview.completedProjects / data.overview.totalProjects) * 100)
+      : 0;
+    const taskCompletionRate = data.overview.totalTasks > 0
+      ? Math.round((data.overview.completedTasks / data.overview.totalTasks) * 100)
+      : 0;
+
+    lines.push('-------------------------------------');
+    lines.push('  完了率');
+    lines.push('-------------------------------------');
+    lines.push(`  案件完了率:         ${projectCompletionRate}%`);
+    lines.push(`  タスク完了率:       ${taskCompletionRate}%`);
+    lines.push('');
+
+    lines.push('-------------------------------------');
+    lines.push('  案件サマリー (上位10件)');
+    lines.push('-------------------------------------');
+    const topProjects = data.projectSummaries.slice(0, 10);
+    for (const project of topProjects) {
+      lines.push(`  ${project.name}`);
+      lines.push(`    ステータス: ${project.status} | 進捗: ${project.progress}%`);
+      lines.push(`    タスク: ${project.completedTasksCount}/${project.tasksCount} 完了`);
+      if (project.overdueTasksCount > 0) {
+        lines.push(`    ※ 期限超過タスク: ${project.overdueTasksCount}件`);
+      }
+      lines.push('');
+    }
+
+    lines.push('-------------------------------------');
+    lines.push('  パートナーパフォーマンス (上位5名)');
+    lines.push('-------------------------------------');
+    const topPartners = data.partnerPerformance.slice(0, 5);
+    for (const partner of topPartners) {
+      lines.push(`  ${partner.name}`);
+      lines.push(`    評価: ${partner.rating} | 完了タスク: ${partner.completedTasks}`);
+      lines.push('');
+    }
+
+    if (data.overdueItems.tasks.length > 0) {
+      lines.push('-------------------------------------');
+      lines.push('  期限超過タスク一覧');
+      lines.push('-------------------------------------');
+      for (const task of data.overdueItems.tasks.slice(0, 10)) {
+        lines.push(`  - ${task.title}`);
+        lines.push(`    期限: ${task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '-'}`);
+      }
+      lines.push('');
+    }
+
+    lines.push('=====================================');
+    lines.push('         レポート終了');
+    lines.push('=====================================');
+
+    const pdfContent = lines.join('\n');
+
+    return {
+      fileName: `${baseFileName}.pdf`,
+      fileContent: Buffer.from(pdfContent, 'utf-8'),
+      mimeType: 'application/pdf',
+    };
   }
 }

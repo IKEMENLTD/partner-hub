@@ -35,6 +35,12 @@ interface TokenValidationResponse {
   valid: boolean;
 }
 
+interface UpdateProfileInput {
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
+}
+
 export const authService = {
   login: (credentials: LoginInput) =>
     api.post<ApiResponse<LoginResponse>>('/auth/login', credentials, true),
@@ -45,6 +51,9 @@ export const authService = {
   logout: () => api.post<void>('/auth/logout'),
 
   getCurrentUser: () => api.get<ApiResponse<User>>('/auth/me'),
+
+  updateProfile: (data: UpdateProfileInput) =>
+    api.patch<ApiResponse<User>>('/auth/me', data),
 
   refreshToken: (refreshToken: string) =>
     api.post<ApiResponse<AuthTokens>>('/auth/refresh', { refreshToken }, true),

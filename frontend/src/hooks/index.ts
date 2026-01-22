@@ -29,6 +29,7 @@ export {
   useAddComment,
   useAddSubtask,
   useToggleSubtask,
+  useProjectTasks,
 } from './useTasks';
 export {
   usePartners,

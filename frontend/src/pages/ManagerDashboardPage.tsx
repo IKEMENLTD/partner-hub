@@ -28,6 +28,7 @@ import {
   useToast,
 } from '@/components/common';
 import { ProjectCard } from '@/components/project';
+import { dashboardService, type ReportType, type ReportFormat } from '@/services/dashboardService';
 
 export function ManagerDashboardPage() {
   const { addToast } = useToast();
@@ -45,8 +46,8 @@ export function ManagerDashboardPage() {
 
   // Report generation state
   const [showReportModal, setShowReportModal] = useState(false);
-  const [reportType, setReportType] = useState('weekly');
-  const [reportFormat, setReportFormat] = useState('pdf');
+  const [reportType, setReportType] = useState<ReportType>('weekly');
+  const [reportFormat, setReportFormat] = useState<ReportFormat>('pdf');
   const [isGenerating, setIsGenerating] = useState(false);
 
   const isLoading = isLoadingStats || isLoadingProjects || isLoadingPartners;
@@ -79,24 +80,26 @@ export function ManagerDashboardPage() {
   const handleGenerateReport = async () => {
     setIsGenerating(true);
     try {
-      // Simulate report generation API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // In real implementation, this would call the backend API
-      // const response = await api.post('/reports/generate', { type: reportType, format: reportFormat });
-      // window.open(response.data.downloadUrl, '_blank');
+      // Call the backend API to generate and download the report
+      await dashboardService.downloadReport({
+        reportType,
+        format: reportFormat,
+      });
+
       const reportName = reportType === 'weekly' ? '週次' : reportType === 'monthly' ? '月次' : 'カスタム';
       addToast({
         type: 'success',
         title: 'レポートを生成しました',
-        message: `${reportName}レポート（${reportFormat.toUpperCase()}形式）のダウンロードが開始されます`,
+        message: `${reportName}レポート（${reportFormat.toUpperCase()}形式）のダウンロードが開始されました`,
       });
       setShowReportModal(false);
     } catch (error) {
       console.error('Report generation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'もう一度お試しください';
       addToast({
         type: 'error',
         title: 'レポート生成に失敗しました',
-        message: 'もう一度お試しください',
+        message: errorMessage,
       });
     } finally {
       setIsGenerating(false);
@@ -437,7 +440,7 @@ export function ManagerDashboardPage() {
           <Select
             label="レポート種類"
             value={reportType}
-            onChange={(e) => setReportType(e.target.value)}
+            onChange={(e) => setReportType(e.target.value as ReportType)}
             options={[
               { value: 'weekly', label: '週次レポート' },
               { value: 'monthly', label: '月次レポート' },
@@ -448,7 +451,7 @@ export function ManagerDashboardPage() {
           <Select
             label="出力形式"
             value={reportFormat}
-            onChange={(e) => setReportFormat(e.target.value)}
+            onChange={(e) => setReportFormat(e.target.value as ReportFormat)}
             options={[
               { value: 'pdf', label: 'PDF' },
               { value: 'excel', label: 'Excel' },

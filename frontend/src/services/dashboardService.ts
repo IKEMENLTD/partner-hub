@@ -1,5 +1,20 @@
 import { api, extractData } from './api';
 import type { DashboardStats, TodayStats, Alert } from '@/types';
+import { supabase } from '@/lib/supabase';
+
+export type ReportType = 'weekly' | 'monthly' | 'custom';
+export type ReportFormat = 'pdf' | 'excel' | 'csv';
+
+export interface GenerateReportParams {
+  reportType: ReportType;
+  format: ReportFormat;
+  startDate?: string;
+  endDate?: string;
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api/v1`
+  : '/api/v1';
 
 export const dashboardService = {
   getStats: async (): Promise<DashboardStats> => {
@@ -34,5 +49,79 @@ export const dashboardService = {
 
   markAllAlertsAsRead: async (): Promise<void> => {
     await api.patch<{ success: boolean; data: null }>('/dashboard/alerts/read-all');
+  },
+
+  /**
+   * Generate and download a dashboard report
+   * Returns the blob for client-side download handling
+   */
+  generateReport: async (params: GenerateReportParams): Promise<Blob> => {
+    // Build query string
+    const queryParams = new URLSearchParams({
+      reportType: params.reportType,
+      format: params.format,
+    });
+
+    if (params.startDate) {
+      queryParams.append('startDate', params.startDate);
+    }
+    if (params.endDate) {
+      queryParams.append('endDate', params.endDate);
+    }
+
+    // Get access token from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/dashboard/reports/generate?${queryParams.toString()}`,
+      {
+        method: 'GET',
+        headers,
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'レポートの生成に失敗しました');
+    }
+
+    return response.blob();
+  },
+
+  /**
+   * Download a report file
+   * Triggers browser download of the generated report
+   */
+  downloadReport: async (params: GenerateReportParams): Promise<string> => {
+    const blob = await dashboardService.generateReport(params);
+
+    // Extract filename from content-disposition or generate one
+    const reportTypeName =
+      params.reportType === 'weekly'
+        ? '週次'
+        : params.reportType === 'monthly'
+        ? '月次'
+        : 'カスタム';
+    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const extension = params.format === 'excel' ? 'xlsx' : params.format;
+    const fileName = `ダッシュボード${reportTypeName}レポート_${dateStr}.${extension}`;
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return fileName;
   },
 };

@@ -21,10 +21,15 @@ import {
   Input,
   Avatar,
   Badge,
+  useToast,
 } from '@/components/common';
+import { authService } from '@/services/authService';
+import { supabase } from '@/lib/supabase';
+import { ApiError } from '@/services/api';
 
 export function ProfilePage() {
   const { user, updateUser } = useAuthStore();
+  const { addToast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -54,11 +59,26 @@ export function ProfilePage() {
 
   const handleEditSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    updateUser({ firstName, lastName });
-    setIsSaving(false);
-    setIsEditing(false);
+    try {
+      const response = await authService.updateProfile({ firstName, lastName });
+      updateUser(response.data);
+      addToast({
+        type: 'success',
+        title: 'プロフィールを更新しました',
+      });
+      setIsEditing(false);
+    } catch (error) {
+      const message = error instanceof ApiError
+        ? error.message
+        : 'プロフィールの更新に失敗しました';
+      addToast({
+        type: 'error',
+        title: 'エラー',
+        message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePasswordChange = async () => {
@@ -75,13 +95,36 @@ export function ProfilePage() {
     }
 
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    setIsChangingPassword(false);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      // Supabase Authでパスワード変更
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      addToast({
+        type: 'success',
+        title: 'パスワードを変更しました',
+      });
+      setIsChangingPassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'パスワードの変更に失敗しました';
+      addToast({
+        type: 'error',
+        title: 'エラー',
+        message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getRoleLabel = (role: string | undefined) => {

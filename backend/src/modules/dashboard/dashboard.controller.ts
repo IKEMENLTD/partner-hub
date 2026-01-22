@@ -1,4 +1,5 @@
-import { Controller, Get, Patch, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Query, UseGuards, ParseIntPipe, Res, HttpStatus } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -7,7 +8,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
-import { DashboardQueryDto } from './dto';
+import { DashboardQueryDto, ReportType, ReportFormat } from './dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -139,5 +140,59 @@ export class DashboardController {
   @ApiResponse({ status: 200, description: 'Manager dashboard data' })
   async getManagerDashboard(@Query('period') period?: string) {
     return this.dashboardService.getManagerDashboard(period || 'month');
+  }
+
+  @Get('reports/generate')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Generate dashboard report' })
+  @ApiQuery({
+    name: 'reportType',
+    required: true,
+    enum: ReportType,
+    description: 'Type of report (weekly, monthly, custom)',
+  })
+  @ApiQuery({
+    name: 'format',
+    required: true,
+    enum: ReportFormat,
+    description: 'Output format (pdf, excel, csv)',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Start date for custom report (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    description: 'End date for custom report (YYYY-MM-DD)',
+  })
+  @ApiResponse({ status: 200, description: 'Report file download' })
+  @ApiResponse({ status: 400, description: 'Invalid parameters' })
+  async generateReport(
+    @Query('reportType') reportType: ReportType,
+    @Query('format') format: ReportFormat,
+    @Query('startDate') startDate: string | undefined,
+    @Query('endDate') endDate: string | undefined,
+    @Res() res: Response,
+  ) {
+    const result = await this.dashboardService.generateReport({
+      reportType,
+      format,
+      startDate,
+      endDate,
+    });
+
+    // Set response headers for file download
+    res.setHeader('Content-Type', result.mimeType);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename*=UTF-8''${encodeURIComponent(result.fileName)}`,
+    );
+    res.setHeader('Content-Length', result.fileContent.length);
+
+    return res.status(HttpStatus.OK).send(result.fileContent);
   }
 }

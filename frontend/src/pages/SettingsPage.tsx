@@ -14,6 +14,10 @@ import {
   AtSign,
   RefreshCw,
   Loader2,
+  HelpCircle,
+  MessageCircle,
+  FileText,
+  Lock,
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 import { getUserDisplayName } from '@/types';
@@ -29,6 +33,13 @@ import {
   useNotificationSettings,
   useUpdateNotificationSettings,
 } from '@/hooks';
+import {
+  HelpCenterModal,
+  ContactModal,
+  TermsModal,
+  PrivacyPolicyModal,
+  PasswordChangeModal,
+} from '@/components/settings';
 
 // トグルスイッチコンポーネント
 interface ToggleSwitchProps {
@@ -96,6 +107,13 @@ export function SettingsPage() {
 
   // User preferences state
   const [language, setLanguage] = useState('ja');
+
+  // Help modals state
+  const [isHelpCenterOpen, setIsHelpCenterOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
 
   // 通知設定フック
   const { data: notificationSettings, isLoading: isLoadingSettings } =
@@ -525,7 +543,12 @@ export function SettingsPage() {
               <p className="text-sm text-gray-500">
                 セキュリティ設定は管理者にお問い合わせください。
               </p>
-              <Button variant="outline" size="sm" className="w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setIsPasswordChangeOpen(true)}
+              >
                 パスワードを変更
               </Button>
             </CardContent>
@@ -540,34 +563,60 @@ export function SettingsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <a
-                href="#"
-                className="block text-primary-600 hover:text-primary-700"
+              <button
+                onClick={() => setIsHelpCenterOpen(true)}
+                className="flex items-center gap-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
               >
+                <HelpCircle className="h-4 w-4" />
                 ヘルプセンター
-              </a>
-              <a
-                href="#"
-                className="block text-primary-600 hover:text-primary-700"
+              </button>
+              <button
+                onClick={() => setIsContactOpen(true)}
+                className="flex items-center gap-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
               >
+                <MessageCircle className="h-4 w-4" />
                 お問い合わせ
-              </a>
-              <a
-                href="#"
-                className="block text-primary-600 hover:text-primary-700"
+              </button>
+              <button
+                onClick={() => setIsTermsOpen(true)}
+                className="flex items-center gap-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
               >
+                <FileText className="h-4 w-4" />
                 利用規約
-              </a>
-              <a
-                href="#"
-                className="block text-primary-600 hover:text-primary-700"
+              </button>
+              <button
+                onClick={() => setIsPrivacyOpen(true)}
+                className="flex items-center gap-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
               >
+                <Lock className="h-4 w-4" />
                 プライバシーポリシー
-              </a>
+              </button>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Help Modals */}
+      <HelpCenterModal
+        isOpen={isHelpCenterOpen}
+        onClose={() => setIsHelpCenterOpen(false)}
+      />
+      <ContactModal
+        isOpen={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
+      />
+      <TermsModal
+        isOpen={isTermsOpen}
+        onClose={() => setIsTermsOpen(false)}
+      />
+      <PrivacyPolicyModal
+        isOpen={isPrivacyOpen}
+        onClose={() => setIsPrivacyOpen(false)}
+      />
+      <PasswordChangeModal
+        isOpen={isPasswordChangeOpen}
+        onClose={() => setIsPasswordChangeOpen(false)}
+      />
     </div>
   );
 }

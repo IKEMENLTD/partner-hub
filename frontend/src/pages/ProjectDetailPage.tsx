@@ -30,6 +30,7 @@ import {
   useUploadFile,
   useDeleteFile,
   useGetDownloadUrl,
+  useProjectTasks,
 } from '@/hooks';
 import type { ProjectDetailTab, TaskStatus, ProjectStakeholder, StakeholderInput } from '@/types';
 import { getUserDisplayName } from '@/types';
@@ -96,6 +97,9 @@ export function ProjectDetailPage() {
   const { mutate: uploadFile, isPending: isUploading } = useUploadFile();
   const { mutate: deleteFile, isPending: isDeletingFile } = useDeleteFile();
   const { mutate: getDownloadUrl } = useGetDownloadUrl();
+
+  // タスク関連
+  const { data: tasksData } = useProjectTasks(id);
 
   const [activeTab, setActiveTab] = useState<ProjectDetailTab>('overview');
   const [showFileUpload, setShowFileUpload] = useState(false);
@@ -481,7 +485,7 @@ export function ProjectDetailPage() {
         {/* Tasks Tab */}
         <TabPanel id="tasks" className="mt-6">
           <TaskList
-            tasks={[]}
+            tasks={tasksData?.data || []}
             onTaskStatusChange={handleTaskStatusChange}
             onTaskClick={(task) => navigate(`/projects/${project.id}/tasks/${task.id}`)}
             onAddTask={() => navigate(`/projects/${project.id}/tasks/new`)}

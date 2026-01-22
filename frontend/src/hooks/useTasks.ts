@@ -53,6 +53,7 @@ export function useCreateTask() {
       queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['today-stats'] });
       queryClient.invalidateQueries({ queryKey: ['project', data.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks', data.projectId] });
     },
   });
 }
@@ -63,12 +64,13 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<TaskInput> }) =>
       taskService.update(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['task', id] });
+      queryClient.invalidateQueries({ queryKey: ['task'] });
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['today-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
     },
   });
 }
@@ -83,6 +85,7 @@ export function useDeleteTask() {
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['today-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
     },
   });
 }
@@ -120,5 +123,14 @@ export function useToggleSubtask() {
     onSuccess: (_, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
     },
+  });
+}
+
+export function useProjectTasks(projectId: string | undefined, params?: UseTasksParams) {
+  return useQuery({
+    queryKey: ['project-tasks', projectId, params],
+    queryFn: () => taskService.getByProject(projectId!, params),
+    enabled: !!projectId,
+    staleTime: 2 * 60 * 1000,
   });
 }
