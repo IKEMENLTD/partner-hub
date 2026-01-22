@@ -46,7 +46,8 @@ export function ProjectCalendar({
   }, [currentMonth]);
 
   const getProjectsForDay = (day: Date) => {
-    return projects.filter((project) => {
+    const safeProjects = Array.isArray(projects) ? projects : [];
+    return safeProjects.filter((project) => {
       const startDate = new Date(project.startDate);
       const endDate = project.endDate
         ? new Date(project.endDate)

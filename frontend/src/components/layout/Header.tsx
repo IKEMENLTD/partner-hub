@@ -89,9 +89,9 @@ export function Header() {
     const lowerQuery = query.toLowerCase();
     const items: SuggestItem[] = [];
 
-    // プロジェクトからサジェスト
-    const projects = (projectsData && 'data' in projectsData ? projectsData.data : projectsData) || [];
-    (projects as Project[])
+    // プロジェクトからサジェスト - projectsData.data が配列
+    const projectsArray = Array.isArray(projectsData?.data) ? projectsData.data : [];
+    projectsArray
       .filter((p: Project) => p.name.toLowerCase().includes(lowerQuery))
       .slice(0, 4)
       .forEach((p: Project) => {
@@ -103,9 +103,9 @@ export function Header() {
         });
       });
 
-    // パートナーからサジェスト
-    const partners = (partnersData && 'data' in partnersData ? partnersData.data : partnersData) || [];
-    (partners as Partner[])
+    // パートナーからサジェスト - partnersData.data が配列
+    const partnersArray = Array.isArray(partnersData?.data) ? partnersData.data : [];
+    partnersArray
       .filter((p: Partner) => p.name.toLowerCase().includes(lowerQuery))
       .slice(0, 4)
       .forEach((p: Partner) => {

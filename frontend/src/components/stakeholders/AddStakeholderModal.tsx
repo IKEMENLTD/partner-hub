@@ -72,8 +72,9 @@ export function AddStakeholderModal({
   const partners = partnersData?.data || [];
 
   // 既に追加済みのパートナーIDを取得
+  const safeStakeholders = Array.isArray(existingStakeholders) ? existingStakeholders : [];
   const existingPartnerIds = new Set(
-    existingStakeholders
+    safeStakeholders
       .filter((s) => s.partnerId && (!editingStakeholder || s.id !== editingStakeholder.id))
       .map((s) => s.partnerId!)
   );
@@ -186,7 +187,7 @@ export function AddStakeholderModal({
     (stakeholderType === 'user' && selectedUserId);
 
   // 親ステークホルダーの選択肢
-  const parentOptions = existingStakeholders
+  const parentOptions = safeStakeholders
     .filter(
       (s) =>
         (!editingStakeholder || s.id !== editingStakeholder.id) &&

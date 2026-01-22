@@ -132,6 +132,11 @@ export function useRecentProjects() {
       });
 
       const results = await Promise.all(projectPromises);
+      // 配列チェックを追加
+      if (!Array.isArray(results)) {
+        console.error('Unexpected results from Promise.all');
+        return [];
+      }
       return results.filter((p): p is Project => p !== null);
     },
     enabled: recentProjectIds.length > 0,
