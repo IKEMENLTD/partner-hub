@@ -53,8 +53,8 @@ export function MyTodayPage() {
   const todayStats = data;
   const today = new Date();
 
-  const tasksForToday = todayStats?.tasksForToday || [];
-  const upcomingDeadlines = todayStats?.upcomingDeadlines || [];
+  const tasksForToday = Array.isArray(todayStats?.tasksForToday) ? todayStats.tasksForToday : [];
+  const upcomingDeadlines = Array.isArray(todayStats?.upcomingDeadlines) ? todayStats.upcomingDeadlines : [];
 
   const completedTodayCount = tasksForToday.filter(
     (t) => t.status === 'completed'

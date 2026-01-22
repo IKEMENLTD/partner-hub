@@ -34,7 +34,8 @@ CREATE INDEX IF NOT EXISTS "IDX_audit_logs_created_at" ON "audit_logs" ("created
 -- Enable RLS
 ALTER TABLE "audit_logs" ENABLE ROW LEVEL SECURITY;
 
--- Service role bypass
+-- Service role bypass (drop if exists to avoid duplicate error)
+DROP POLICY IF EXISTS "Service role has full access to audit_logs" ON "audit_logs";
 CREATE POLICY "Service role has full access to audit_logs" ON "audit_logs"
   FOR ALL USING (auth.role() = 'service_role');
 

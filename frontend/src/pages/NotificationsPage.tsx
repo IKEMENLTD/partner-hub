@@ -51,7 +51,7 @@ export function NotificationsPage() {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterRead, setFilterRead] = useState<string>('all');
 
-  const alerts = (data || []) as Alert[];
+  const alerts = (Array.isArray(data) ? data : []) as Alert[];
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter((alert) => {

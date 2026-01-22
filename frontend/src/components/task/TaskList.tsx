@@ -47,7 +47,8 @@ export function TaskList({
   const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<Priority | ''>('');
 
-  const filteredTasks = tasks.filter((task) => {
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const filteredTasks = safeTasks.filter((task) => {
     if (statusFilter && task.status !== statusFilter) return false;
     if (priorityFilter && task.priority !== priorityFilter) return false;
     return true;

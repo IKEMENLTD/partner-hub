@@ -39,7 +39,7 @@ export function Header() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestRef = useRef<HTMLDivElement>(null);
 
-  const alerts: Alert[] = alertsData || [];
+  const alerts: Alert[] = Array.isArray(alertsData) ? alertsData : [];
   const unreadCount = alerts.filter((a) => !a.isRead).length;
 
   // 画面遷移時にドロップダウンを閉じる
