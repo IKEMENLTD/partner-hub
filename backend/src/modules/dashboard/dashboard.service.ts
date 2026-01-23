@@ -1191,11 +1191,19 @@ export class DashboardService {
     lines.push('');
 
     // Project summaries
+    const projectStatusLabels: Record<string, string> = {
+      planning: '計画中',
+      in_progress: '進行中',
+      on_hold: '保留',
+      completed: '完了',
+      cancelled: 'キャンセル',
+    };
+
     lines.push('=== 案件サマリー ===');
     lines.push('案件名,ステータス,進捗率,終了日,タスク数,完了タスク,期限超過タスク');
     for (const project of data.projectSummaries) {
       lines.push(
-        `"${project.name}",${project.status},${project.progress}%,${
+        `"${project.name}",${projectStatusLabels[project.status] || project.status},${project.progress}%,${
           project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '-'
         },${project.tasksCount},${project.completedTasksCount},${project.overdueTasksCount}`,
       );
@@ -1213,15 +1221,28 @@ export class DashboardService {
     lines.push('');
 
     // Task distribution
+    const statusLabels: Record<string, string> = {
+      todo: '未着手',
+      in_progress: '進行中',
+      completed: '完了',
+      cancelled: 'キャンセル',
+    };
+    const priorityLabels: Record<string, string> = {
+      low: '低',
+      medium: '中',
+      high: '高',
+      urgent: '緊急',
+    };
+
     lines.push('=== タスク分布 ===');
     lines.push('ステータス別:');
     for (const [status, count] of Object.entries(data.taskDistribution.byStatus)) {
-      lines.push(`${status},${count}`);
+      lines.push(`${statusLabels[status] || status},${count}`);
     }
     lines.push('');
     lines.push('優先度別:');
     for (const [priority, count] of Object.entries(data.taskDistribution.byPriority)) {
-      lines.push(`${priority},${count}`);
+      lines.push(`${priorityLabels[priority] || priority},${count}`);
     }
 
     const csvContent = bom + lines.join('\n');
