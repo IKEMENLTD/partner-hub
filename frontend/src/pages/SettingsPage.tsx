@@ -120,6 +120,7 @@ export function SettingsPage() {
   const [localSettings, setLocalSettings] = useState({
     emailNotification: true,
     pushNotification: true,
+    inAppNotification: true,
     digestEnabled: true,
     digestTime: '07:00' as DigestTime,
     deadlineNotification: true,
@@ -135,6 +136,7 @@ export function SettingsPage() {
       setLocalSettings({
         emailNotification: notificationSettings.emailNotification,
         pushNotification: notificationSettings.pushNotification,
+        inAppNotification: notificationSettings.inAppNotification,
         digestEnabled: notificationSettings.digestEnabled,
         digestTime: notificationSettings.digestTime,
         deadlineNotification: notificationSettings.deadlineNotification,
@@ -168,6 +170,7 @@ export function SettingsPage() {
         setLocalSettings({
           emailNotification: notificationSettings.emailNotification,
           pushNotification: notificationSettings.pushNotification,
+          inAppNotification: notificationSettings.inAppNotification,
           digestEnabled: notificationSettings.digestEnabled,
           digestTime: notificationSettings.digestTime,
           deadlineNotification: notificationSettings.deadlineNotification,
@@ -259,6 +262,21 @@ export function SettingsPage() {
                 />
               </div>
 
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">アプリ内通知</p>
+                  <p className="text-sm text-gray-500">
+                    アプリ内のベルアイコンで通知を受け取ります
+                  </p>
+                </div>
+                <ToggleSwitch
+                  checked={localSettings.inAppNotification}
+                  onChange={(checked) =>
+                    handleSettingChange('inAppNotification', checked)
+                  }
+                  disabled={isLoadingSettings}
+                />
+              </div>
             </CardContent>
           </Card>
 

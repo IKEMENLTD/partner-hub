@@ -84,6 +84,9 @@ export class NotificationSettings {
   @Column({ name: 'push_notification', default: true })
   pushNotification: boolean;
 
+  @Column({ name: 'in_app_notification', default: true })
+  inAppNotification: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

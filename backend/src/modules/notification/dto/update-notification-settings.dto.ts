@@ -129,4 +129,12 @@ export class UpdateNotificationSettingsDto {
   @IsOptional()
   @IsBoolean()
   pushNotification?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'アプリ内通知の有効/無効',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  inAppNotification?: boolean;
 }

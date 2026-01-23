@@ -572,6 +572,7 @@ export interface NotificationSettings {
   // 基本通知設定
   emailNotification: boolean;
   pushNotification: boolean;
+  inAppNotification: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -587,6 +588,7 @@ export interface NotificationSettingsInput {
   reminderMaxCount?: number;
   emailNotification?: boolean;
   pushNotification?: boolean;
+  inAppNotification?: boolean;
 }
 
 // アプリ内通知の型定義

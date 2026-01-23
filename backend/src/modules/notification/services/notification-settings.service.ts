@@ -35,6 +35,7 @@ export class NotificationSettingsService {
         reminderMaxCount: 3,
         emailNotification: true,
         pushNotification: true,
+        inAppNotification: true,
       });
       settings = await this.notificationSettingsRepository.save(settings);
       this.logger.log(`Created default notification settings for user: ${userId}`);
@@ -83,6 +84,9 @@ export class NotificationSettingsService {
     if (updateDto.pushNotification !== undefined) {
       updateData.pushNotification = updateDto.pushNotification;
     }
+    if (updateDto.inAppNotification !== undefined) {
+      updateData.inAppNotification = updateDto.inAppNotification;
+    }
 
     // 更新を実行
     await this.notificationSettingsRepository.update(settings.id, updateData);
@@ -116,6 +120,7 @@ export class NotificationSettingsService {
       reminderMaxCount: settings.reminderMaxCount,
       emailNotification: settings.emailNotification,
       pushNotification: settings.pushNotification,
+      inAppNotification: settings.inAppNotification,
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
     };
