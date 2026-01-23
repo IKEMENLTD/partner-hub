@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Bell, Search, LogOut, User, ChevronDown } from 'lucide-react';
+import { Search, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
-import { getUserDisplayName, Alert, Project, Partner } from '@/types';
-import { useLogout, useAlerts, useProjects, usePartners } from '@/hooks';
+import { getUserDisplayName, Project, Partner } from '@/types';
+import { useLogout, useProjects, usePartners } from '@/hooks';
 import { Avatar, Badge } from '@/components/common';
+import { NotificationBell } from '@/components/notifications';
 import clsx from 'clsx';
 
 // サジェストアイテムの型定義
@@ -21,14 +22,12 @@ export function Header() {
   const { user } = useAuthStore();
   const { sidebarOpen } = useUIStore();
   const { mutate: logout } = useLogout();
-  const { data: alertsData } = useAlerts();
 
   // 検索用データの取得
   const { data: projectsData } = useProjects();
   const { data: partnersData } = usePartners();
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   // 検索機能の状態
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,12 +38,8 @@ export function Header() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestRef = useRef<HTMLDivElement>(null);
 
-  const alerts: Alert[] = Array.isArray(alertsData) ? alertsData : [];
-  const unreadCount = alerts.filter((a) => !a.isRead).length;
-
   // 画面遷移時にドロップダウンを閉じる
   useEffect(() => {
-    setIsNotificationOpen(false);
     setIsProfileOpen(false);
     setIsSuggestOpen(false);
   }, [location.pathname]);
@@ -276,72 +271,7 @@ export function Header() {
       {/* Actions */}
       <div className="flex items-center gap-2">
         {/* Notifications */}
-        <div className="relative">
-          <button
-            onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-            className="relative rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800"
-            aria-label="通知"
-            aria-expanded={isNotificationOpen}
-          >
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
-
-          {isNotificationOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setIsNotificationOpen(false)}
-              />
-              <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
-                <div className="border-b border-gray-200 dark:border-slate-700 px-4 py-3">
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">通知</h3>
-                </div>
-                <div className="max-h-96 overflow-y-auto">
-                  {alerts.length === 0 ? (
-                    <p className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                      通知はありません
-                    </p>
-                  ) : (
-                    <ul>
-                      {alerts.slice(0, 5).map((alert) => (
-                        <li
-                          key={alert.id}
-                          className={clsx(
-                            'border-b border-gray-100 px-4 py-3 last:border-b-0',
-                            !alert.isRead && 'bg-blue-50'
-                          )}
-                        >
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {alert.title}
-                          </p>
-                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            {alert.message}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                {alerts.length > 0 && (
-                  <div className="border-t border-gray-200 dark:border-slate-700 px-4 py-3">
-                    <Link
-                      to="/notifications"
-                      className="text-sm font-medium text-primary-600 hover:text-primary-700"
-                      onClick={() => setIsNotificationOpen(false)}
-                    >
-                      すべての通知を見る
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+        <NotificationBell />
 
         {/* Profile dropdown */}
         <div className="relative">

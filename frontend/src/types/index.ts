@@ -588,3 +588,26 @@ export interface NotificationSettingsInput {
   emailNotification?: boolean;
   pushNotification?: boolean;
 }
+
+// アプリ内通知の型定義
+export type InAppNotificationType = 'deadline' | 'mention' | 'assigned' | 'system';
+
+export interface InAppNotification {
+  id: string;
+  userId: string;
+  type: InAppNotificationType;
+  title: string;
+  message?: string;
+  isRead: boolean;
+  linkUrl?: string;
+  taskId?: string;
+  projectId?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface InAppNotificationResponse {
+  notifications: InAppNotification[];
+  total: number;
+  unreadCount: number;
+}

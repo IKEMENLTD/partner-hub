@@ -80,3 +80,4 @@ export {
   useNotificationSettings,
   useUpdateNotificationSettings,
 } from './useNotificationSettings';
+export { useInAppNotifications } from './useInAppNotifications';
