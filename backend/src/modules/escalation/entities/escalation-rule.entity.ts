@@ -61,7 +61,7 @@ export class EscalationRule {
   @Column({ type: 'int', default: 1 })
   priority: number;
 
-  @Column({ name: 'notify_emails', type: 'simple-array', nullable: true })
+  @Column({ name: 'notify_emails', type: 'text', array: true, nullable: true, default: '{}' })
   notifyEmails: string[];
 
   @Column({ name: 'escalate_to_user_id', nullable: true })

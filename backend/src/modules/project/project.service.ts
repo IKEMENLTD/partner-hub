@@ -251,9 +251,9 @@ export class ProjectService {
     const project = await this.findOne(id);
     const { partnerIds, tags, ...updateData } = updateProjectDto;
 
-    // Handle tags - convert empty array to null for simple-array compatibility
+    // Handle tags - now using native PostgreSQL array, empty arrays are supported
     if (tags !== undefined) {
-      (updateData as any).tags = tags && tags.length > 0 ? tags : null;
+      (updateData as any).tags = Array.isArray(tags) ? tags : [];
     }
 
     Object.assign(project, updateData);

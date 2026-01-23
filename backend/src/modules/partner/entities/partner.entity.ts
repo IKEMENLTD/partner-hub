@@ -46,7 +46,7 @@ export class Partner {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'simple-array', nullable: true })
+  @Column({ type: 'text', array: true, nullable: true, default: '{}' })
   skills: string[];
 
   @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })

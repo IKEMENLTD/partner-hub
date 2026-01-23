@@ -54,7 +54,7 @@ export class EscalationLog {
   @Column({ name: 'action_detail', type: 'text', nullable: true })
   actionDetail: string;
 
-  @Column({ name: 'notified_users', type: 'simple-array', nullable: true })
+  @Column({ name: 'notified_users', type: 'text', array: true, nullable: true, default: '{}' })
   notifiedUsers: string[];
 
   @Column({ name: 'escalated_to_user_id', nullable: true })

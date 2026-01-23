@@ -10,6 +10,7 @@ import {
   IsArray,
   IsObject,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus, TaskPriority, TaskType } from '../enums/task-status.enum';
 
@@ -76,6 +77,15 @@ export class CreateTaskDto {
   estimatedHours?: number;
 
   @ApiPropertyOptional({ description: 'Task tags', type: [String] })
+  @Transform(({ value }) => {
+    // Handle empty strings, null, undefined -> empty array
+    if (!value || value === '') return [];
+    // If already an array, filter out empty strings
+    if (Array.isArray(value)) return value.filter((v: unknown) => typeof v === 'string' && v.trim() !== '');
+    // If a non-empty string, wrap in array
+    if (typeof value === 'string' && value.trim() !== '') return [value.trim()];
+    return [];
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

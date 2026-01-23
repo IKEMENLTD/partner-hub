@@ -96,7 +96,7 @@ export class Task {
   @Column({ type: 'int', default: 0 })
   progress: number;
 
-  @Column({ type: 'simple-array', nullable: true })
+  @Column({ type: 'text', array: true, nullable: true, default: '{}' })
   tags: string[];
 
   @Column({ type: 'jsonb', nullable: true })
