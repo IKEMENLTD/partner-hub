@@ -344,10 +344,10 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    デイリーダイジェスト
+                    ダイジェストメール（まとめ配信）
                   </p>
                   <p className="text-sm text-gray-500">
-                    毎日のタスクサマリーをメールで受け取ります
+                    1日の通知を1通のメールにまとめて受け取ります
                   </p>
                 </div>
                 <ToggleSwitch
@@ -380,9 +380,17 @@ export function SettingsPage() {
               )}
 
               <div className="rounded-lg bg-blue-50 p-3">
-                <p className="text-xs text-blue-700">
-                  ダイジェストメールには、本日のタスク、期限超過タスク、未読通知のサマリーが含まれます。
-                </p>
+                <div className="text-xs text-blue-700 space-y-1">
+                  <p className="font-medium">
+                    {localSettings.digestEnabled ? '✅ ON: ' : '❌ OFF: '}
+                    {localSettings.digestEnabled
+                      ? '通知をまとめて1日1通のメールで配信します'
+                      : '通知ごとに個別メールが届きます（メール数が増えます）'}
+                  </p>
+                  <p>
+                    ダイジェストには本日のタスク、期限超過タスク、未読通知のサマリーが含まれます。
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
