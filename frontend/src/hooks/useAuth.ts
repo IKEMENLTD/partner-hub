@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store';
 import { authService } from '@/services/authService';
 import type { AuthError } from '@supabase/supabase-js';
+import type { User } from '@/types';
 
 /**
  * Auth Hooks - Supabase Edition
@@ -34,7 +35,7 @@ function getErrorMessage(error: AuthError): string {
 
 // バックエンドからプロファイルを取得してユーザー情報を更新
 async function fetchAndSetUserProfile(
-  setUser: ReturnType<typeof useAuthStore>['setUser'],
+  setUser: (user: User | null) => void,
   fallbackUser: { id: string; email: string; createdAt: string }
 ) {
   try {
