@@ -80,20 +80,22 @@ export function useAuthListener() {
     }
 
     let isMounted = true;
+    let isInitialized = false;
 
-    const initSession = async () => {
-      setLoading(true);
-      try {
-        // タイムアウト付きでセッション取得
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Session fetch timeout')), 10000);
-        });
+    const markInitialized = () => {
+      if (!isInitialized && isMounted) {
+        isInitialized = true;
+        setInitialized(true);
+      }
+    };
 
-        const sessionPromise = supabase.auth.getSession();
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
-
+    // onAuthStateChangeをメインの初期化手段として使用
+    // INITIAL_SESSIONイベントで既存セッションを取得
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
         if (!isMounted) return;
 
+        console.log('Auth state changed:', event);
         setSession(session);
 
         if (session?.user) {
@@ -103,41 +105,26 @@ export function useAuthListener() {
             email: session.user.email || '',
             createdAt: session.user.created_at,
           });
-        }
-      } catch (error) {
-        console.error('Session initialization failed:', error);
-      } finally {
-        if (isMounted) {
-          setInitialized(true);
-        }
-      }
-    };
-
-    initSession();
-
-    // 認証状態の変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!isMounted) return;
-
-        console.log('Auth state changed:', event);
-        setSession(session);
-
-        if (event === 'SIGNED_IN' && session?.user) {
-          // バックエンドからプロファイル（role含む）を取得
-          await fetchAndSetUserProfile(setUser, {
-            id: session.user.id,
-            email: session.user.email || '',
-            createdAt: session.user.created_at,
-          });
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
         }
+
+        // INITIAL_SESSION または SIGNED_IN/SIGNED_OUT で初期化完了
+        markInitialized();
       }
     );
 
+    // フォールバック: 5秒後にも初期化されていなければ強制的に初期化完了
+    const fallbackTimer = setTimeout(() => {
+      if (!isInitialized) {
+        console.warn('Auth initialization fallback triggered');
+        markInitialized();
+      }
+    }, 5000);
+
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, [setSession, setUser, setInitialized, setLoading]);
