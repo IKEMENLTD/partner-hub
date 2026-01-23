@@ -51,8 +51,14 @@ export class TaskService {
       }
     }
 
+    // Sanitize tags: ensure it's an array (handle empty strings or invalid values)
+    const sanitizedTags = Array.isArray(createTaskDto.tags)
+      ? createTaskDto.tags.filter((tag) => typeof tag === 'string' && tag.trim() !== '')
+      : [];
+
     const task = this.taskRepository.create({
       ...createTaskDto,
+      tags: sanitizedTags,
       createdById,
     });
 
@@ -191,6 +197,13 @@ export class TaskService {
       if (!parentTask) {
         throw new BadRequestException('Parent task not found');
       }
+    }
+
+    // Sanitize tags if provided: ensure it's an array (handle empty strings or invalid values)
+    if (updateTaskDto.tags !== undefined) {
+      updateTaskDto.tags = Array.isArray(updateTaskDto.tags)
+        ? updateTaskDto.tags.filter((tag) => typeof tag === 'string' && tag.trim() !== '')
+        : [];
     }
 
     Object.assign(task, updateTaskDto);
