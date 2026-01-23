@@ -13,8 +13,13 @@ import {
   MessageSquare,
   Plus,
   Send,
+  FileText,
+  Mail,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
 } from 'lucide-react';
-import { useTask, useUpdateTask, useDeleteTask, useAddComment, useAddSubtask, useToggleSubtask } from '@/hooks';
+import { useTask, useUpdateTask, useDeleteTask, useAddComment, useAddSubtask, useToggleSubtask, useProgressReports, useRequestProgressReport, useReviewProgressReport } from '@/hooks';
 import type { TaskStatus } from '@/types';
 import { getUserDisplayName } from '@/types';
 import {
@@ -69,10 +74,16 @@ export function TaskDetailPage() {
   const { mutate: addComment, isPending: isAddingComment } = useAddComment();
   const { mutate: addSubtask, isPending: isAddingSubtask } = useAddSubtask();
   const { mutate: toggleSubtask } = useToggleSubtask();
+  const { data: progressReports = [], isLoading: isLoadingReports } = useProgressReports(taskId);
+  const { mutate: requestReport, isPending: isRequestingReport } = useRequestProgressReport();
+  const { mutate: reviewReport, isPending: isReviewingReport } = useReviewProgressReport();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRequestReportModal, setShowRequestReportModal] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [newSubtask, setNewSubtask] = useState('');
+  const [partnerEmail, setPartnerEmail] = useState('');
+  const [partnerName, setPartnerName] = useState('');
 
   if (isLoading) {
     return <PageLoading />;
@@ -139,6 +150,30 @@ export function TaskDetailPage() {
 
   const handleToggleSubtask = (subtaskId: string) => {
     toggleSubtask({ taskId: task.id, subtaskId });
+  };
+
+  const handleRequestReport = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!partnerEmail.trim()) return;
+
+    requestReport(
+      {
+        taskId: task.id,
+        partnerEmail: partnerEmail.trim(),
+        partnerName: partnerName.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          setShowRequestReportModal(false);
+          setPartnerEmail('');
+          setPartnerName('');
+        },
+      }
+    );
+  };
+
+  const handleReviewReport = (reportId: string, status: 'reviewed' | 'rejected') => {
+    reviewReport({ reportId, data: { status } });
   };
 
   const completedSubtasks = task.subtasks?.filter((s) => s.completed).length || 0;
@@ -368,6 +403,115 @@ export function TaskDetailPage() {
               </form>
             </CardContent>
           </Card>
+
+          {/* Progress Reports */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  進捗報告 ({progressReports.length})
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  leftIcon={<Mail className="h-4 w-4" />}
+                  onClick={() => setShowRequestReportModal(true)}
+                >
+                  報告をリクエスト
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingReports ? (
+                <p className="text-gray-400 italic">読み込み中...</p>
+              ) : progressReports.length > 0 ? (
+                <ul className="space-y-4">
+                  {progressReports.map((report) => (
+                    <li
+                      key={report.id}
+                      className="border border-gray-200 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-medium text-gray-900">
+                              {report.reporterName}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              ({report.reporterEmail})
+                            </span>
+                            {report.status === 'pending' && (
+                              <Badge variant="warning">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                未確認
+                              </Badge>
+                            )}
+                            {report.status === 'reviewed' && (
+                              <Badge variant="success">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                確認済み
+                              </Badge>
+                            )}
+                            {report.status === 'rejected' && (
+                              <Badge variant="danger">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                差し戻し
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm text-gray-500">進捗率</span>
+                              <span className="text-sm font-medium text-primary-600">
+                                {report.progress}%
+                              </span>
+                            </div>
+                            <div className="h-2 w-full rounded-full bg-gray-200">
+                              <div
+                                className="h-2 rounded-full bg-primary-500"
+                                style={{ width: `${report.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                          {report.comment && (
+                            <p className="text-sm text-gray-600 bg-gray-50 rounded p-2 mb-2">
+                              {report.comment}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500">
+                            報告日時: {format(new Date(report.createdAt), 'yyyy/M/d HH:mm', { locale: ja })}
+                          </p>
+                        </div>
+                        {report.status === 'pending' && (
+                          <div className="flex gap-2 ml-4">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReviewReport(report.id, 'reviewed')}
+                              disabled={isReviewingReport}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReviewReport(report.id, 'rejected')}
+                              disabled={isReviewingReport}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-400 italic">進捗報告がありません</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}
@@ -459,6 +603,53 @@ export function TaskDetailPage() {
             削除
           </Button>
         </ModalFooter>
+      </Modal>
+
+      {/* Request Progress Report Modal */}
+      <Modal
+        isOpen={showRequestReportModal}
+        onClose={() => setShowRequestReportModal(false)}
+        title="進捗報告をリクエスト"
+        size="md"
+      >
+        <form onSubmit={handleRequestReport}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              パートナーに進捗報告フォームへのリンクをメールで送信します。
+            </p>
+            <Input
+              label="パートナーのメールアドレス"
+              type="email"
+              value={partnerEmail}
+              onChange={(e) => setPartnerEmail(e.target.value)}
+              placeholder="partner@example.com"
+              required
+            />
+            <Input
+              label="パートナーの名前（任意）"
+              value={partnerName}
+              onChange={(e) => setPartnerName(e.target.value)}
+              placeholder="山田 太郎"
+            />
+          </div>
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowRequestReportModal(false)}
+            >
+              キャンセル
+            </Button>
+            <Button
+              type="submit"
+              leftIcon={<Send className="h-4 w-4" />}
+              isLoading={isRequestingReport}
+              disabled={!partnerEmail.trim()}
+            >
+              送信
+            </Button>
+          </ModalFooter>
+        </form>
       </Modal>
     </div>
   );
