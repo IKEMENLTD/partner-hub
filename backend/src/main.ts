@@ -4,9 +4,33 @@ import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { AppDataSource } from './config/data-source';
+
+async function runMigrations() {
+  const logger = new Logger('Migrations');
+  try {
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+    logger.log('Running pending migrations...');
+    const migrations = await AppDataSource.runMigrations();
+    if (migrations.length > 0) {
+      logger.log(`Executed ${migrations.length} migration(s): ${migrations.map((m) => m.name).join(', ')}`);
+    } else {
+      logger.log('No pending migrations');
+    }
+    await AppDataSource.destroy();
+  } catch (error) {
+    logger.error('Migration failed:', error.message);
+    // Don't throw - allow app to start even if migrations fail
+  }
+}
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+
+  // Run migrations before starting the app
+  await runMigrations();
 
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
