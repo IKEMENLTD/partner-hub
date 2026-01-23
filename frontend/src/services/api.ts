@@ -43,9 +43,10 @@ export class RateLimitError extends ApiError {
   }
 }
 
-// Supabaseからアクセストークンを取得
-async function getAccessToken(): Promise<string | null> {
-  const { data: { session } } = await supabase.auth.getSession();
+// ストアに保存されているセッションからアクセストークンを取得
+// getSession() APIコールを避けてパフォーマンス向上
+function getAccessToken(): string | null {
+  const { session } = useAuthStore.getState();
   return session?.access_token ?? null;
 }
 
@@ -61,9 +62,9 @@ async function request<T>(
     ...options.headers,
   };
 
-  // Supabaseからアクセストークンを取得
+  // ストアからアクセストークンを取得（同期的）
   if (!skipAuth) {
-    const token = await getAccessToken();
+    const token = getAccessToken();
     if (token) {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store';
 import type { ProjectFile, SignedUrlResponse, FileCategory } from '@/types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
@@ -12,13 +12,14 @@ interface BackendApiResponse<T> {
   message?: string;
 }
 
-async function getAccessToken(): Promise<string | null> {
-  const { data: { session } } = await supabase.auth.getSession();
+// ストアからアクセストークンを取得（同期的、getSession()のタイムアウトを回避）
+function getAccessToken(): string | null {
+  const { session } = useAuthStore.getState();
   return session?.access_token ?? null;
 }
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const token = await getAccessToken();
+function getAuthHeaders(): Record<string, string> {
+  const token = getAccessToken();
   const headers: Record<string, string> = {};
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -46,7 +47,7 @@ export const fileService = {
       formData.append('category', category);
     }
 
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
 
     const response = await fetch(`${API_BASE_URL}/files/upload`, {
       method: 'POST',
@@ -67,7 +68,7 @@ export const fileService = {
    * Get files for a project
    */
   getFilesByProject: async (projectId: string): Promise<ProjectFile[]> => {
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
     headers['Content-Type'] = 'application/json';
 
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files`, {
@@ -88,7 +89,7 @@ export const fileService = {
    * Get files for a task
    */
   getFilesByTask: async (taskId: string): Promise<ProjectFile[]> => {
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
     headers['Content-Type'] = 'application/json';
 
     const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/files`, {
@@ -109,7 +110,7 @@ export const fileService = {
    * Get file by ID
    */
   getFile: async (fileId: string): Promise<ProjectFile> => {
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
     headers['Content-Type'] = 'application/json';
 
     const response = await fetch(`${API_BASE_URL}/files/${fileId}`, {
@@ -130,7 +131,7 @@ export const fileService = {
    * Delete a file
    */
   deleteFile: async (fileId: string): Promise<void> => {
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
     headers['Content-Type'] = 'application/json';
 
     const response = await fetch(`${API_BASE_URL}/files/${fileId}`, {
@@ -151,7 +152,7 @@ export const fileService = {
     fileId: string,
     expiresIn?: number
   ): Promise<SignedUrlResponse> => {
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
     headers['Content-Type'] = 'application/json';
 
     const queryParams = expiresIn ? `?expiresIn=${expiresIn}` : '';

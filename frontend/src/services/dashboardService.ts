@@ -1,6 +1,6 @@
 import { api, extractData } from './api';
 import type { DashboardStats, TodayStats, Alert } from '@/types';
-import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store';
 
 export type ReportType = 'weekly' | 'monthly' | 'custom';
 export type ReportFormat = 'pdf' | 'excel' | 'csv';
@@ -69,8 +69,8 @@ export const dashboardService = {
       queryParams.append('endDate', params.endDate);
     }
 
-    // Get access token from Supabase
-    const { data: { session } } = await supabase.auth.getSession();
+    // ストアからアクセストークンを取得（同期的）
+    const { session } = useAuthStore.getState();
     const token = session?.access_token;
 
     const headers: HeadersInit = {};
