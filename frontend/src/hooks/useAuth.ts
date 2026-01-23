@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store';
+import { authService } from '@/services/authService';
 import type { AuthError } from '@supabase/supabase-js';
 
 /**
@@ -31,6 +32,40 @@ function getErrorMessage(error: AuthError): string {
   }
 }
 
+// バックエンドからプロファイルを取得してユーザー情報を更新
+async function fetchAndSetUserProfile(
+  setUser: ReturnType<typeof useAuthStore>['setUser'],
+  fallbackUser: { id: string; email: string; createdAt: string }
+) {
+  try {
+    const response = await authService.getCurrentUser();
+    if (response.data) {
+      const profile = response.data;
+      setUser({
+        id: profile.id,
+        email: profile.email,
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        role: profile.role || 'member',
+        isActive: profile.isActive ?? true,
+        createdAt: profile.createdAt || fallbackUser.createdAt,
+      });
+    }
+  } catch (error) {
+    console.error('Failed to fetch user profile from backend:', error);
+    // フォールバック: Supabaseの情報を使用（roleはmemberになる）
+    setUser({
+      id: fallbackUser.id,
+      email: fallbackUser.email,
+      firstName: '',
+      lastName: '',
+      role: 'member',
+      isActive: true,
+      createdAt: fallbackUser.createdAt,
+    });
+  }
+}
+
 // 認証状態の初期化・監視
 export function useAuthListener() {
   const { setSession, setUser, setInitialized, setLoading } = useAuthStore();
@@ -43,14 +78,10 @@ export function useAuthListener() {
         setSession(session);
 
         if (session?.user) {
-          // Supabase userからアプリユーザーへの変換
-          setUser({
+          // バックエンドからプロファイル（role含む）を取得
+          await fetchAndSetUserProfile(setUser, {
             id: session.user.id,
             email: session.user.email || '',
-            firstName: session.user.user_metadata?.first_name || '',
-            lastName: session.user.user_metadata?.last_name || '',
-            role: 'member', // デフォルト値、後でバックエンドから取得可能
-            isActive: true,
             createdAt: session.user.created_at,
           });
         }
@@ -70,13 +101,10 @@ export function useAuthListener() {
         setSession(session);
 
         if (event === 'SIGNED_IN' && session?.user) {
-          setUser({
+          // バックエンドからプロファイル（role含む）を取得
+          await fetchAndSetUserProfile(setUser, {
             id: session.user.id,
             email: session.user.email || '',
-            firstName: session.user.user_metadata?.first_name || '',
-            lastName: session.user.user_metadata?.last_name || '',
-            role: 'member',
-            isActive: true,
             createdAt: session.user.created_at,
           });
         } else if (event === 'SIGNED_OUT') {
