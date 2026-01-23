@@ -2,7 +2,7 @@
 -- 使い方: 自分のuser_idを確認してから実行
 
 -- 1. 自分のuser_idを確認
-SELECT id, email FROM user_profiles;
+SELECT id, email FROM users;
 
 -- 2. テスト通知を挿入（上で確認したidに置き換えて実行）
 INSERT INTO in_app_notifications (user_id, type, title, message, is_read)
