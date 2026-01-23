@@ -13,6 +13,8 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectStatus, ProjectPriority } from '../enums/project-status.enum';
+import { ProjectType } from '../enums/project-type.enum';
+import { CompanyRole } from '../enums/company-role.enum';
 
 export class CreateProjectDto {
   @ApiProperty({ description: 'Project name', example: 'New Website Development' })
@@ -34,6 +36,16 @@ export class CreateProjectDto {
   @IsOptional()
   @IsEnum(ProjectPriority)
   priority?: ProjectPriority;
+
+  @ApiPropertyOptional({ description: 'Project type', enum: ProjectType })
+  @IsOptional()
+  @IsEnum(ProjectType)
+  projectType?: ProjectType;
+
+  @ApiPropertyOptional({ description: 'Company role in project', enum: CompanyRole })
+  @IsOptional()
+  @IsEnum(CompanyRole)
+  companyRole?: CompanyRole;
 
   @ApiPropertyOptional({ description: 'Project start date', example: '2024-01-01' })
   @IsOptional()
