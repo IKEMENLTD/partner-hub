@@ -40,16 +40,14 @@ export class ProjectService {
     private partnerRepository: Repository<Partner>,
   ) {}
 
-  async create(
-    createProjectDto: CreateProjectDto,
-    createdById: string,
-  ): Promise<Project> {
+  async create(createProjectDto: CreateProjectDto, createdById: string): Promise<Project> {
     const { partnerIds, tags, ...projectData } = createProjectDto;
 
     // Handle tags - convert empty string or invalid values to undefined
-    const sanitizedTags = Array.isArray(tags) && tags.length > 0
-      ? tags.filter(t => t && typeof t === 'string' && t.trim() !== '')
-      : undefined;
+    const sanitizedTags =
+      Array.isArray(tags) && tags.length > 0
+        ? tags.filter((t) => t && typeof t === 'string' && t.trim() !== '')
+        : undefined;
 
     const project = this.projectRepository.create({
       ...projectData,
@@ -116,7 +114,7 @@ export class ProjectService {
       if (userId && userRole !== 'admin') {
         queryBuilder.andWhere(
           '(project.ownerId = :userId OR project.managerId = :userId OR project.createdById = :userId)',
-          { userId }
+          { userId },
         );
       }
 
@@ -130,10 +128,9 @@ export class ProjectService {
       }
 
       if (search) {
-        queryBuilder.andWhere(
-          '(project.name ILIKE :search OR project.description ILIKE :search)',
-          { search: `%${search}%` },
-        );
+        queryBuilder.andWhere('(project.name ILIKE :search OR project.description ILIKE :search)', {
+          search: `%${search}%`,
+        });
       }
 
       if (ownerId) {
@@ -252,7 +249,12 @@ export class ProjectService {
 
   async update(id: string, updateProjectDto: UpdateProjectDto): Promise<Project> {
     const project = await this.findOne(id);
-    const { partnerIds, ...updateData } = updateProjectDto;
+    const { partnerIds, tags, ...updateData } = updateProjectDto;
+
+    // Handle tags - convert empty array to null for simple-array compatibility
+    if (tags !== undefined) {
+      (updateData as any).tags = tags && tags.length > 0 ? tags : null;
+    }
 
     Object.assign(project, updateData);
 
@@ -462,7 +464,12 @@ export class ProjectService {
     const startDate = project.startDate ? new Date(project.startDate) : null;
 
     // 期限超過で減点（-30点）
-    if (endDate && today > endDate && project.status !== ProjectStatus.COMPLETED && project.status !== ProjectStatus.CANCELLED) {
+    if (
+      endDate &&
+      today > endDate &&
+      project.status !== ProjectStatus.COMPLETED &&
+      project.status !== ProjectStatus.CANCELLED
+    ) {
       score -= 30;
     }
 
