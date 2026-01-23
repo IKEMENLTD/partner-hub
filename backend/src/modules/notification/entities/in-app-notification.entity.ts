@@ -9,12 +9,7 @@ import {
 } from 'typeorm';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
 
-export enum InAppNotificationType {
-  DEADLINE = 'deadline',
-  MENTION = 'mention',
-  ASSIGNED = 'assigned',
-  SYSTEM = 'system',
-}
+export type InAppNotificationType = 'deadline' | 'mention' | 'assigned' | 'system';
 
 @Entity('in_app_notifications')
 @Index(['userId', 'isRead'])
@@ -31,11 +26,11 @@ export class InAppNotification {
   user: UserProfile;
 
   @Column({
-    type: 'enum',
-    enum: InAppNotificationType,
-    default: InAppNotificationType.SYSTEM,
+    type: 'varchar',
+    length: 20,
+    default: 'system',
   })
-  type: InAppNotificationType;
+  type: string;
 
   @Column()
   title: string;
