@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAlerts, useMarkAlertAsRead, useMarkAllAlertsAsRead } from '@/hooks';
-import type { Alert, AlertType, AlertSeverity } from '@/types';
+import type { Alert, AlertSeverity } from '@/types';
 import {
   Card,
   CardContent,
@@ -27,9 +27,18 @@ import {
 } from '@/components/common';
 import clsx from 'clsx';
 
-const alertTypeConfig: Record<AlertType, { icon: typeof Clock; color: string; label: string }> = {
+const alertTypeConfig: Record<string, { icon: typeof Clock; color: string; label: string }> = {
+  // Backend ReminderType mappings
+  task_due: { icon: Clock, color: 'text-orange-500', label: 'タスク期限' },
+  task_overdue: { icon: AlertCircle, color: 'text-red-500', label: 'タスク期限超過' },
+  project_deadline: { icon: Clock, color: 'text-orange-500', label: 'プロジェクト期限' },
+  project_overdue: { icon: AlertCircle, color: 'text-red-500', label: 'プロジェクト期限超過' },
+  project_stagnant: { icon: AlertCircle, color: 'text-yellow-500', label: 'プロジェクト停滞' },
+  status_update_request: { icon: GitBranch, color: 'text-purple-500', label: 'ステータス更新依頼' },
+  partner_activity: { icon: UserPlus, color: 'text-green-500', label: 'パートナー活動' },
+  custom: { icon: Bell, color: 'text-gray-500', label: 'カスタム' },
+  // Legacy types for backward compatibility
   deadline_approaching: { icon: Clock, color: 'text-orange-500', label: '期限接近' },
-  task_overdue: { icon: AlertCircle, color: 'text-red-500', label: '期限超過' },
   mention: { icon: MessageSquare, color: 'text-blue-500', label: 'メンション' },
   assignment: { icon: UserPlus, color: 'text-green-500', label: 'アサイン' },
   status_change: { icon: GitBranch, color: 'text-purple-500', label: 'ステータス変更' },

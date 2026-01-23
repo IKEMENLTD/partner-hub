@@ -21,9 +21,18 @@ interface AlertListProps {
   showMarkAll?: boolean;
 }
 
-const alertTypeConfig = {
-  deadline_approaching: { icon: Clock, color: 'text-orange-500' },
+const alertTypeConfig: Record<string, { icon: typeof Clock; color: string }> = {
+  // Backend ReminderType mappings
+  task_due: { icon: Clock, color: 'text-orange-500' },
   task_overdue: { icon: AlertCircle, color: 'text-red-500' },
+  project_deadline: { icon: Clock, color: 'text-orange-500' },
+  project_overdue: { icon: AlertCircle, color: 'text-red-500' },
+  project_stagnant: { icon: AlertCircle, color: 'text-yellow-500' },
+  status_update_request: { icon: GitBranch, color: 'text-purple-500' },
+  partner_activity: { icon: UserPlus, color: 'text-green-500' },
+  custom: { icon: Bell, color: 'text-gray-500' },
+  // Legacy types for backward compatibility
+  deadline_approaching: { icon: Clock, color: 'text-orange-500' },
   mention: { icon: MessageSquare, color: 'text-blue-500' },
   assignment: { icon: UserPlus, color: 'text-green-500' },
   status_change: { icon: GitBranch, color: 'text-purple-500' },

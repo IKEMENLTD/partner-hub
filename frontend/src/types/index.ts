@@ -268,8 +268,16 @@ export interface Alert {
 }
 
 export type AlertType =
-  | 'deadline_approaching'
+  | 'task_due'
   | 'task_overdue'
+  | 'project_deadline'
+  | 'project_overdue'
+  | 'project_stagnant'
+  | 'status_update_request'
+  | 'partner_activity'
+  | 'custom'
+  // Legacy types for backward compatibility
+  | 'deadline_approaching'
   | 'mention'
   | 'assignment'
   | 'status_change'
