@@ -156,7 +156,7 @@ export class DashboardController {
     name: 'format',
     required: true,
     enum: ReportFormat,
-    description: 'Output format (pdf, excel, csv)',
+    description: 'Output format (csv)',
   })
   @ApiQuery({
     name: 'startDate',

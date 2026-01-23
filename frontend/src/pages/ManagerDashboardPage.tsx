@@ -46,7 +46,7 @@ export function ManagerDashboardPage() {
   // Report generation state
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportType, setReportType] = useState<ReportType>('weekly');
-  const [reportFormat, setReportFormat] = useState<ReportFormat>('pdf');
+  const [reportFormat, setReportFormat] = useState<ReportFormat>('csv');
   const [isGenerating, setIsGenerating] = useState(false);
 
   const isLoading = isLoadingStats || isLoadingProjects || isLoadingPartners;
@@ -452,8 +452,8 @@ export function ManagerDashboardPage() {
             value={reportFormat}
             onChange={(e) => setReportFormat(e.target.value as ReportFormat)}
             options={[
-              { value: 'pdf', label: 'PDF' },
-              { value: 'excel', label: 'Excel' },
+              { value: 'pdf', label: 'PDF（未実装）', disabled: true },
+              { value: 'excel', label: 'Excel（未実装）', disabled: true },
               { value: 'csv', label: 'CSV' },
             ]}
           />

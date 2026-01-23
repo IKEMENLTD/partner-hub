@@ -1139,7 +1139,7 @@ export class DashboardService {
   }
 
   /**
-   * Generate report file in the specified format
+   * Generate report file in CSV format
    */
   private async generateReportFile(
     data: any,
@@ -1158,17 +1158,8 @@ export class DashboardService {
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const baseFileName = `ダッシュボード${reportTypeName}レポート_${dateStr}`;
 
-    switch (format) {
-      case ReportFormat.CSV:
-        return this.generateCsvReport(data, baseFileName);
-
-      case ReportFormat.EXCEL:
-        return this.generateExcelReport(data, baseFileName);
-
-      case ReportFormat.PDF:
-      default:
-        return this.generatePdfReport(data, baseFileName, reportTypeName, startDate, endDate);
-    }
+    // CSV形式のみサポート
+    return this.generateCsvReport(data, baseFileName);
   }
 
   /**
@@ -1242,125 +1233,4 @@ export class DashboardService {
     };
   }
 
-  /**
-   * Generate Excel report (simplified as CSV with .xlsx extension for now)
-   * In production, use a library like exceljs
-   */
-  private generateExcelReport(
-    data: any,
-    baseFileName: string,
-  ): { fileName: string; fileContent: Buffer; mimeType: string } {
-    // For simplicity, generate CSV format that Excel can open
-    // In production, use exceljs or similar library
-    const csvResult = this.generateCsvReport(data, baseFileName);
-
-    return {
-      fileName: `${baseFileName}.xlsx`,
-      fileContent: csvResult.fileContent,
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    };
-  }
-
-  /**
-   * Generate PDF report (simplified as text for now)
-   * In production, use a library like pdfkit or puppeteer
-   */
-  private generatePdfReport(
-    data: any,
-    baseFileName: string,
-    reportTypeName: string,
-    startDate: Date,
-    endDate: Date,
-  ): { fileName: string; fileContent: Buffer; mimeType: string } {
-    // For simplicity, generate a text-based report
-    // In production, use pdfkit, puppeteer, or similar library
-    const lines: string[] = [];
-
-    lines.push('=====================================');
-    lines.push(`    ダッシュボード${reportTypeName}レポート`);
-    lines.push('=====================================');
-    lines.push('');
-    lines.push(`期間: ${data.periodStart} 〜 ${data.periodEnd}`);
-    lines.push(`生成日時: ${new Date().toLocaleString('ja-JP')}`);
-    lines.push('');
-    lines.push('-------------------------------------');
-    lines.push('  概要');
-    lines.push('-------------------------------------');
-    lines.push(`  総案件数:           ${data.overview.totalProjects}`);
-    lines.push(`  進行中案件:         ${data.overview.activeProjects}`);
-    lines.push(`  完了案件:           ${data.overview.completedProjects}`);
-    lines.push(`  総タスク数:         ${data.overview.totalTasks}`);
-    lines.push(`  完了タスク:         ${data.overview.completedTasks}`);
-    lines.push(`  未完了タスク:       ${data.overview.pendingTasks}`);
-    lines.push(`  期限超過タスク:     ${data.overview.overdueTasks}`);
-    lines.push(`  総パートナー数:     ${data.overview.totalPartners}`);
-    lines.push(`  アクティブパートナー: ${data.overview.activePartners}`);
-    lines.push('');
-
-    // Completion rates
-    const projectCompletionRate =
-      data.overview.totalProjects > 0
-        ? Math.round((data.overview.completedProjects / data.overview.totalProjects) * 100)
-        : 0;
-    const taskCompletionRate =
-      data.overview.totalTasks > 0
-        ? Math.round((data.overview.completedTasks / data.overview.totalTasks) * 100)
-        : 0;
-
-    lines.push('-------------------------------------');
-    lines.push('  完了率');
-    lines.push('-------------------------------------');
-    lines.push(`  案件完了率:         ${projectCompletionRate}%`);
-    lines.push(`  タスク完了率:       ${taskCompletionRate}%`);
-    lines.push('');
-
-    lines.push('-------------------------------------');
-    lines.push('  案件サマリー (上位10件)');
-    lines.push('-------------------------------------');
-    const topProjects = data.projectSummaries.slice(0, 10);
-    for (const project of topProjects) {
-      lines.push(`  ${project.name}`);
-      lines.push(`    ステータス: ${project.status} | 進捗: ${project.progress}%`);
-      lines.push(`    タスク: ${project.completedTasksCount}/${project.tasksCount} 完了`);
-      if (project.overdueTasksCount > 0) {
-        lines.push(`    ※ 期限超過タスク: ${project.overdueTasksCount}件`);
-      }
-      lines.push('');
-    }
-
-    lines.push('-------------------------------------');
-    lines.push('  パートナーパフォーマンス (上位5名)');
-    lines.push('-------------------------------------');
-    const topPartners = data.partnerPerformance.slice(0, 5);
-    for (const partner of topPartners) {
-      lines.push(`  ${partner.name}`);
-      lines.push(`    評価: ${partner.rating} | 完了タスク: ${partner.completedTasks}`);
-      lines.push('');
-    }
-
-    if (data.overdueItems.tasks.length > 0) {
-      lines.push('-------------------------------------');
-      lines.push('  期限超過タスク一覧');
-      lines.push('-------------------------------------');
-      for (const task of data.overdueItems.tasks.slice(0, 10)) {
-        lines.push(`  - ${task.title}`);
-        lines.push(
-          `    期限: ${task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '-'}`,
-        );
-      }
-      lines.push('');
-    }
-
-    lines.push('=====================================');
-    lines.push('         レポート終了');
-    lines.push('=====================================');
-
-    const pdfContent = lines.join('\n');
-
-    return {
-      fileName: `${baseFileName}.pdf`,
-      fileContent: Buffer.from(pdfContent, 'utf-8'),
-      mimeType: 'application/pdf',
-    };
-  }
 }

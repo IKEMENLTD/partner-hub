@@ -8,8 +8,6 @@ export enum ReportType {
 }
 
 export enum ReportFormat {
-  PDF = 'pdf',
-  EXCEL = 'excel',
   CSV = 'csv',
 }
 
@@ -25,7 +23,7 @@ export class GenerateReportDto {
   @ApiProperty({
     description: 'Output format of the report',
     enum: ReportFormat,
-    example: ReportFormat.PDF,
+    example: ReportFormat.CSV,
   })
   @IsEnum(ReportFormat)
   format: ReportFormat;
