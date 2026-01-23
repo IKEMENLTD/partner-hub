@@ -1,4 +1,11 @@
-import { Injectable, Logger, NotFoundException, Inject, forwardRef, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  Inject,
+  forwardRef,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThan, In, Not } from 'typeorm';
 import { Project } from '../project/entities/project.entity';
@@ -10,7 +17,13 @@ import { ProjectStatus } from '../project/enums/project-status.enum';
 import { TaskStatus } from '../task/enums/task-status.enum';
 import { PartnerStatus } from '../partner/enums/partner-status.enum';
 import { ReminderStatus } from '../reminder/enums/reminder-type.enum';
-import { DashboardQueryDto, GenerateReportDto, ReportType, ReportFormat, ReportGenerationResult } from './dto';
+import {
+  DashboardQueryDto,
+  GenerateReportDto,
+  ReportType,
+  ReportFormat,
+  ReportGenerationResult,
+} from './dto';
 import { HealthScoreService } from '../project/services/health-score.service';
 
 export interface DashboardOverview {
@@ -440,7 +453,8 @@ export class DashboardService {
         continue;
       }
 
-      const totalDuration = new Date(project.endDate).getTime() - new Date(project.startDate).getTime();
+      const totalDuration =
+        new Date(project.endDate).getTime() - new Date(project.startDate).getTime();
       const elapsed = today.getTime() - new Date(project.startDate).getTime();
       const expectedProgress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
 
@@ -496,24 +510,26 @@ export class DashboardService {
   /**
    * Get detailed health score breakdown for all active projects
    */
-  async getAllProjectsHealthScores(): Promise<Array<{
-    projectId: string;
-    projectName: string;
-    healthScore: number;
-    breakdown: {
-      onTimeRate: number;
-      completionRate: number;
-      budgetHealth: number;
-      totalScore: number;
-      details: {
-        totalTasks: number;
-        completedTasks: number;
-        onTimeCompletedTasks: number;
-        budget: number;
-        actualCost: number;
+  async getAllProjectsHealthScores(): Promise<
+    Array<{
+      projectId: string;
+      projectName: string;
+      healthScore: number;
+      breakdown: {
+        onTimeRate: number;
+        completionRate: number;
+        budgetHealth: number;
+        totalScore: number;
+        details: {
+          totalTasks: number;
+          completedTasks: number;
+          onTimeCompletedTasks: number;
+          budget: number;
+          actualCost: number;
+        };
       };
-    };
-  }>> {
+    }>
+  > {
     return this.healthScoreService.getAllProjectsHealthScores();
   }
 
@@ -601,12 +617,15 @@ export class DashboardService {
     totalProjects: number;
     totalPartners: number;
   }> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
+    // Use date strings for PostgreSQL date column comparison (avoid timezone issues)
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0]; // 'YYYY-MM-DD' format
+    const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const nextWeek = new Date(today);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const nextWeek = new Date(now);
     nextWeek.setDate(nextWeek.getDate() + 7);
+    const nextWeekStr = nextWeek.toISOString().split('T')[0];
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -624,8 +643,8 @@ export class DashboardService {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
       })
       .andWhere(
-        '(task.dueDate BETWEEN :today AND :tomorrow OR task.dueDate < :today OR task.dueDate IS NULL)',
-        { today, tomorrow }
+        '(task.dueDate = :todayStr OR task.dueDate < :todayStr OR task.dueDate IS NULL)',
+        { todayStr },
       )
       .orderBy('task.dueDate', 'ASC', 'NULLS LAST')
       .addOrderBy('task.priority', 'DESC')
@@ -638,8 +657,8 @@ export class DashboardService {
       .leftJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('task.assigneeId = :userId', { userId })
-      .andWhere('task.dueDate > :tomorrow', { tomorrow })
-      .andWhere('task.dueDate <= :nextWeek', { nextWeek })
+      .andWhere('task.dueDate > :todayStr', { todayStr })
+      .andWhere('task.dueDate <= :nextWeekStr', { nextWeekStr })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
       })
@@ -655,7 +674,7 @@ export class DashboardService {
       take: 10,
     });
 
-    const recentAlerts = alerts.map(alert => ({
+    const recentAlerts = alerts.map((alert) => ({
       id: alert.id,
       type: alert.type,
       severity: 'medium',
@@ -667,7 +686,7 @@ export class DashboardService {
 
     // Get recent activity (timeline events)
     const recentActivities = await this.getRecentActivity(10);
-    const recentActivity = recentActivities.map(activity => ({
+    const recentActivity = recentActivities.map((activity) => ({
       id: activity.entityId,
       type: activity.type,
       action: activity.action,
@@ -705,18 +724,12 @@ export class DashboardService {
   }
 
   async markAlertAsRead(userId: string, alertId: string): Promise<{ success: boolean }> {
-    await this.reminderRepository.update(
-      { id: alertId, userId },
-      { isRead: true },
-    );
+    await this.reminderRepository.update({ id: alertId, userId }, { isRead: true });
     return { success: true };
   }
 
   async markAllAlertsAsRead(userId: string): Promise<{ success: boolean }> {
-    await this.reminderRepository.update(
-      { userId, isRead: false },
-      { isRead: true },
-    );
+    await this.reminderRepository.update({ userId, isRead: false }, { isRead: true });
     return { success: true };
   }
 
@@ -788,9 +801,8 @@ export class DashboardService {
           }
         }
       }
-      const onTimeDeliveryRate = completedTasks.length > 0
-        ? Math.round((onTimeCount / completedTasks.length) * 100)
-        : 100;
+      const onTimeDeliveryRate =
+        completedTasks.length > 0 ? Math.round((onTimeCount / completedTasks.length) * 100) : 100;
 
       result.push({
         partnerId: p.id,
@@ -850,8 +862,8 @@ export class DashboardService {
 
   async getManagerDashboard(period: string = 'month'): Promise<any> {
     const today = new Date();
-    let periodStart = new Date();
-    let periodEnd = new Date();
+    const periodStart = new Date();
+    const periodEnd = new Date();
 
     if (period === 'week') {
       periodStart.setDate(today.getDate() - 7);
@@ -873,7 +885,7 @@ export class DashboardService {
       .where('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
       .andWhere('project.progress < 50')
       .andWhere('project.endDate < :futureDate', {
-        futureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        futureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       })
       .getMany();
 
@@ -894,7 +906,7 @@ export class DashboardService {
       taskSummary: await this.calculateTaskSummary(taskSummary),
       partnerPerformance: await this.calculatePartnerPerformance(partnerPerformance),
       projectsAtRisk: await this.enrichProjectsAtRisk(projectsAtRisk),
-      recentActivities: recentActivities.map(a => ({
+      recentActivities: recentActivities.map((a) => ({
         id: a.entityId,
         type: a.type === 'task' ? 'task_completed' : 'project_updated',
         description: `${a.action} ${a.entityName}`,
@@ -927,7 +939,7 @@ export class DashboardService {
         .getCount();
 
       const daysRemaining = Math.floor(
-        (new Date(p.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        (new Date(p.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
       );
 
       // Determine risk level based on multiple factors
@@ -988,7 +1000,7 @@ export class DashboardService {
       .take(10)
       .getMany();
 
-    return tasks.map(t => ({
+    return tasks.map((t) => ({
       id: t.id,
       title: t.title,
       projectId: t.projectId,
@@ -1000,7 +1012,7 @@ export class DashboardService {
       dueDate: t.dueDate,
       priority: t.priority,
       daysRemaining: Math.floor(
-        (new Date(t.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        (new Date(t.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
       ),
     }));
   }
@@ -1061,9 +1073,7 @@ export class DashboardService {
 
       case ReportType.CUSTOM:
         if (!dto.startDate || !dto.endDate) {
-          throw new BadRequestException(
-            'カスタムレポートには開始日と終了日が必要です',
-          );
+          throw new BadRequestException('カスタムレポートには開始日と終了日が必要です');
         }
         startDate = new Date(dto.startDate);
         startDate.setHours(0, 0, 0, 0);
@@ -1127,8 +1137,8 @@ export class DashboardService {
       reportType === ReportType.WEEKLY
         ? '週次'
         : reportType === ReportType.MONTHLY
-        ? '月次'
-        : 'カスタム';
+          ? '月次'
+          : 'カスタム';
 
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const baseFileName = `ダッシュボード${reportTypeName}レポート_${dateStr}`;
@@ -1273,12 +1283,14 @@ export class DashboardService {
     lines.push('');
 
     // Completion rates
-    const projectCompletionRate = data.overview.totalProjects > 0
-      ? Math.round((data.overview.completedProjects / data.overview.totalProjects) * 100)
-      : 0;
-    const taskCompletionRate = data.overview.totalTasks > 0
-      ? Math.round((data.overview.completedTasks / data.overview.totalTasks) * 100)
-      : 0;
+    const projectCompletionRate =
+      data.overview.totalProjects > 0
+        ? Math.round((data.overview.completedProjects / data.overview.totalProjects) * 100)
+        : 0;
+    const taskCompletionRate =
+      data.overview.totalTasks > 0
+        ? Math.round((data.overview.completedTasks / data.overview.totalTasks) * 100)
+        : 0;
 
     lines.push('-------------------------------------');
     lines.push('  完了率');
@@ -1317,7 +1329,9 @@ export class DashboardService {
       lines.push('-------------------------------------');
       for (const task of data.overdueItems.tasks.slice(0, 10)) {
         lines.push(`  - ${task.title}`);
-        lines.push(`    期限: ${task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '-'}`);
+        lines.push(
+          `    期限: ${task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '-'}`,
+        );
       }
       lines.push('');
     }
