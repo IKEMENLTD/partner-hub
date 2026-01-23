@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuthStore } from '@/store';
 import { authService } from '@/services/authService';
 import type { AuthError } from '@supabase/supabase-js';
@@ -72,10 +72,28 @@ export function useAuthListener() {
   const { setSession, setUser, setInitialized, setLoading } = useAuthStore();
 
   useEffect(() => {
+    // Supabaseが設定されていない場合は即座に初期化完了
+    if (!isSupabaseConfigured) {
+      console.error('Supabase is not configured. Authentication disabled.');
+      setInitialized(true);
+      return;
+    }
+
+    let isMounted = true;
+
     const initSession = async () => {
       setLoading(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // タイムアウト付きでセッション取得
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Session fetch timeout')), 10000);
+        });
+
+        const sessionPromise = supabase.auth.getSession();
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+
+        if (!isMounted) return;
+
         setSession(session);
 
         if (session?.user) {
@@ -89,7 +107,9 @@ export function useAuthListener() {
       } catch (error) {
         console.error('Session initialization failed:', error);
       } finally {
-        setInitialized(true);
+        if (isMounted) {
+          setInitialized(true);
+        }
       }
     };
 
@@ -98,6 +118,8 @@ export function useAuthListener() {
     // 認証状態の変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+
         console.log('Auth state changed:', event);
         setSession(session);
 
@@ -115,6 +137,7 @@ export function useAuthListener() {
     );
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [setSession, setUser, setInitialized, setLoading]);
@@ -131,6 +154,10 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async ({ email, password }: LoginInput) => {
+      if (!isSupabaseConfigured) {
+        throw new Error('認証システムが設定されていません');
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -165,6 +192,10 @@ export function useRegister() {
 
   return useMutation({
     mutationFn: async ({ email, password, firstName, lastName }: RegisterInput) => {
+      if (!isSupabaseConfigured) {
+        throw new Error('認証システムが設定されていません');
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -198,6 +229,11 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
+      if (!isSupabaseConfigured) {
+        // Supabaseが設定されていなくてもローカル状態はクリア
+        return;
+      }
+
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     },
@@ -219,6 +255,10 @@ interface ForgotPasswordInput {
 export function useForgotPassword() {
   return useMutation({
     mutationFn: async ({ email }: ForgotPasswordInput) => {
+      if (!isSupabaseConfigured) {
+        throw new Error('認証システムが設定されていません');
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
@@ -239,6 +279,10 @@ interface ResetPasswordInput {
 export function useResetPassword() {
   return useMutation({
     mutationFn: async ({ newPassword }: ResetPasswordInput) => {
+      if (!isSupabaseConfigured) {
+        throw new Error('認証システムが設定されていません');
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
