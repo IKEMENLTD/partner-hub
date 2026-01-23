@@ -62,13 +62,19 @@ export function RegisterPage() {
       errors.password = 'パスワードは8文字以上で入力してください';
     } else if (formData.password.length > 50) {
       errors.password = 'パスワードは50文字以内で入力してください';
-    } else if (
-      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/.test(
-        formData.password
-      )
-    ) {
-      errors.password =
-        'パスワードは大文字、小文字、数字、特殊文字(@$!%*?&)を含める必要があります';
+    } else {
+      // 4条件のうち2つ以上を満たすかチェック
+      const conditions = [
+        /[a-z]/.test(formData.password), // 小文字
+        /[A-Z]/.test(formData.password), // 大文字
+        /\d/.test(formData.password),    // 数字
+        /[@$!%*?&#^()_+\-=\[\]{}|;:'",.<>?/\\`~]/.test(formData.password) // 特殊文字
+      ];
+      const conditionsMet = conditions.filter(Boolean).length;
+      if (conditionsMet < 2) {
+        errors.password =
+          'パスワードは大文字、小文字、数字、特殊文字のうち2種類以上を含めてください';
+      }
     }
 
     // Confirm password validation
@@ -223,10 +229,10 @@ export function RegisterPage() {
               value={formData.password}
               onChange={handleChange('password')}
               error={validationErrors.password}
-              placeholder="8文字以上（大小英字・数字・記号を含む）"
+              placeholder="8文字以上"
               autoComplete="new-password"
               required
-              helperText="大文字、小文字、数字、特殊文字(@$!%*?&)を含む8文字以上"
+              helperText="8文字以上、大文字・小文字・数字・記号のうち2種類以上"
               rightIcon={
                 <button
                   type="button"
