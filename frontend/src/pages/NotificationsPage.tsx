@@ -4,92 +4,63 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import {
   Bell,
-  AlertCircle,
   Clock,
   MessageSquare,
   UserPlus,
-  GitBranch,
+  Settings,
   Filter,
   CheckCheck,
-  X,
+  Check,
 } from 'lucide-react';
-import { useAlerts, useMarkAlertAsRead, useMarkAllAlertsAsRead } from '@/hooks';
-import type { Alert, AlertSeverity } from '@/types';
+import { useInAppNotifications } from '@/hooks/useInAppNotifications';
+import type { InAppNotificationType } from '@/types';
 import {
   Card,
   CardContent,
   Button,
   Select,
   PageLoading,
-  ErrorMessage,
   EmptyState,
   Badge,
 } from '@/components/common';
 import clsx from 'clsx';
 
-const alertTypeConfig: Record<string, { icon: typeof Clock; color: string; label: string }> = {
-  // Backend ReminderType mappings
-  task_due: { icon: Clock, color: 'text-orange-500', label: 'タスク期限' },
-  task_overdue: { icon: AlertCircle, color: 'text-red-500', label: 'タスク期限超過' },
-  project_deadline: { icon: Clock, color: 'text-orange-500', label: 'プロジェクト期限' },
-  project_overdue: { icon: AlertCircle, color: 'text-red-500', label: 'プロジェクト期限超過' },
-  project_stagnant: { icon: AlertCircle, color: 'text-yellow-500', label: 'プロジェクト停滞' },
-  status_update_request: { icon: GitBranch, color: 'text-purple-500', label: 'ステータス更新依頼' },
-  partner_activity: { icon: UserPlus, color: 'text-green-500', label: 'パートナー活動' },
-  custom: { icon: Bell, color: 'text-gray-500', label: 'カスタム' },
-  // Legacy types for backward compatibility
-  deadline_approaching: { icon: Clock, color: 'text-orange-500', label: '期限接近' },
+const notificationTypeConfig: Record<InAppNotificationType, { icon: typeof Clock; color: string; label: string }> = {
+  deadline: { icon: Clock, color: 'text-orange-500', label: '期限通知' },
   mention: { icon: MessageSquare, color: 'text-blue-500', label: 'メンション' },
-  assignment: { icon: UserPlus, color: 'text-green-500', label: 'アサイン' },
-  status_change: { icon: GitBranch, color: 'text-purple-500', label: 'ステータス変更' },
-  comment: { icon: MessageSquare, color: 'text-gray-500', label: 'コメント' },
-};
-
-const severityStyles: Record<AlertSeverity, string> = {
-  info: 'border-l-blue-400',
-  warning: 'border-l-yellow-400',
-  error: 'border-l-red-400',
-  success: 'border-l-green-400',
+  assigned: { icon: UserPlus, color: 'text-green-500', label: '担当者アサイン' },
+  system: { icon: Settings, color: 'text-gray-500', label: 'システム' },
 };
 
 export function NotificationsPage() {
-  const { data, isLoading, error, refetch } = useAlerts();
-  const { mutate: markAsRead } = useMarkAlertAsRead();
-  const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllAlertsAsRead();
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+  } = useInAppNotifications();
 
   const [filterType, setFilterType] = useState<string>('all');
   const [filterRead, setFilterRead] = useState<string>('all');
 
-  const alerts = (Array.isArray(data) ? data : []) as Alert[];
-
-  const filteredAlerts = useMemo(() => {
-    return alerts.filter((alert) => {
-      if (filterType !== 'all' && alert.type !== filterType) {
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter((notification) => {
+      if (filterType !== 'all' && notification.type !== filterType) {
         return false;
       }
-      if (filterRead === 'unread' && alert.isRead) {
+      if (filterRead === 'unread' && notification.isRead) {
         return false;
       }
-      if (filterRead === 'read' && !alert.isRead) {
+      if (filterRead === 'read' && !notification.isRead) {
         return false;
       }
       return true;
     });
-  }, [alerts, filterType, filterRead]);
-
-  const unreadCount = alerts.filter((a) => !a.isRead).length;
+  }, [notifications, filterType, filterRead]);
 
   if (isLoading) {
     return <PageLoading />;
-  }
-
-  if (error) {
-    return (
-      <ErrorMessage
-        message="通知の読み込みに失敗しました"
-        retry={() => refetch()}
-      />
-    );
   }
 
   return (
@@ -112,7 +83,6 @@ export function NotificationsPage() {
             variant="outline"
             leftIcon={<CheckCheck className="h-4 w-4" />}
             onClick={() => markAllAsRead()}
-            isLoading={isMarkingAll}
           >
             すべて既読にする
           </Button>
@@ -134,12 +104,10 @@ export function NotificationsPage() {
               className="w-full sm:w-48"
               options={[
                 { value: 'all', label: 'すべてのタイプ' },
-                { value: 'deadline_approaching', label: '期限接近' },
-                { value: 'task_overdue', label: '期限超過' },
+                { value: 'deadline', label: '期限通知' },
                 { value: 'mention', label: 'メンション' },
-                { value: 'assignment', label: 'アサイン' },
-                { value: 'status_change', label: 'ステータス変更' },
-                { value: 'comment', label: 'コメント' },
+                { value: 'assigned', label: '担当者アサイン' },
+                { value: 'system', label: 'システム' },
               ]}
             />
             <Select
@@ -155,13 +123,13 @@ export function NotificationsPage() {
             />
           </div>
           <div className="text-sm text-gray-500">
-            {filteredAlerts.length} 件表示
+            {filteredNotifications.length} 件表示
           </div>
         </CardContent>
       </Card>
 
       {/* Notifications List */}
-      {filteredAlerts.length === 0 ? (
+      {filteredNotifications.length === 0 ? (
         <Card className="py-12">
           <EmptyState
             icon={<Bell className="h-12 w-12" />}
@@ -175,17 +143,16 @@ export function NotificationsPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {filteredAlerts.map((alert) => {
-            const config = alertTypeConfig[alert.type];
+          {filteredNotifications.map((notification) => {
+            const config = notificationTypeConfig[notification.type] || notificationTypeConfig.system;
             const Icon = config.icon;
 
             return (
               <Card
-                key={alert.id}
+                key={notification.id}
                 className={clsx(
-                  'relative border-l-4 transition-colors',
-                  severityStyles[alert.severity],
-                  !alert.isRead && 'bg-blue-50/50'
+                  'relative transition-colors',
+                  !notification.isRead && 'bg-blue-50/50'
                 )}
               >
                 <CardContent className="py-4">
@@ -199,47 +166,62 @@ export function NotificationsPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-medium text-gray-900">
-                              {alert.title}
+                              {notification.title}
                             </h3>
                             <Badge variant="default" className="text-xs">
                               {config.label}
                             </Badge>
+                            {!notification.isRead && (
+                              <span className="h-2 w-2 rounded-full bg-primary-500" />
+                            )}
                           </div>
-                          <p className="mt-1 text-sm text-gray-600">
-                            {alert.message}
-                          </p>
+                          {notification.message && (
+                            <p className="mt-1 text-sm text-gray-600">
+                              {notification.message}
+                            </p>
+                          )}
                         </div>
 
-                        {!alert.isRead && (
+                        {!notification.isRead && (
                           <button
-                            onClick={() => markAsRead(alert.id)}
+                            onClick={() => markAsRead(notification.id)}
                             className="flex-shrink-0 rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
                             aria-label="既読にする"
+                            title="既読にする"
                           >
-                            <X className="h-4 w-4" />
+                            <Check className="h-4 w-4" />
                           </button>
                         )}
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-4">
                         <span className="text-xs text-gray-500">
-                          {format(new Date(alert.createdAt), 'yyyy年M月d日 HH:mm', {
+                          {format(new Date(notification.createdAt), 'yyyy年M月d日 HH:mm', {
                             locale: ja,
                           })}
                         </span>
 
-                        {alert.projectId && (
+                        {notification.linkUrl && (
                           <Link
-                            to={`/projects/${alert.projectId}`}
+                            to={notification.linkUrl}
+                            className="text-xs font-medium text-primary-600 hover:text-primary-700"
+                          >
+                            詳細を確認
+                          </Link>
+                        )}
+
+                        {notification.projectId && !notification.linkUrl && (
+                          <Link
+                            to={`/projects/${notification.projectId}`}
                             className="text-xs font-medium text-primary-600 hover:text-primary-700"
                           >
                             案件を確認
                           </Link>
                         )}
 
-                        {alert.taskId && (
+                        {notification.taskId && !notification.linkUrl && (
                           <Link
-                            to={`/projects/${alert.projectId}/tasks/${alert.taskId}`}
+                            to={`/projects/${notification.projectId}/tasks/${notification.taskId}`}
                             className="text-xs font-medium text-primary-600 hover:text-primary-700"
                           >
                             タスクを確認
@@ -248,10 +230,6 @@ export function NotificationsPage() {
                       </div>
                     </div>
                   </div>
-
-                  {!alert.isRead && (
-                    <span className="absolute right-4 top-4 h-2 w-2 rounded-full bg-primary-500" />
-                  )}
                 </CardContent>
               </Card>
             );
@@ -260,9 +238,9 @@ export function NotificationsPage() {
       )}
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-        {Object.entries(alertTypeConfig).map(([type, config]) => {
-          const count = alerts.filter((a) => a.type === type).length;
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {Object.entries(notificationTypeConfig).map(([type, config]) => {
+          const count = notifications.filter((n) => n.type === type).length;
           const Icon = config.icon;
           return (
             <Card
