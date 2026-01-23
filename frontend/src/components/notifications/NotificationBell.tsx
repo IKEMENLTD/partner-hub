@@ -144,7 +144,7 @@ export function NotificationBell() {
           </div>
 
           {/* Notification List */}
-          <div className="max-h-96 overflow-y-auto">
+          <div>
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
@@ -156,7 +156,7 @@ export function NotificationBell() {
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {notifications.map((notification) => (
+                {notifications.slice(0, 3).map((notification) => (
                   <NotificationItem
                     key={notification.id}
                     notification={notification}
