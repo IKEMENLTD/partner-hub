@@ -29,6 +29,17 @@ import {
 import { TaskStatus } from '../task/enums/task-status.enum';
 import { ReminderType, ReminderChannel } from '../reminder/enums/reminder-type.enum';
 
+/**
+ * EscalationService - エスカレーションルールの管理と実行
+ *
+ * 依存関係アーキテクチャ:
+ *   EscalationService → ReminderService → NotificationService
+ *
+ * 重要: この一方向の依存関係を維持してください。
+ * ReminderService から EscalationService を呼び出すと循環依存が発生します。
+ * 将来的にReminderからEscalation機能が必要な場合は、
+ * イベント駆動アーキテクチャ（@nestjs/event-emitter）の導入を検討してください。
+ */
 @Injectable()
 export class EscalationService {
   private readonly logger = new Logger(EscalationService.name);

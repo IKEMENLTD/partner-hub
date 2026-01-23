@@ -22,7 +22,15 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
     synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV === 'development',
     autoLoadEntities: true,
-    // Supabaseは自己署名証明書を使用するため、rejectUnauthorized: false が必要
+    // SECURITY WARNING: rejectUnauthorized: false disables SSL certificate verification
+    // This makes the connection vulnerable to Man-in-the-Middle (MITM) attacks.
+    //
+    // Current setting is required because Supabase uses a self-signed certificate.
+    //
+    // TODO: For improved security, obtain Supabase's CA certificate and configure:
+    //   ssl: { rejectUnauthorized: true, ca: process.env.SUPABASE_CA_CERT }
+    //
+    // Reference: https://supabase.com/docs/guides/database/connecting-to-postgres
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   };
 });

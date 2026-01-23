@@ -2,7 +2,15 @@ import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 // This script creates initial demo data
+// WARNING: This script should NEVER be run in production
 async function seed() {
+  // SECURITY: Block execution in production environment
+  if (process.env.NODE_ENV === 'production') {
+    console.error('ERROR: Seed script is disabled in production environment');
+    console.error('This script creates demo users with known credentials and must not run in production.');
+    process.exit(1);
+  }
+
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
@@ -39,7 +47,8 @@ async function seed() {
       isActive: true,
     });
 
-    console.log('Demo user created: demo@example.com / Demo1234!');
+    // SECURITY: Do not log credentials even in development
+    console.log('Demo user created successfully');
   } else {
     console.log('Demo user already exists');
   }
