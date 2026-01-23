@@ -1,6 +1,11 @@
 import { api } from './api';
 import type { InAppNotificationResponse } from '@/types';
 
+interface BackendResponse<T> {
+  success: boolean;
+  data: T;
+}
+
 export const inAppNotificationService = {
   async getNotifications(params?: {
     limit?: number;
@@ -14,26 +19,27 @@ export const inAppNotificationService = {
 
     const query = queryParams.toString();
     const url = query ? `/notifications?${query}` : '/notifications';
-    return api.get<InAppNotificationResponse>(url);
+    const response = await api.get<BackendResponse<InAppNotificationResponse>>(url);
+    return response.data;
   },
 
   async getUnreadCount(): Promise<number> {
-    const response = await api.get<{ count: number }>('/notifications/unread-count');
-    return response.count;
+    const response = await api.get<BackendResponse<{ count: number }>>('/notifications/unread-count');
+    return response.data.count;
   },
 
   async markAsRead(id: string): Promise<boolean> {
-    const response = await api.post<{ success: boolean }>(`/notifications/${id}/read`);
-    return response.success;
+    const response = await api.post<BackendResponse<{ success: boolean }>>(`/notifications/${id}/read`);
+    return response.data.success;
   },
 
   async markAllAsRead(): Promise<number> {
-    const response = await api.post<{ success: boolean; count: number }>('/notifications/read-all');
-    return response.count;
+    const response = await api.post<BackendResponse<{ success: boolean; count: number }>>('/notifications/read-all');
+    return response.data.count;
   },
 
   async deleteNotification(id: string): Promise<boolean> {
-    const response = await api.delete<{ success: boolean }>(`/notifications/${id}`);
-    return response.success;
+    const response = await api.delete<BackendResponse<{ success: boolean }>>(`/notifications/${id}`);
+    return response.data.success;
   },
 };
