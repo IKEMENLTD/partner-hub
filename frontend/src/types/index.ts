@@ -301,6 +301,7 @@ export interface DashboardStats {
 export interface TodayStats {
   tasksForToday: Task[];
   upcomingDeadlines: Task[];
+  upcomingProjectDeadlines: Project[];
   recentAlerts: Alert[];
   recentActivity: TimelineEvent[];
   totalProjects: number;

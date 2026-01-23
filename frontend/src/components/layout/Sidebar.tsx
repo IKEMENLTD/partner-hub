@@ -12,7 +12,7 @@ import {
 import { useAuthStore, useUIStore } from '@/store';
 
 const mainNavItems = [
-  { icon: Home, label: '今日のタスク', path: '/today' },
+  { icon: Home, label: 'ダッシュボード', path: '/today' },
   { icon: FolderKanban, label: '案件一覧', path: '/projects' },
   { icon: Users, label: 'パートナー', path: '/partners' },
 ];

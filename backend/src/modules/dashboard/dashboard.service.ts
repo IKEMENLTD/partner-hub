@@ -612,6 +612,7 @@ export class DashboardService {
   async getMyToday(userId: string): Promise<{
     tasksForToday: Task[];
     upcomingDeadlines: Task[];
+    upcomingProjectDeadlines: Project[];
     recentAlerts: any[];
     recentActivity: any[];
     totalProjects: number;
@@ -665,6 +666,20 @@ export class DashboardService {
       .take(10)
       .getMany();
 
+    // Get projects with end_date within next 7 days (including today and overdue)
+    const upcomingProjectDeadlines = await this.projectRepository
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.owner', 'owner')
+      .leftJoinAndSelect('project.manager', 'manager')
+      .where('project.endDate IS NOT NULL')
+      .andWhere('project.endDate <= :nextWeekStr', { nextWeekStr })
+      .andWhere('project.status NOT IN (:...completedStatuses)', {
+        completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
+      })
+      .orderBy('project.endDate', 'ASC')
+      .take(10)
+      .getMany();
+
     // Get recent alerts
     const alerts = await this.reminderRepository.find({
       where: { userId },
@@ -706,6 +721,7 @@ export class DashboardService {
     return {
       tasksForToday,
       upcomingDeadlines,
+      upcomingProjectDeadlines,
       recentAlerts,
       recentActivity,
       totalProjects,

@@ -55,6 +55,7 @@ export function MyTodayPage() {
 
   const tasksForToday = Array.isArray(todayStats?.tasksForToday) ? todayStats.tasksForToday : [];
   const upcomingDeadlines = Array.isArray(todayStats?.upcomingDeadlines) ? todayStats.upcomingDeadlines : [];
+  const upcomingProjectDeadlines = Array.isArray(todayStats?.upcomingProjectDeadlines) ? todayStats.upcomingProjectDeadlines : [];
 
   const completedTodayCount = tasksForToday.filter(
     (t) => t.status === 'completed'
@@ -264,28 +265,60 @@ export function MyTodayPage() {
           </CardContent>
         </Card>
 
-        {/* Upcoming Deadlines */}
+        {/* Upcoming Project Deadlines */}
         <Card padding="none">
           <CardHeader className="px-6 pt-6">
-            期限が1週間以内のタスク
-            {upcomingDeadlines.length > 0 && (
+            期限が1週間以内の案件
+            {upcomingProjectDeadlines.length > 0 && (
               <span className="ml-2 text-sm font-normal text-gray-500">
-                ({upcomingDeadlines.length}件)
+                ({upcomingProjectDeadlines.length}件)
               </span>
             )}
           </CardHeader>
           <CardContent className="px-6 pb-6">
-            {upcomingDeadlines.length === 0 ? (
+            {upcomingProjectDeadlines.length === 0 ? (
               <EmptyState
-                title="期限が1週間以内のタスクはありません"
-                description="1週間以内に期限を迎えるタスクがここに表示されます"
+                title="期限が1週間以内の案件はありません"
+                description="1週間以内に期限を迎える案件がここに表示されます"
                 className="py-8"
               />
             ) : (
               <div className="space-y-3">
-                {upcomingDeadlines.map((task) => (
-                  <TaskCard key={task.id} task={task} compact />
-                ))}
+                {upcomingProjectDeadlines.map((project) => {
+                  const endDate = project.endDate ? new Date(project.endDate) : null;
+                  const isOverdue = endDate && endDate < today;
+                  const isToday = endDate && endDate.toDateString() === today.toDateString();
+                  return (
+                    <Link
+                      key={project.id}
+                      to={`/projects/${project.id}`}
+                      className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-primary-300 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-lg bg-primary-100 p-2">
+                          <FolderKanban className="h-4 w-4 text-primary-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">{project.name}</p>
+                          <p className="text-xs text-gray-500">
+                            期限: {endDate ? format(endDate, 'M月d日', { locale: ja }) : '未設定'}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant={isOverdue ? 'danger' : isToday ? 'warning' : 'default'}
+                      >
+                        {isOverdue
+                          ? '期限超過'
+                          : isToday
+                          ? '本日期限'
+                          : endDate
+                          ? format(endDate, 'M/d', { locale: ja })
+                          : '未設定'}
+                      </Badge>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </CardContent>
