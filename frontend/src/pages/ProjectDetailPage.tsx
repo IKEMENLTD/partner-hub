@@ -20,7 +20,7 @@ import {
   useProject,
   useProjectTimeline,
   useDeleteProject,
-  useUpdateTask,
+  useUpdateTaskStatus,
   useStakeholderTree,
   useProjectStakeholders,
   useAddStakeholder,
@@ -83,7 +83,7 @@ export function ProjectDetailPage() {
   const { data, isLoading, error, refetch } = useProject(id);
   const { data: timelineData } = useProjectTimeline(id);
   const { mutate: deleteProject, isPending: isDeleting } = useDeleteProject();
-  const { mutate: updateTask } = useUpdateTask();
+  const { mutate: updateTaskStatus } = useUpdateTaskStatus();
 
   // ステークホルダー関連
   const { data: stakeholderTree, isLoading: isLoadingStakeholders } = useStakeholderTree(id);
@@ -152,7 +152,7 @@ export function ProjectDetailPage() {
   };
 
   const handleTaskStatusChange = (taskId: string, newStatus: TaskStatus) => {
-    updateTask({ id: taskId, data: { status: newStatus } });
+    updateTaskStatus({ id: taskId, status: newStatus });
   };
 
   // ステークホルダー追加/編集ハンドラー

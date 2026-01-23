@@ -85,17 +85,21 @@ export function useUpdateTaskStatus() {
     onMutate: async ({ id, status }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['today-stats'] });
+      await queryClient.cancelQueries({ queryKey: ['project-tasks'], exact: false });
 
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData(['today-stats']);
+      // Snapshot previous values
+      const previousTodayStats = queryClient.getQueryData(['today-stats']);
+      const projectTasksQueries = queryClient.getQueriesData({ queryKey: ['project-tasks'] });
 
-      // Optimistically update the cache
+      // Helper to update tasks in an array
+      const updateTasks = (tasks: any[]) =>
+        tasks?.map((task: any) =>
+          task.id === id ? { ...task, status } : task
+        ) || [];
+
+      // Optimistically update today-stats
       queryClient.setQueryData(['today-stats'], (old: any) => {
         if (!old) return old;
-        const updateTasks = (tasks: any[]) =>
-          tasks?.map((task: any) =>
-            task.id === id ? { ...task, status } : task
-          ) || [];
         return {
           ...old,
           tasksForToday: updateTasks(old.tasksForToday),
@@ -103,12 +107,27 @@ export function useUpdateTaskStatus() {
         };
       });
 
-      return { previousData };
+      // Optimistically update all project-tasks queries
+      projectTasksQueries.forEach(([queryKey, data]: [any, any]) => {
+        if (data?.data) {
+          queryClient.setQueryData(queryKey, {
+            ...data,
+            data: updateTasks(data.data),
+          });
+        }
+      });
+
+      return { previousTodayStats, projectTasksQueries };
     },
     onError: (_err, _variables, context) => {
       // Rollback on error
-      if (context?.previousData) {
-        queryClient.setQueryData(['today-stats'], context.previousData);
+      if (context?.previousTodayStats) {
+        queryClient.setQueryData(['today-stats'], context.previousTodayStats);
+      }
+      if (context?.projectTasksQueries) {
+        context.projectTasksQueries.forEach(([queryKey, data]: [any, any]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
     },
     onSettled: () => {

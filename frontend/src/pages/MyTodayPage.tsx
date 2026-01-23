@@ -341,12 +341,12 @@ export function MyTodayPage() {
             <div className="flex items-center gap-2">
               <Hourglass className="h-5 w-5 text-orange-500" />
               <span>自分の対応待ち</span>
+              {pendingActionTasks.length > 0 && (
+                <span className="text-sm font-normal text-gray-500">
+                  ({pendingActionTasks.length}件)
+                </span>
+              )}
             </div>
-            {pendingActionTasks.length > 0 && (
-              <span className="ml-2 text-sm font-normal text-gray-500">
-                ({pendingActionTasks.length}件)
-              </span>
-            )}
           </CardHeader>
           <CardContent className="px-6 pb-6">
             {pendingActionTasks.length === 0 ? (
@@ -371,12 +371,12 @@ export function MyTodayPage() {
             <div className="flex items-center gap-2">
               <Eye className="h-5 w-5 text-blue-500" />
               <span>対応待ち（他者）</span>
+              {waitingForOthersTasks.length > 0 && (
+                <span className="text-sm font-normal text-gray-500">
+                  ({waitingForOthersTasks.length}件)
+                </span>
+              )}
             </div>
-            {waitingForOthersTasks.length > 0 && (
-              <span className="ml-2 text-sm font-normal text-gray-500">
-                ({waitingForOthersTasks.length}件)
-              </span>
-            )}
           </CardHeader>
           <CardContent className="px-6 pb-6">
             {waitingForOthersTasks.length === 0 ? (
