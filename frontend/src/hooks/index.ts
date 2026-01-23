@@ -25,6 +25,7 @@ export {
   useTodayTasks,
   useCreateTask,
   useUpdateTask,
+  useUpdateTaskStatus,
   useDeleteTask,
   useAddComment,
   useAddSubtask,

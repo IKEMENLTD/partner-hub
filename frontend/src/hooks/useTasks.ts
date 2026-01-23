@@ -75,6 +75,51 @@ export function useUpdateTask() {
   });
 }
 
+// Optimistic update for task status changes (faster UX)
+export function useUpdateTaskStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      taskService.update(id, { status } as Partial<TaskInput>),
+    onMutate: async ({ id, status }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['today-stats'] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(['today-stats']);
+
+      // Optimistically update the cache
+      queryClient.setQueryData(['today-stats'], (old: any) => {
+        if (!old) return old;
+        const updateTasks = (tasks: any[]) =>
+          tasks?.map((task: any) =>
+            task.id === id ? { ...task, status } : task
+          ) || [];
+        return {
+          ...old,
+          tasksForToday: updateTasks(old.tasksForToday),
+          upcomingDeadlines: updateTasks(old.upcomingDeadlines),
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        queryClient.setQueryData(['today-stats'], context.previousData);
+      }
+    },
+    onSettled: () => {
+      // Refetch after mutation
+      queryClient.invalidateQueries({ queryKey: ['today-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+    },
+  });
+}
+
 export function useDeleteTask() {
   const queryClient = useQueryClient();
 

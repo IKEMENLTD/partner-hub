@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { getUserDisplayName } from '@/types';
-import { useTodayStats } from '@/hooks';
+import type { TaskStatus } from '@/types';
+import { useTodayStats, useUpdateTaskStatus } from '@/hooks';
 import { useRecentProjects } from '@/hooks/useRecentProjects';
 import {
   Card,
@@ -36,6 +37,13 @@ export function MyTodayPage() {
 
   // Fetch recent projects from localStorage
   const { projects: recentProjects, isLoading: isLoadingProjects } = useRecentProjects();
+
+  // Task status update with optimistic updates
+  const { mutate: updateTaskStatus } = useUpdateTaskStatus();
+
+  const handleTaskStatusChange = (taskId: string, status: TaskStatus) => {
+    updateTaskStatus({ id: taskId, status });
+  };
 
   if (isLoading || isLoadingProjects) {
     return <PageLoading />;
@@ -258,7 +266,7 @@ export function MyTodayPage() {
             ) : (
               <div className="space-y-3">
                 {tasksForToday.map((task) => (
-                  <TaskCard key={task.id} task={task} compact />
+                  <TaskCard key={task.id} task={task} compact onStatusChange={handleTaskStatusChange} />
                 ))}
               </div>
             )}
@@ -329,18 +337,16 @@ export function MyTodayPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Pending Action Tasks (Self) */}
         <Card padding="none">
-          <CardHeader
-            className="px-6 pt-6"
-            action={
-              pendingActionTasks.length > 0 && (
-                <Badge variant="warning">{pendingActionTasks.length}</Badge>
-              )
-            }
-          >
+          <CardHeader className="px-6 pt-6">
             <div className="flex items-center gap-2">
               <Hourglass className="h-5 w-5 text-orange-500" />
               <span>自分の対応待ち</span>
             </div>
+            {pendingActionTasks.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-gray-500">
+                ({pendingActionTasks.length}件)
+              </span>
+            )}
           </CardHeader>
           <CardContent className="px-6 pb-6">
             {pendingActionTasks.length === 0 ? (
@@ -352,7 +358,7 @@ export function MyTodayPage() {
             ) : (
               <div className="space-y-3">
                 {pendingActionTasks.slice(0, 5).map((task) => (
-                  <TaskCard key={task.id} task={task} compact />
+                  <TaskCard key={task.id} task={task} compact onStatusChange={handleTaskStatusChange} />
                 ))}
               </div>
             )}
@@ -361,18 +367,16 @@ export function MyTodayPage() {
 
         {/* Waiting for Others (Tasks assigned to others that I'm stakeholder of) */}
         <Card padding="none">
-          <CardHeader
-            className="px-6 pt-6"
-            action={
-              waitingForOthersTasks.length > 0 && (
-                <Badge variant="info">{waitingForOthersTasks.length}</Badge>
-              )
-            }
-          >
+          <CardHeader className="px-6 pt-6">
             <div className="flex items-center gap-2">
               <Eye className="h-5 w-5 text-blue-500" />
               <span>対応待ち（他者）</span>
             </div>
+            {waitingForOthersTasks.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-gray-500">
+                ({waitingForOthersTasks.length}件)
+              </span>
+            )}
           </CardHeader>
           <CardContent className="px-6 pb-6">
             {waitingForOthersTasks.length === 0 ? (
@@ -384,7 +388,7 @@ export function MyTodayPage() {
             ) : (
               <div className="space-y-3">
                 {waitingForOthersTasks.slice(0, 5).map((task) => (
-                  <TaskCard key={task.id} task={task} compact />
+                  <TaskCard key={task.id} task={task} compact onStatusChange={handleTaskStatusChange} />
                 ))}
               </div>
             )}
