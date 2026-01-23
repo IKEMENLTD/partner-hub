@@ -274,6 +274,12 @@ export function SettingsPage() {
                   disabled={isLoadingSettings}
                 />
               </div>
+
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs text-gray-600">
+                  両方ONの場合、同じ通知がメールとブラウザの両方に届きます。
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -332,7 +338,8 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Digest Email Settings */}
+          {/* Digest Email Settings - Only show when email notification is ON */}
+          {localSettings.emailNotification && (
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -394,6 +401,7 @@ export function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+          )}
 
           {/* Reminder Settings */}
           <Card>
@@ -443,9 +451,6 @@ export function SettingsPage() {
                   <span className="absolute -translate-x-1/2" style={{ left: '44.44%' }}>5回</span>
                   <span className="absolute right-0 translate-x-0">10回</span>
                 </div>
-                <p className="text-center text-sm font-medium text-primary-600">
-                  現在の設定: {localSettings.reminderMaxCount}回
-                </p>
               </div>
 
               <div className="rounded-lg bg-amber-50 p-3">
