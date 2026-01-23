@@ -37,10 +37,10 @@ export class PartnerAccessGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if access check should be skipped
-    const skipCheck = this.reflector.getAllAndOverride<boolean>(
-      SKIP_PARTNER_ACCESS_CHECK,
-      [context.getHandler(), context.getClass()],
-    );
+    const skipCheck = this.reflector.getAllAndOverride<boolean>(SKIP_PARTNER_ACCESS_CHECK, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (skipCheck) {
       return true;
@@ -82,29 +82,19 @@ export class PartnerAccessGuard implements CanActivate {
     }
 
     // Check if user is associated with any project that involves this partner
-    const hasProjectAccess = await this.checkProjectAssociation(
-      partnerId,
-      user.id,
-    );
+    const hasProjectAccess = await this.checkProjectAssociation(partnerId, user.id);
     if (hasProjectAccess) {
       return true;
     }
 
-    this.logger.warn(
-      `Access denied for user ${user.id} to partner ${partnerId}`,
-    );
-    throw new ForbiddenException(
-      'You do not have permission to access this partner',
-    );
+    this.logger.warn(`Access denied for user ${user.id} to partner ${partnerId}`);
+    throw new ForbiddenException('You do not have permission to access this partner');
   }
 
   /**
    * Check if user is associated with any project that involves this partner
    */
-  private async checkProjectAssociation(
-    partnerId: string,
-    userId: string,
-  ): Promise<boolean> {
+  private async checkProjectAssociation(partnerId: string, userId: string): Promise<boolean> {
     // Find projects that:
     // 1. Have this partner associated
     // 2. The user is owner, manager, or creator of

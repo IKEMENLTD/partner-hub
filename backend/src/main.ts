@@ -30,11 +30,12 @@ async function bootstrap() {
   // Enable CORS
   const corsOrigin = configService.get<string>('app.corsOrigin');
   app.enableCors({
-    origin: nodeEnv === 'production'
-      ? corsOrigin
-        ? corsOrigin.split(',').map((origin) => origin.trim())
-        : []
-      : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+    origin:
+      nodeEnv === 'production'
+        ? corsOrigin
+          ? corsOrigin.split(',').map((origin) => origin.trim())
+          : []
+        : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });

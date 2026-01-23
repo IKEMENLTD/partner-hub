@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, In } from 'typeorm';
 import { Partner } from './entities/partner.entity';
@@ -38,10 +33,7 @@ export class PartnerService {
     private projectRepository: Repository<Project>,
   ) {}
 
-  async create(
-    createPartnerDto: CreatePartnerDto,
-    createdById: string,
-  ): Promise<Partner> {
+  async create(createPartnerDto: CreatePartnerDto, createdById: string): Promise<Partner> {
     // Check if partner with email already exists
     const existingPartner = await this.partnerRepository.findOne({
       where: { email: createPartnerDto.email },
@@ -61,9 +53,7 @@ export class PartnerService {
     return partner;
   }
 
-  async findAll(
-    queryDto: QueryPartnerDto,
-  ): Promise<PaginatedResponseDto<Partner>> {
+  async findAll(queryDto: QueryPartnerDto): Promise<PaginatedResponseDto<Partner>> {
     const {
       page = 1,
       limit = 10,
@@ -176,10 +166,7 @@ export class PartnerService {
     return partner;
   }
 
-  async incrementProjectCount(
-    id: string,
-    completed: boolean = false,
-  ): Promise<void> {
+  async incrementProjectCount(id: string, completed: boolean = false): Promise<void> {
     const partner = await this.findOne(id);
     partner.totalProjects += 1;
     if (completed) {

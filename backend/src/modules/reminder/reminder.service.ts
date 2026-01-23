@@ -34,10 +34,7 @@ export class ReminderService {
     private notificationService?: NotificationService,
   ) {}
 
-  async create(
-    createReminderDto: CreateReminderDto,
-    createdById: string,
-  ): Promise<Reminder> {
+  async create(createReminderDto: CreateReminderDto, createdById: string): Promise<Reminder> {
     const reminder = this.reminderRepository.create({
       ...createReminderDto,
       createdById,
@@ -145,10 +142,7 @@ export class ReminderService {
   }
 
   async markAllAsRead(userId: string): Promise<void> {
-    await this.reminderRepository.update(
-      { userId, isRead: false },
-      { isRead: true },
-    );
+    await this.reminderRepository.update({ userId, isRead: false }, { isRead: true });
 
     this.logger.log(`All reminders marked as read for user: ${userId}`);
   }
@@ -414,7 +408,11 @@ export class ReminderService {
       .leftJoinAndSelect('project.owner', 'owner')
       .where('project.updatedAt < :stagnantDate', { stagnantDate })
       .andWhere('project.status NOT IN (:...completedStatuses)', {
-        completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED, ProjectStatus.ON_HOLD],
+        completedStatuses: [
+          ProjectStatus.COMPLETED,
+          ProjectStatus.CANCELLED,
+          ProjectStatus.ON_HOLD,
+        ],
       })
       .getMany();
 
@@ -438,7 +436,7 @@ export class ReminderService {
 
       if (!existingReminder) {
         const daysSinceUpdate = Math.floor(
-          (Date.now() - new Date(project.updatedAt).getTime()) / (1000 * 60 * 60 * 24)
+          (Date.now() - new Date(project.updatedAt).getTime()) / (1000 * 60 * 60 * 24),
         );
 
         await this.reminderRepository.save({
@@ -451,7 +449,9 @@ export class ReminderService {
           scheduledAt: new Date(),
         });
 
-        this.logger.log(`Stagnant project reminder created for: ${project.name} (${daysSinceUpdate} days)`);
+        this.logger.log(
+          `Stagnant project reminder created for: ${project.name} (${daysSinceUpdate} days)`,
+        );
       }
     }
   }

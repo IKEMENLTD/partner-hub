@@ -1,12 +1,16 @@
-import { Controller, Get, Patch, Param, Query, UseGuards, ParseIntPipe, Res, HttpStatus } from '@nestjs/common';
-import { Response } from 'express';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+  Res,
+  HttpStatus,
+} from '@nestjs/common';
+import { Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { DashboardQueryDto, ReportType, ReportFormat } from './dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -120,10 +124,7 @@ export class DashboardController {
   @Patch('alerts/:alertId/read')
   @ApiOperation({ summary: 'Mark alert as read' })
   @ApiResponse({ status: 200, description: 'Alert marked as read' })
-  async markAlertAsRead(
-    @CurrentUser('id') userId: string,
-    @Param('alertId') alertId: string,
-  ) {
+  async markAlertAsRead(@CurrentUser('id') userId: string, @Param('alertId') alertId: string) {
     return this.dashboardService.markAlertAsRead(userId, alertId);
   }
 

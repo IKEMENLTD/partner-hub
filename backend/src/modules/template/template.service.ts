@@ -1,33 +1,17 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Template, TemplatePhase, TemplateTask } from './entities/template.entity';
 import { Project } from '../project/entities/project.entity';
 import { Task } from '../task/entities/task.entity';
 import { Partner } from '../partner/entities/partner.entity';
-import {
-  CreateTemplateDto,
-  UpdateTemplateDto,
-  ApplyTemplateDto,
-  QueryTemplateDto,
-} from './dto';
+import { CreateTemplateDto, UpdateTemplateDto, ApplyTemplateDto, QueryTemplateDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { ProjectStatus } from '../project/enums/project-status.enum';
 import { TaskStatus, TaskType } from '../task/enums/task-status.enum';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
-const ALLOWED_SORT_COLUMNS = [
-  'createdAt',
-  'updatedAt',
-  'name',
-  'projectType',
-  'isActive',
-];
+const ALLOWED_SORT_COLUMNS = ['createdAt', 'updatedAt', 'name', 'projectType', 'isActive'];
 
 @Injectable()
 export class TemplateService {
@@ -62,15 +46,13 @@ export class TemplateService {
       isActive,
     } = queryDto;
 
-    const queryBuilder = this.templateRepository
-      .createQueryBuilder('template');
+    const queryBuilder = this.templateRepository.createQueryBuilder('template');
 
     // Apply filters
     if (search) {
-      queryBuilder.andWhere(
-        '(template.name ILIKE :search OR template.description ILIKE :search)',
-        { search: `%${search}%` },
-      );
+      queryBuilder.andWhere('(template.name ILIKE :search OR template.description ILIKE :search)', {
+        search: `%${search}%`,
+      });
     }
 
     if (projectType) {
@@ -143,7 +125,8 @@ export class TemplateService {
 
     // Validate partner IDs if provided
     let partners: Partner[] = [];
-    const partnerIds = applyTemplateDto.partnerIds ||
+    const partnerIds =
+      applyTemplateDto.partnerIds ||
       (applyTemplateDto.partnerId ? [applyTemplateDto.partnerId] : []);
 
     if (partnerIds.length > 0) {
@@ -175,7 +158,12 @@ export class TemplateService {
 
     // Create tasks from template phases
     if (template.phases && template.phases.length > 0) {
-      await this.createTasksFromTemplate(project.id, template.phases, createdById, applyTemplateDto.startDate);
+      await this.createTasksFromTemplate(
+        project.id,
+        template.phases,
+        createdById,
+        applyTemplateDto.startDate,
+      );
     }
 
     // Reload project with relations
@@ -243,7 +231,9 @@ export class TemplateService {
 
         // Move current date forward based on estimated days
         if (taskDef.estimatedDays) {
-          currentDate = new Date(currentDate.getTime() + taskDef.estimatedDays * 24 * 60 * 60 * 1000);
+          currentDate = new Date(
+            currentDate.getTime() + taskDef.estimatedDays * 24 * 60 * 60 * 1000,
+          );
         }
       }
 

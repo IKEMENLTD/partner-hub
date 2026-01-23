@@ -1,9 +1,5 @@
 import { PartialType } from '@nestjs/swagger';
-import {
-  IsInt,
-  Min,
-  Max,
-} from 'class-validator';
+import { IsInt, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { CreateStakeholderDto } from './create-stakeholder.dto';
 

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, IsNull, In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -77,7 +73,9 @@ export class EscalationService {
     return this.findRuleById(rule.id);
   }
 
-  async findAllRules(queryDto: QueryEscalationRuleDto): Promise<PaginatedResponseDto<EscalationRule>> {
+  async findAllRules(
+    queryDto: QueryEscalationRuleDto,
+  ): Promise<PaginatedResponseDto<EscalationRule>> {
     const {
       page = 1,
       limit = 10,
@@ -96,7 +94,9 @@ export class EscalationService {
       .leftJoinAndSelect('rule.createdBy', 'createdBy');
 
     if (projectId) {
-      queryBuilder.andWhere('(rule.projectId = :projectId OR rule.projectId IS NULL)', { projectId });
+      queryBuilder.andWhere('(rule.projectId = :projectId OR rule.projectId IS NULL)', {
+        projectId,
+      });
     }
 
     if (triggerType) {
@@ -478,11 +478,13 @@ export class EscalationService {
       ? `Due: ${new Date(task.dueDate).toLocaleDateString()}`
       : 'No due date';
 
-    return `${prefix}Task "${task.title}" requires attention.\n\n` +
+    return (
+      `${prefix}Task "${task.title}" requires attention.\n\n` +
       `Rule: ${rule.name}\n` +
       `${dueInfo}\n` +
       `Progress: ${task.progress}%\n` +
-      `Status: ${task.status}`;
+      `Status: ${task.status}`
+    );
   }
 
   async logEscalation(

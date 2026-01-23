@@ -109,10 +109,9 @@ export class TaskService {
     }
 
     if (search) {
-      queryBuilder.andWhere(
-        '(task.title ILIKE :search OR task.description ILIKE :search)',
-        { search: `%${search}%` },
-      );
+      queryBuilder.andWhere('(task.title ILIKE :search OR task.description ILIKE :search)', {
+        search: `%${search}%`,
+      });
     }
 
     if (projectId) {

@@ -75,12 +75,8 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should throw UnauthorizedException if user is not provided', () => {
-      expect(() => guard.handleRequest(null, null, null)).toThrow(
-        UnauthorizedException,
-      );
-      expect(() => guard.handleRequest(null, null, null)).toThrow(
-        'Authentication required',
-      );
+      expect(() => guard.handleRequest(null, null, null)).toThrow(UnauthorizedException);
+      expect(() => guard.handleRequest(null, null, null)).toThrow('Authentication required');
     });
 
     it('should throw error if err is provided', () => {
@@ -98,9 +94,7 @@ describe('JwtAuthGuard', () => {
     it('should throw UnauthorizedException with info parameter', () => {
       const info = { message: 'Token expired' };
 
-      expect(() => guard.handleRequest(null, null, info)).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => guard.handleRequest(null, null, info)).toThrow(UnauthorizedException);
     });
 
     it('should return user even with info provided', () => {
@@ -130,9 +124,7 @@ describe('JwtAuthGuard', () => {
     it('should throw original error type when error is provided', () => {
       const customError = new UnauthorizedException('Custom error');
 
-      expect(() => guard.handleRequest(customError, null, null)).toThrow(
-        customError,
-      );
+      expect(() => guard.handleRequest(customError, null, null)).toThrow(customError);
     });
   });
 
@@ -155,27 +147,19 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should throw UnauthorizedException for false as user', () => {
-      expect(() => guard.handleRequest(null, false as any, null)).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => guard.handleRequest(null, false as any, null)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for undefined user', () => {
-      expect(() => guard.handleRequest(null, undefined, null)).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => guard.handleRequest(null, undefined, null)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for 0 as user', () => {
-      expect(() => guard.handleRequest(null, 0 as any, null)).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => guard.handleRequest(null, 0 as any, null)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for empty string as user', () => {
-      expect(() => guard.handleRequest(null, '' as any, null)).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => guard.handleRequest(null, '' as any, null)).toThrow(UnauthorizedException);
     });
   });
 

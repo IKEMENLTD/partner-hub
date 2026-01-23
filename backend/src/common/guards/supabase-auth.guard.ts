@@ -53,7 +53,10 @@ export class SupabaseAuthGuard implements CanActivate {
       }
 
       // Verify token using Supabase's getUser method
-      const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+      const {
+        data: { user },
+        error,
+      } = await supabaseAdmin.auth.getUser(token);
 
       if (error) {
         this.logger.warn(`Token verification failed: ${error.message}`);

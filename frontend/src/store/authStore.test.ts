@@ -13,42 +13,67 @@ describe('authStore', () => {
       const state = useAuthStore.getState();
 
       expect(state.user).toBeNull();
-      expect(state.token).toBeNull();
+      expect(state.session).toBeNull();
       expect(state.isAuthenticated).toBe(false);
-      expect(state.isLoading).toBe(false);
+      expect(state.isLoading).toBe(true); // Changed: starts as true for initialization
       expect(state.error).toBeNull();
+      expect(state.isInitialized).toBe(false);
     });
   });
 
-  describe('login action', () => {
-    it('should set user and token on login', () => {
+  describe('setSession action', () => {
+    it('should set session and user on login', () => {
       const store = useAuthStore.getState();
-      const mockUser = {
+      const mockSupabaseUser = {
         id: 'user-123',
         email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-        role: 'MEMBER' as const,
-      };
-      const mockToken = 'test-token';
+        user_metadata: {
+          firstName: 'Test',
+          lastName: 'User',
+        },
+        app_metadata: {
+          role: 'MEMBER',
+        },
+      } as any;
 
-      store.login(mockUser, mockToken);
+      const mockSession = {
+        user: mockSupabaseUser,
+        access_token: 'test-token',
+        refresh_token: 'refresh-token',
+      } as any;
+
+      store.setSession(mockSession);
 
       const state = useAuthStore.getState();
-      expect(state.user).toEqual(mockUser);
-      expect(state.token).toBe(mockToken);
+      expect(state.session).toEqual(mockSession);
+      expect(state.supabaseUser).toEqual(mockSupabaseUser);
       expect(state.isAuthenticated).toBe(true);
       expect(state.error).toBeNull();
     });
 
-    it('should clear error on successful login', () => {
+    it('should clear error on successful setSession', () => {
       const store = useAuthStore.getState();
 
       // Set an error first
       store.setError('Login failed');
       expect(useAuthStore.getState().error).toBe('Login failed');
 
-      // Then login
+      // Then set session
+      const mockSession = {
+        user: { id: 'user-123', email: 'test@example.com' },
+        access_token: 'test-token',
+      } as any;
+
+      store.setSession(mockSession);
+
+      const state = useAuthStore.getState();
+      expect(state.error).toBeNull();
+    });
+  });
+
+  describe('setUser action', () => {
+    it('should set user information', () => {
+      const store = useAuthStore.getState();
       const mockUser = {
         id: 'user-123',
         email: 'test@example.com',
@@ -56,13 +81,14 @@ describe('authStore', () => {
         lastName: 'User',
         role: 'MEMBER' as const,
       };
-      store.login(mockUser, 'token');
+
+      store.setUser(mockUser);
 
       const state = useAuthStore.getState();
-      expect(state.error).toBeNull();
+      expect(state.user).toEqual(mockUser);
     });
 
-    it('should handle login with different user roles', () => {
+    it('should handle different user roles', () => {
       const store = useAuthStore.getState();
       const roles = ['ADMIN', 'MANAGER', 'MEMBER', 'PARTNER'] as const;
 
@@ -77,17 +103,14 @@ describe('authStore', () => {
           role,
         };
 
-        store.login(mockUser, 'token');
+        store.setUser(mockUser);
 
         const state = useAuthStore.getState();
         expect(state.user?.role).toBe(role);
-        expect(state.isAuthenticated).toBe(true);
       });
     });
-  });
 
-  describe('logout action', () => {
-    it('should clear user and token on logout', () => {
+    it('should allow setting user to null', () => {
       const store = useAuthStore.getState();
       const mockUser = {
         id: 'user-123',
@@ -97,8 +120,33 @@ describe('authStore', () => {
         role: 'MEMBER' as const,
       };
 
-      // Login first
-      store.login(mockUser, 'token');
+      store.setUser(mockUser);
+      expect(useAuthStore.getState().user).toEqual(mockUser);
+
+      store.setUser(null);
+      expect(useAuthStore.getState().user).toBeNull();
+    });
+  });
+
+  describe('logout action', () => {
+    it('should clear user and session on logout', () => {
+      const store = useAuthStore.getState();
+      const mockUser = {
+        id: 'user-123',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        role: 'MEMBER' as const,
+      };
+
+      const mockSession = {
+        user: { id: 'user-123' },
+        access_token: 'test-token',
+      } as any;
+
+      // Set session and user first
+      store.setSession(mockSession);
+      store.setUser(mockUser);
       expect(useAuthStore.getState().isAuthenticated).toBe(true);
 
       // Then logout
@@ -106,7 +154,8 @@ describe('authStore', () => {
 
       const state = useAuthStore.getState();
       expect(state.user).toBeNull();
-      expect(state.token).toBeNull();
+      expect(state.session).toBeNull();
+      expect(state.supabaseUser).toBeNull();
       expect(state.isAuthenticated).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -142,6 +191,19 @@ describe('authStore', () => {
     });
   });
 
+  describe('setInitialized action', () => {
+    it('should set initialized flag and set loading to false', () => {
+      const store = useAuthStore.getState();
+
+      store.setLoading(true);
+      store.setInitialized(true);
+
+      const state = useAuthStore.getState();
+      expect(state.isInitialized).toBe(true);
+      expect(state.isLoading).toBe(false);
+    });
+  });
+
   describe('setError action', () => {
     it('should set error message', () => {
       const store = useAuthStore.getState();
@@ -170,6 +232,15 @@ describe('authStore', () => {
 
       expect(useAuthStore.getState().error).toBe('');
     });
+
+    it('should handle very long error messages', () => {
+      const store = useAuthStore.getState();
+      const longError = 'Error: ' + 'a'.repeat(1000);
+
+      store.setError(longError);
+
+      expect(useAuthStore.getState().error).toBe(longError);
+    });
   });
 
   describe('updateUser action', () => {
@@ -183,7 +254,7 @@ describe('authStore', () => {
         role: 'MEMBER' as const,
       };
 
-      store.login(mockUser, 'token');
+      store.setUser(mockUser);
 
       store.updateUser({
         firstName: 'Updated',
@@ -217,7 +288,7 @@ describe('authStore', () => {
         role: 'MEMBER' as const,
       };
 
-      store.login(mockUser, 'token');
+      store.setUser(mockUser);
 
       store.updateUser({ firstName: 'NewFirst' });
 
@@ -238,30 +309,32 @@ describe('authStore', () => {
         role: 'MEMBER' as const,
       };
 
-      store.login(mockUser, 'token');
+      const mockSession = {
+        user: { id: 'user-123' },
+        access_token: 'test-token',
+      } as any;
 
-      // The persist middleware should save to localStorage
-      // Note: In a real test, you might need to mock localStorage
+      store.setSession(mockSession);
+      store.setUser(mockUser);
+
+      // Supabase handles session persistence automatically
       const state = useAuthStore.getState();
       expect(state.user).toEqual(mockUser);
-      expect(state.token).toBe('token');
+      expect(state.session).toEqual(mockSession);
       expect(state.isAuthenticated).toBe(true);
     });
   });
 
   describe('Edge Cases', () => {
-    it('should handle multiple rapid login/logout cycles', () => {
+    it('should handle multiple rapid setSession/logout cycles', () => {
       const store = useAuthStore.getState();
-      const mockUser = {
-        id: 'user-123',
-        email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-        role: 'MEMBER' as const,
-      };
+      const mockSession = {
+        user: { id: 'user-123' },
+        access_token: 'test-token',
+      } as any;
 
       for (let i = 0; i < 5; i++) {
-        store.login(mockUser, 'token');
+        store.setSession(mockSession);
         expect(useAuthStore.getState().isAuthenticated).toBe(true);
 
         store.logout();
@@ -269,57 +342,43 @@ describe('authStore', () => {
       }
     });
 
-    it('should handle logging in while already logged in', () => {
+    it('should handle setting a new session while already authenticated', () => {
       const store = useAuthStore.getState();
-      const user1 = {
-        id: 'user-1',
-        email: 'user1@example.com',
-        firstName: 'User',
-        lastName: 'One',
-        role: 'MEMBER' as const,
-      };
-      const user2 = {
-        id: 'user-2',
-        email: 'user2@example.com',
-        firstName: 'User',
-        lastName: 'Two',
-        role: 'ADMIN' as const,
-      };
+      const session1 = {
+        user: { id: 'user-1', email: 'user1@example.com' },
+        access_token: 'token1',
+      } as any;
 
-      store.login(user1, 'token1');
-      expect(useAuthStore.getState().user?.id).toBe('user-1');
+      const session2 = {
+        user: { id: 'user-2', email: 'user2@example.com' },
+        access_token: 'token2',
+      } as any;
 
-      store.login(user2, 'token2');
+      store.setSession(session1);
+      expect(useAuthStore.getState().supabaseUser?.id).toBe('user-1');
+
+      store.setSession(session2);
 
       const state = useAuthStore.getState();
-      expect(state.user?.id).toBe('user-2');
-      expect(state.token).toBe('token2');
+      expect(state.supabaseUser?.id).toBe('user-2');
+      expect(state.session).toEqual(session2);
     });
 
-    it('should handle empty token', () => {
+    it('should handle null session', () => {
       const store = useAuthStore.getState();
-      const mockUser = {
-        id: 'user-123',
-        email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-        role: 'MEMBER' as const,
-      };
+      const mockSession = {
+        user: { id: 'user-123' },
+        access_token: 'test-token',
+      } as any;
 
-      store.login(mockUser, '');
+      store.setSession(mockSession);
+      expect(useAuthStore.getState().isAuthenticated).toBe(true);
+
+      store.setSession(null);
 
       const state = useAuthStore.getState();
-      expect(state.token).toBe('');
-      expect(state.isAuthenticated).toBe(true); // Still authenticated
-    });
-
-    it('should handle very long error messages', () => {
-      const store = useAuthStore.getState();
-      const longError = 'Error: ' + 'a'.repeat(1000);
-
-      store.setError(longError);
-
-      expect(useAuthStore.getState().error).toBe(longError);
+      expect(state.session).toBeNull();
+      expect(state.isAuthenticated).toBe(false);
     });
   });
 
@@ -328,9 +387,11 @@ describe('authStore', () => {
       const state = useAuthStore.getState();
       const isAuthenticated = state.isAuthenticated;
       const isLoading = state.isLoading;
+      const isInitialized = state.isInitialized;
 
       expect(typeof isAuthenticated).toBe('boolean');
       expect(typeof isLoading).toBe('boolean');
+      expect(typeof isInitialized).toBe('boolean');
     });
   });
 });

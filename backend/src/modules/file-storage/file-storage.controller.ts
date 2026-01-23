@@ -128,9 +128,7 @@ export class FileStorageController {
     description: 'List of files',
     type: [FileResponseDto],
   })
-  async getFilesByTask(
-    @Param('taskId', ParseUUIDPipe) taskId: string,
-  ): Promise<FileResponseDto[]> {
+  async getFilesByTask(@Param('taskId', ParseUUIDPipe) taskId: string): Promise<FileResponseDto[]> {
     const files = await this.fileStorageService.getFilesByTask(taskId);
     return files.map((file) => this.toResponseDto(file));
   }
@@ -144,9 +142,7 @@ export class FileStorageController {
     type: FileResponseDto,
   })
   @ApiResponse({ status: 404, description: 'File not found' })
-  async getFile(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<FileResponseDto> {
+  async getFile(@Param('id', ParseUUIDPipe) id: string): Promise<FileResponseDto> {
     const file = await this.fileStorageService.getFileById(id);
     return this.toResponseDto(file);
   }

@@ -103,9 +103,7 @@ describe('TaskService', () => {
     it('should throw NotFoundException when task not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -126,10 +124,7 @@ describe('TaskService', () => {
         status: TaskStatus.IN_PROGRESS,
       });
 
-      const result = await service.updateStatus(
-        'test-task-uuid',
-        TaskStatus.IN_PROGRESS,
-      );
+      const result = await service.updateStatus('test-task-uuid', TaskStatus.IN_PROGRESS);
 
       expect(result.status).toBe(TaskStatus.IN_PROGRESS);
     });

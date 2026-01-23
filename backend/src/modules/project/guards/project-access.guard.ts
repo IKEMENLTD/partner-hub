@@ -38,10 +38,10 @@ export class ProjectAccessGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if access check should be skipped
-    const skipCheck = this.reflector.getAllAndOverride<boolean>(
-      SKIP_PROJECT_ACCESS_CHECK,
-      [context.getHandler(), context.getClass()],
-    );
+    const skipCheck = this.reflector.getAllAndOverride<boolean>(SKIP_PROJECT_ACCESS_CHECK, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (skipCheck) {
       return true;
@@ -89,12 +89,8 @@ export class ProjectAccessGuard implements CanActivate {
       return true;
     }
 
-    this.logger.warn(
-      `Access denied for user ${user.id} to project ${projectId}`,
-    );
-    throw new ForbiddenException(
-      'You do not have permission to access this project',
-    );
+    this.logger.warn(`Access denied for user ${user.id} to project ${projectId}`);
+    throw new ForbiddenException('You do not have permission to access this project');
   }
 
   /**
@@ -124,10 +120,7 @@ export class ProjectAccessGuard implements CanActivate {
    * Check if user is a stakeholder of the project
    * This checks if the user's partner organization is listed as a stakeholder
    */
-  private async checkStakeholderAccess(
-    projectId: string,
-    userId: string,
-  ): Promise<boolean> {
+  private async checkStakeholderAccess(projectId: string, userId: string): Promise<boolean> {
     // Check if user is associated with any stakeholder partner
     // This requires querying the stakeholders table and checking partner associations
     const stakeholders = await this.stakeholderRepository

@@ -47,10 +47,7 @@ export class TaskController {
   @Post()
   @ApiOperation({ summary: 'Create a new task' })
   @ApiResponse({ status: 201, description: 'Task created successfully' })
-  async create(
-    @Body() createTaskDto: CreateTaskDto,
-    @CurrentUser('id') userId: string,
-  ) {
+  async create(@Body() createTaskDto: CreateTaskDto, @CurrentUser('id') userId: string) {
     return this.taskService.create(createTaskDto, userId);
   }
 
@@ -136,10 +133,7 @@ export class TaskController {
   @ApiResponse({ status: 200, description: 'Task updated successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 403, description: 'Access denied' })
-  async update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateTaskDto: UpdateTaskDto,
-  ) {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() updateTaskDto: UpdateTaskDto) {
     return this.taskService.update(id, updateTaskDto);
   }
 
@@ -182,10 +176,7 @@ export class TaskController {
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Invalid assignee ID' })
   @ApiResponse({ status: 403, description: 'Access denied' })
-  async assignTask(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() assignTaskDto: AssignTaskDto,
-  ) {
+  async assignTask(@Param('id', ParseUUIDPipe) id: string, @Body() assignTaskDto: AssignTaskDto) {
     return this.taskService.assignTask(id, assignTaskDto.assigneeId);
   }
 

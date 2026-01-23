@@ -8,10 +8,7 @@ import { UserProfile } from '../auth/entities/user-profile.entity';
 import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ProgressReport, Task, UserProfile]),
-    NotificationModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ProgressReport, Task, UserProfile]), NotificationModule],
   controllers: [ProgressReportController],
   providers: [ProgressReportService],
   exports: [ProgressReportService],

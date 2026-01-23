@@ -33,7 +33,10 @@ export class EmailService {
   constructor(private configService: ConfigService) {
     this.isEnabled = this.configService.get<boolean>('email.enabled', false);
     this.fromAddress = this.configService.get<string>('email.from', 'noreply@example.com');
-    this.fromName = this.configService.get<string>('email.fromName', 'Partner Collaboration Platform');
+    this.fromName = this.configService.get<string>(
+      'email.fromName',
+      'Partner Collaboration Platform',
+    );
 
     if (this.isEnabled) {
       this.initializeTransporter();

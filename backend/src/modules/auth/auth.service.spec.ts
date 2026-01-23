@@ -43,9 +43,7 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    profileRepository = module.get<Repository<UserProfile>>(
-      getRepositoryToken(UserProfile),
-    );
+    profileRepository = module.get<Repository<UserProfile>>(getRepositoryToken(UserProfile));
 
     jest.clearAllMocks();
   });
@@ -69,9 +67,7 @@ describe('AuthService', () => {
     it('should throw NotFoundException when profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findProfileById('non-existent')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findProfileById('non-existent')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -111,9 +107,9 @@ describe('AuthService', () => {
     it('should throw NotFoundException if profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.updateProfile('non-existent', updateDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.updateProfile('non-existent', updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -134,9 +130,9 @@ describe('AuthService', () => {
     it('should throw NotFoundException if profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.updateUserRole('non-existent', UserRole.ADMIN),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.updateUserRole('non-existent', UserRole.ADMIN)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -154,17 +150,15 @@ describe('AuthService', () => {
     });
 
     it('should throw BadRequestException when trying to deactivate own account', async () => {
-      await expect(
-        service.deactivateUser('test-uuid', 'test-uuid'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.deactivateUser('test-uuid', 'test-uuid')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException if profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.deactivateUser('non-existent')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.deactivateUser('non-existent')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -187,9 +181,7 @@ describe('AuthService', () => {
     it('should throw NotFoundException if profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.activateUser('non-existent')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.activateUser('non-existent')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -238,10 +230,7 @@ describe('AuthService', () => {
         email: 'updated@example.com',
       });
 
-      const result = await service.syncProfile(
-        'test-uuid',
-        'updated@example.com',
-      );
+      const result = await service.syncProfile('test-uuid', 'updated@example.com');
 
       expect(mockProfileRepository.save).toHaveBeenCalled();
       expect(result.email).toBe('updated@example.com');

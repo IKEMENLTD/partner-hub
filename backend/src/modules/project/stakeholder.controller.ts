@@ -106,9 +106,7 @@ export class StakeholderController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of primary stakeholders' })
   @ApiResponse({ status: 404, description: 'Project not found' })
-  async getPrimaryStakeholders(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-  ) {
+  async getPrimaryStakeholders(@Param('projectId', ParseUUIDPipe) projectId: string) {
     return this.stakeholderService.getPrimaryStakeholders(projectId);
   }
 

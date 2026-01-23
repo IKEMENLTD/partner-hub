@@ -1,15 +1,5 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Body,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get, Patch, Body } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationSettingsService } from './services/notification-settings.service';
 import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -19,9 +9,7 @@ import { ApiResponseDto } from '../../common/dto/api-response.dto';
 @Controller('users/me/notification-settings')
 @ApiBearerAuth()
 export class NotificationSettingsController {
-  constructor(
-    private readonly notificationSettingsService: NotificationSettingsService,
-  ) {}
+  constructor(private readonly notificationSettingsService: NotificationSettingsService) {}
 
   @Get()
   @ApiOperation({ summary: '現在のユーザーの通知設定を取得' })
@@ -51,10 +39,7 @@ export class NotificationSettingsController {
     @CurrentUser('id') userId: string,
     @Body() updateDto: UpdateNotificationSettingsDto,
   ) {
-    const settings = await this.notificationSettingsService.updateSettings(
-      userId,
-      updateDto,
-    );
+    const settings = await this.notificationSettingsService.updateSettings(userId, updateDto);
     return ApiResponseDto.success(
       this.notificationSettingsService.mapToResponse(settings),
       '通知設定を更新しました',

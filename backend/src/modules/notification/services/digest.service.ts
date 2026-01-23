@@ -88,16 +88,11 @@ export class DigestService {
           skippedCount++;
         }
       } catch (error) {
-        this.logger.error(
-          `Failed to send digest to ${user.email}: ${error.message}`,
-          error.stack,
-        );
+        this.logger.error(`Failed to send digest to ${user.email}: ${error.message}`, error.stack);
       }
     }
 
-    this.logger.log(
-      `Daily digest complete: ${sentCount} sent, ${skippedCount} skipped`,
-    );
+    this.logger.log(`Daily digest complete: ${sentCount} sent, ${skippedCount} skipped`);
   }
 
   /**
@@ -154,8 +149,7 @@ export class DigestService {
       }),
     ]);
 
-    const completionRate =
-      totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     return {
       todayTasks: todayTasks.map((t) => ({
@@ -172,8 +166,7 @@ export class DigestService {
         priority: t.priority,
         dueDate: t.dueDate,
         daysOverdue: Math.floor(
-          (today.getTime() - new Date(t.dueDate).getTime()) /
-            (1000 * 60 * 60 * 24),
+          (today.getTime() - new Date(t.dueDate).getTime()) / (1000 * 60 * 60 * 24),
         ),
       })),
       unreadNotifications: unreadNotifications.map((n) => ({
@@ -193,10 +186,7 @@ export class DigestService {
   /**
    * Send digest email to a user
    */
-  private async sendDigestEmail(
-    user: UserProfile,
-    digest: DigestData,
-  ): Promise<void> {
+  private async sendDigestEmail(user: UserProfile, digest: DigestData): Promise<void> {
     const today = new Date();
     const dateStr = today.toLocaleDateString('ja-JP', {
       year: 'numeric',
@@ -358,11 +348,7 @@ export class DigestService {
   /**
    * Update user's digest settings
    */
-  async updateDigestSettings(
-    userId: string,
-    enabled: boolean,
-    time?: string,
-  ): Promise<void> {
+  async updateDigestSettings(userId: string, enabled: boolean, time?: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error(`User ${userId} not found`);
@@ -375,17 +361,13 @@ export class DigestService {
     }
 
     await this.userRepository.update(userId, { metadata });
-    this.logger.log(
-      `Digest settings updated for user ${userId}: enabled=${enabled}`,
-    );
+    this.logger.log(`Digest settings updated for user ${userId}: enabled=${enabled}`);
   }
 
   /**
    * Get user's digest settings
    */
-  async getDigestSettings(
-    userId: string,
-  ): Promise<{ enabled: boolean; time: string }> {
+  async getDigestSettings(userId: string): Promise<{ enabled: boolean; time: string }> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error(`User ${userId} not found`);

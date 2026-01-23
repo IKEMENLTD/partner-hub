@@ -50,11 +50,15 @@ export class SupabaseJwtStrategy extends PassportStrategy(Strategy, 'supabase-jw
       algorithms: ['HS256'],
     });
 
-    this.logger.log(`SupabaseJwtStrategy initialized - secret: ${jwtSecret.length} chars, decoded: ${decodedSecret.length} bytes`);
+    this.logger.log(
+      `SupabaseJwtStrategy initialized - secret: ${jwtSecret.length} chars, decoded: ${decodedSecret.length} bytes`,
+    );
   }
 
   async validate(payload: SupabaseJwtPayload): Promise<UserProfile> {
-    this.logger.debug(`Validating JWT payload: sub=${payload.sub}, email=${payload.email}, role=${payload.role}`);
+    this.logger.debug(
+      `Validating JWT payload: sub=${payload.sub}, email=${payload.email}, role=${payload.role}`,
+    );
 
     if (payload.role !== 'authenticated') {
       this.logger.warn(`Invalid token role: ${payload.role}`);

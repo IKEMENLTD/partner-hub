@@ -42,7 +42,7 @@ export class CreateStakeholderDto {
   @IsString()
   roleDescription?: string;
 
-  @ApiPropertyOptional({ description: 'Contract amount', example: 100000.00 })
+  @ApiPropertyOptional({ description: 'Contract amount', example: 100000.0 })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   contractAmount?: number;

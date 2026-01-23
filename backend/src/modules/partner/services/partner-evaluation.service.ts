@@ -76,10 +76,7 @@ export class PartnerEvaluationService {
       (task) => task.status === TaskStatus.COMPLETED,
     ).length;
 
-    const rate =
-      totalCompletedTasks > 0
-        ? (completedOnTime / totalCompletedTasks) * 100
-        : 100;
+    const rate = totalCompletedTasks > 0 ? (completedOnTime / totalCompletedTasks) * 100 : 100;
 
     return {
       rate: Math.round(rate * 100) / 100,
@@ -152,8 +149,7 @@ export class PartnerEvaluationService {
       return { averageDays: 0, taskCount: 0 };
     }
 
-    const averageDays =
-      responseTimes.reduce((sum, days) => sum + days, 0) / responseTimes.length;
+    const averageDays = responseTimes.reduce((sum, days) => sum + days, 0) / responseTimes.length;
 
     return {
       averageDays: Math.round(averageDays * 100) / 100,
@@ -167,12 +163,11 @@ export class PartnerEvaluationService {
   async getAutoMetrics(partnerId: string): Promise<AutoMetrics> {
     await this.validatePartner(partnerId);
 
-    const [deadlineCompliance, reportSubmission, responseTime] =
-      await Promise.all([
-        this.calculateDeadlineComplianceRate(partnerId),
-        this.calculateReportSubmissionRate(partnerId),
-        this.calculateAverageResponseTime(partnerId),
-      ]);
+    const [deadlineCompliance, reportSubmission, responseTime] = await Promise.all([
+      this.calculateDeadlineComplianceRate(partnerId),
+      this.calculateReportSubmissionRate(partnerId),
+      this.calculateAverageResponseTime(partnerId),
+    ]);
 
     return {
       deadlineComplianceRate: deadlineCompliance.rate,
@@ -206,9 +201,7 @@ export class PartnerEvaluationService {
       evaluationPeriodStart: dto.evaluationPeriodStart
         ? new Date(dto.evaluationPeriodStart)
         : undefined,
-      evaluationPeriodEnd: dto.evaluationPeriodEnd
-        ? new Date(dto.evaluationPeriodEnd)
-        : undefined,
+      evaluationPeriodEnd: dto.evaluationPeriodEnd ? new Date(dto.evaluationPeriodEnd) : undefined,
     });
 
     await this.evaluationRepository.save(evaluation);
@@ -216,9 +209,7 @@ export class PartnerEvaluationService {
     // Update partner's overall rating
     await this.updatePartnerRating(partnerId);
 
-    this.logger.log(
-      `Evaluation created for partner ${partnerId} by evaluator ${evaluatorId}`,
-    );
+    this.logger.log(`Evaluation created for partner ${partnerId} by evaluator ${evaluatorId}`);
 
     return evaluation;
   }
@@ -320,8 +311,7 @@ export class PartnerEvaluationService {
         Math.max(0, 5 - autoMetrics.averageResponseTime / 2)) / // Lower response time is better
       3;
 
-    const overallScore =
-      autoMetricsAvg * 0.4 + manualEvaluation.averageManualScore * 0.6;
+    const overallScore = autoMetricsAvg * 0.4 + manualEvaluation.averageManualScore * 0.6;
 
     return {
       partnerId,
@@ -329,17 +319,14 @@ export class PartnerEvaluationService {
       autoMetrics,
       manualEvaluation: {
         communication: Math.round(manualEvaluation.communication * 100) / 100,
-        deliverableQuality:
-          Math.round(manualEvaluation.deliverableQuality * 100) / 100,
+        deliverableQuality: Math.round(manualEvaluation.deliverableQuality * 100) / 100,
         responseSpeed: Math.round(manualEvaluation.responseSpeed * 100) / 100,
         reliability: Math.round(manualEvaluation.reliability * 100) / 100,
-        averageManualScore:
-          Math.round(manualEvaluation.averageManualScore * 100) / 100,
+        averageManualScore: Math.round(manualEvaluation.averageManualScore * 100) / 100,
       },
       overallScore: Math.round(overallScore * 100) / 100,
       evaluationCount: evaluations.length,
-      lastEvaluationDate:
-        evaluations.length > 0 ? evaluations[0].createdAt : null,
+      lastEvaluationDate: evaluations.length > 0 ? evaluations[0].createdAt : null,
     };
   }
 
@@ -353,9 +340,7 @@ export class PartnerEvaluationService {
       rating: summary.overallScore,
     });
 
-    this.logger.log(
-      `Partner ${partnerId} rating updated to ${summary.overallScore}`,
-    );
+    this.logger.log(`Partner ${partnerId} rating updated to ${summary.overallScore}`);
   }
 
   /**

@@ -11,13 +11,7 @@ import { ReminderModule } from '../reminder/reminder.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      EscalationRule,
-      EscalationLog,
-      Task,
-      Project,
-      ProjectStakeholder,
-    ]),
+    TypeOrmModule.forFeature([EscalationRule, EscalationLog, Task, Project, ProjectStakeholder]),
     ReminderModule,
   ],
   controllers: [EscalationController],

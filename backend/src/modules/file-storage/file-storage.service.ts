@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,17 +9,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 const BUCKET_NAME = 'project-files';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const ALLOWED_EXTENSIONS = [
-  'pdf',
-  'doc',
-  'docx',
-  'xls',
-  'xlsx',
-  'png',
-  'jpg',
-  'jpeg',
-  'gif',
-];
+const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg', 'gif'];
 
 const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif'];
@@ -51,9 +36,7 @@ export class FileStorageService {
   ): Promise<ProjectFile> {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      throw new BadRequestException(
-        `ファイルサイズが上限（10MB）を超えています`,
-      );
+      throw new BadRequestException(`ファイルサイズが上限（10MB）を超えています`);
     }
 
     // Validate file extension
@@ -86,15 +69,11 @@ export class FileStorageService {
 
     if (error) {
       this.logger.error(`Failed to upload file to Supabase: ${error.message}`);
-      throw new BadRequestException(
-        `ファイルのアップロードに失敗しました: ${error.message}`,
-      );
+      throw new BadRequestException(`ファイルのアップロードに失敗しました: ${error.message}`);
     }
 
     // Get public URL
-    const { data: urlData } = supabaseAdmin.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(storagePath);
+    const { data: urlData } = supabaseAdmin.storage.from(BUCKET_NAME).getPublicUrl(storagePath);
 
     // Save file metadata to database
     const projectFile = new ProjectFile();
@@ -111,9 +90,7 @@ export class FileStorageService {
 
     const savedFile = await this.projectFileRepository.save(projectFile);
 
-    this.logger.log(
-      `File uploaded successfully: ${savedFile.id} (${file.originalname})`,
-    );
+    this.logger.log(`File uploaded successfully: ${savedFile.id} (${file.originalname})`);
 
     return savedFile;
   }
@@ -165,14 +142,10 @@ export class FileStorageService {
     // Delete from Supabase Storage
     const supabaseAdmin = this.supabaseService.admin;
     if (supabaseAdmin) {
-      const { error } = await supabaseAdmin.storage
-        .from(BUCKET_NAME)
-        .remove([file.storagePath]);
+      const { error } = await supabaseAdmin.storage.from(BUCKET_NAME).remove([file.storagePath]);
 
       if (error) {
-        this.logger.warn(
-          `Failed to delete file from Supabase Storage: ${error.message}`,
-        );
+        this.logger.warn(`Failed to delete file from Supabase Storage: ${error.message}`);
       }
     }
 
@@ -202,9 +175,7 @@ export class FileStorageService {
 
     if (error) {
       this.logger.error(`Failed to generate signed URL: ${error.message}`);
-      throw new BadRequestException(
-        `署名付きURLの生成に失敗しました: ${error.message}`,
-      );
+      throw new BadRequestException(`署名付きURLの生成に失敗しました: ${error.message}`);
     }
 
     return {

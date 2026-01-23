@@ -12,13 +12,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { PartnerService } from './partner.service';
 import {
   CreatePartnerDto,
@@ -45,10 +39,7 @@ export class PartnerController {
   @ApiOperation({ summary: 'Create a new partner' })
   @ApiResponse({ status: 201, description: 'Partner created successfully' })
   @ApiResponse({ status: 409, description: 'Partner already exists' })
-  async create(
-    @Body() createPartnerDto: CreatePartnerDto,
-    @CurrentUser('id') userId: string,
-  ) {
+  async create(@Body() createPartnerDto: CreatePartnerDto, @CurrentUser('id') userId: string) {
     return this.partnerService.create(createPartnerDto, userId);
   }
 
@@ -112,10 +103,7 @@ export class PartnerController {
   @ApiResponse({ status: 200, description: 'Partner updated successfully' })
   @ApiResponse({ status: 404, description: 'Partner not found' })
   @ApiResponse({ status: 403, description: 'Access denied' })
-  async update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updatePartnerDto: UpdatePartnerDto,
-  ) {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePartnerDto: UpdatePartnerDto) {
     return this.partnerService.update(id, updatePartnerDto);
   }
 

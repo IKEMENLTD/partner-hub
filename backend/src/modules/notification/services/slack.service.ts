@@ -35,7 +35,9 @@ export class SlackService {
       this.client = new WebClient(botToken);
       this.logger.log('Slack WebClient initialized');
     } else if (this.isDevelopment) {
-      this.logger.log('Slack service running in development mode - messages will be logged to console only');
+      this.logger.log(
+        'Slack service running in development mode - messages will be logged to console only',
+      );
     } else {
       this.logger.warn('Slack bot token not configured');
     }
@@ -126,9 +128,7 @@ export class SlackService {
     task: Task,
     channelId: string,
   ): Promise<SlackMessageResult> {
-    const dueDate = task.dueDate
-      ? new Date(task.dueDate).toLocaleDateString('ja-JP')
-      : '未設定';
+    const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('ja-JP') : '未設定';
 
     const priorityEmoji = this.getPriorityEmoji(task.priority);
     const statusText = this.getStatusText(task.status);

@@ -617,15 +617,13 @@ export class DashboardService {
     totalProjects: number;
     totalPartners: number;
   }> {
-    // Use date strings for PostgreSQL date column comparison (avoid timezone issues)
+    // Use date strings for PostgreSQL date column comparison
+    // Use local timezone (not UTC) to avoid date shift issues
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0]; // 'YYYY-MM-DD' format
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const nextWeek = new Date(now);
     nextWeek.setDate(nextWeek.getDate() + 7);
-    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+    const nextWeekStr = `${nextWeek.getFullYear()}-${String(nextWeek.getMonth() + 1).padStart(2, '0')}-${String(nextWeek.getDate()).padStart(2, '0')}`;
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -633,17 +631,17 @@ export class DashboardService {
     }
 
     // Get today's tasks (tasksForToday)
-    // Include: tasks due today, overdue tasks, and in-progress tasks without due date
+    // Include: tasks due today or overdue, assigned to user OR created by user
     const tasksForToday = await this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
-      .where('task.assigneeId = :userId', { userId })
+      .where('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
       })
       .andWhere(
-        '(task.dueDate = :todayStr OR task.dueDate < :todayStr OR task.dueDate IS NULL)',
+        '(task.dueDate = :todayStr OR task.dueDate < :todayStr)',
         { todayStr },
       )
       .orderBy('task.dueDate', 'ASC', 'NULLS LAST')
@@ -652,11 +650,12 @@ export class DashboardService {
       .getMany();
 
     // Get upcoming deadlines (tasks due in next 7 days, excluding today)
+    // Include: tasks assigned to user OR created by user
     const upcomingDeadlines = await this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
-      .where('task.assigneeId = :userId', { userId })
+      .where('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
       .andWhere('task.dueDate > :todayStr', { todayStr })
       .andWhere('task.dueDate <= :nextWeekStr', { nextWeekStr })
       .andWhere('task.status NOT IN (:...completedStatuses)', {

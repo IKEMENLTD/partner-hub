@@ -11,12 +11,7 @@ import {
   HttpStatus,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserProfile } from './entities/user-profile.entity';

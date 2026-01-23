@@ -11,7 +11,8 @@ export interface EscalationEmailData {
 export function generateEscalationEmailHtml(data: EscalationEmailData): string {
   const { escalationReason, escalationLevel, project, recipientName, additionalInfo } = data;
 
-  const levelColor = escalationLevel === 'critical' ? '#dc3545' : escalationLevel === 'high' ? '#fd7e14' : '#ffc107';
+  const levelColor =
+    escalationLevel === 'critical' ? '#dc3545' : escalationLevel === 'high' ? '#fd7e14' : '#ffc107';
 
   return `
 <!DOCTYPE html>
@@ -57,12 +58,16 @@ export function generateEscalationEmailHtml(data: EscalationEmailData): string {
       <p style="margin: 5px 0;"><strong>Progress:</strong> ${project.progress}%</p>
     </div>
 
-    ${additionalInfo ? `
+    ${
+      additionalInfo
+        ? `
     <div style="margin: 20px 0;">
       <h3 style="color: #495057;">Additional Information</h3>
       <p style="font-size: 14px; color: #555;">${additionalInfo}</p>
     </div>
-    ` : ''}
+    `
+        : ''
+    }
 
     <div style="margin-top: 30px; text-align: center;">
       <a href="#" style="background-color: ${levelColor}; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">

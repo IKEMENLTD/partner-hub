@@ -53,10 +53,7 @@ export class ProjectController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Create a new project' })
   @ApiResponse({ status: 201, description: 'Project created successfully' })
-  async create(
-    @Body() createProjectDto: CreateProjectDto,
-    @CurrentUser('id') userId: string,
-  ) {
+  async create(@Body() createProjectDto: CreateProjectDto, @CurrentUser('id') userId: string) {
     return this.projectService.create(createProjectDto, userId);
   }
 
@@ -136,10 +133,7 @@ export class ProjectController {
   @ApiResponse({ status: 200, description: 'Project details' })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 403, description: 'Access denied' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
     return this.projectService.findOne(id, userId);
   }
 
@@ -151,10 +145,7 @@ export class ProjectController {
   @ApiResponse({ status: 200, description: 'Project updated successfully' })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 403, description: 'Access denied' })
-  async update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateProjectDto: UpdateProjectDto,
-  ) {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() updateProjectDto: UpdateProjectDto) {
     return this.projectService.update(id, updateProjectDto);
   }
 

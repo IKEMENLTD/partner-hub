@@ -8,10 +8,7 @@ import { Project } from '../project/entities/project.entity';
 import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Reminder, Task, Project]),
-    NotificationModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Reminder, Task, Project]), NotificationModule],
   controllers: [ReminderController],
   providers: [ReminderService],
   exports: [ReminderService],

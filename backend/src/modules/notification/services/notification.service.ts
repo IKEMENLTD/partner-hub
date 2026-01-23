@@ -40,7 +40,17 @@ export class NotificationService {
    * Send notification based on channel type
    */
   async sendNotification(options: SendNotificationOptions): Promise<boolean> {
-    const { channel, reminder, task, project, recipients, escalationReason, escalationLevel, additionalInfo, slackChannelId } = options;
+    const {
+      channel,
+      reminder,
+      task,
+      project,
+      recipients,
+      escalationReason,
+      escalationLevel,
+      additionalInfo,
+      slackChannelId,
+    } = options;
 
     try {
       switch (channel) {
@@ -78,7 +88,15 @@ export class NotificationService {
    * Send email notification
    */
   private async sendEmailNotification(options: SendNotificationOptions): Promise<boolean> {
-    const { reminder, task, project, recipients, escalationReason, escalationLevel, additionalInfo } = options;
+    const {
+      reminder,
+      task,
+      project,
+      recipients,
+      escalationReason,
+      escalationLevel,
+      additionalInfo,
+    } = options;
 
     if (recipients.length === 0) {
       this.logger.warn('No recipients specified for email notification');
@@ -139,7 +157,15 @@ export class NotificationService {
    * Send Slack notification
    */
   private async sendSlackNotification(options: SendNotificationOptions): Promise<boolean> {
-    const { reminder, task, project, escalationReason, escalationLevel, slackChannelId, additionalInfo } = options;
+    const {
+      reminder,
+      task,
+      project,
+      escalationReason,
+      escalationLevel,
+      slackChannelId,
+      additionalInfo,
+    } = options;
 
     // Find Slack channel ID from options or from project configuration
     let targetChannelId = slackChannelId;
@@ -256,15 +282,17 @@ export class NotificationService {
       return [];
     }
 
-    return this.userProfileRepository.findBy(
-      userIds.map((id) => ({ id })),
-    );
+    return this.userProfileRepository.findBy(userIds.map((id) => ({ id })));
   }
 
   /**
    * Send reminder notification with automatic recipient resolution
    */
-  async sendReminderNotification(reminder: Reminder, task?: Task, slackChannelId?: string): Promise<boolean> {
+  async sendReminderNotification(
+    reminder: Reminder,
+    task?: Task,
+    slackChannelId?: string,
+  ): Promise<boolean> {
     // Get recipients
     const recipients: UserProfile[] = [];
 
@@ -331,12 +359,7 @@ export class NotificationService {
     message: string,
     type: 'info' | 'warning' | 'error' | 'success' = 'info',
   ): Promise<boolean> {
-    const result = await this.slackService.sendSimpleNotification(
-      channelId,
-      title,
-      message,
-      type,
-    );
+    const result = await this.slackService.sendSimpleNotification(channelId, title, message, type);
     return result.success;
   }
 

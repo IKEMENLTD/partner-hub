@@ -16,10 +16,7 @@ export default registerAs(
     port: parseInt(process.env.PORT || '3000', 10),
     apiPrefix: process.env.API_PREFIX || 'api/v1',
     logLevel: process.env.LOG_LEVEL || 'debug',
-    reminderCheckInterval: parseInt(
-      process.env.REMINDER_CHECK_INTERVAL || '60000',
-      10,
-    ),
+    reminderCheckInterval: parseInt(process.env.REMINDER_CHECK_INTERVAL || '60000', 10),
     corsOrigin: process.env.CORS_ORIGIN || '',
   }),
 );

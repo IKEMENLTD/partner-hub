@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserProfile } from './entities/user-profile.entity';
@@ -48,10 +43,7 @@ export class AuthService {
   /**
    * プロファイルを更新
    */
-  async updateProfile(
-    id: string,
-    updateProfileDto: UpdateProfileDto,
-  ): Promise<UserProfile> {
+  async updateProfile(id: string, updateProfileDto: UpdateProfileDto): Promise<UserProfile> {
     const profile = await this.findProfileById(id);
     Object.assign(profile, updateProfileDto);
     await this.profileRepository.save(profile);

@@ -28,15 +28,15 @@ export default registerAs('jwt', (): JwtConfig => {
 
   // For development only - warn if using defaults
   if (!jwtSecret && nodeEnv !== 'production') {
-    console.warn(
-      'WARNING: Using development JWT_SECRET. Set a secure secret for production!',
-    );
+    console.warn('WARNING: Using development JWT_SECRET. Set a secure secret for production!');
   }
 
   return {
     secret: jwtSecret || (nodeEnv !== 'production' ? 'dev_jwt_secret_not_for_production_use' : ''),
     expiresIn: process.env.JWT_EXPIRES_IN || '15m', // SECURITY FIX: Reduced from 1d to 15m
-    refreshSecret: jwtRefreshSecret || (nodeEnv !== 'production' ? 'dev_refresh_secret_not_for_production_use' : ''),
+    refreshSecret:
+      jwtRefreshSecret ||
+      (nodeEnv !== 'production' ? 'dev_refresh_secret_not_for_production_use' : ''),
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   };
 });

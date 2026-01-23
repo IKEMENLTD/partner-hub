@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProjectStakeholder } from './entities/project-stakeholder.entity';
@@ -71,7 +66,9 @@ export class StakeholderService {
         where: { id: parentStakeholderId },
       });
       if (!parentStakeholder) {
-        throw new NotFoundException(`Parent stakeholder with ID "${parentStakeholderId}" not found`);
+        throw new NotFoundException(
+          `Parent stakeholder with ID "${parentStakeholderId}" not found`,
+        );
       }
       // Ensure parent stakeholder belongs to the same project
       if (parentStakeholder.projectId !== projectId) {
@@ -201,7 +198,9 @@ export class StakeholderService {
           where: { id: parentStakeholderId },
         });
         if (!parentStakeholder) {
-          throw new NotFoundException(`Parent stakeholder with ID "${parentStakeholderId}" not found`);
+          throw new NotFoundException(
+            `Parent stakeholder with ID "${parentStakeholderId}" not found`,
+          );
         }
         if (parentStakeholder.projectId !== stakeholder.projectId) {
           throw new BadRequestException('Parent stakeholder must belong to the same project');
@@ -264,10 +263,7 @@ export class StakeholderService {
   /**
    * Get stakeholders by tier for a project
    */
-  async getStakeholdersByTier(
-    projectId: string,
-    tier: number,
-  ): Promise<ProjectStakeholder[]> {
+  async getStakeholdersByTier(projectId: string, tier: number): Promise<ProjectStakeholder[]> {
     // Verify project exists
     const project = await this.projectRepository.findOne({
       where: { id: projectId },
@@ -335,15 +331,9 @@ export class StakeholderService {
     };
 
     // Group stakeholders by tier
-    const tier1 = allStakeholders
-      .filter((s) => s.tier === 1)
-      .map((s) => buildNode(s));
-    const tier2 = allStakeholders
-      .filter((s) => s.tier === 2)
-      .map((s) => buildNode(s));
-    const tier3 = allStakeholders
-      .filter((s) => s.tier === 3)
-      .map((s) => buildNode(s));
+    const tier1 = allStakeholders.filter((s) => s.tier === 1).map((s) => buildNode(s));
+    const tier2 = allStakeholders.filter((s) => s.tier === 2).map((s) => buildNode(s));
+    const tier3 = allStakeholders.filter((s) => s.tier === 3).map((s) => buildNode(s));
 
     return {
       tier1,

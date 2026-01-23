@@ -39,10 +39,10 @@ export class TaskAccessGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if access check should be skipped
-    const skipCheck = this.reflector.getAllAndOverride<boolean>(
-      SKIP_TASK_ACCESS_CHECK,
-      [context.getHandler(), context.getClass()],
-    );
+    const skipCheck = this.reflector.getAllAndOverride<boolean>(SKIP_TASK_ACCESS_CHECK, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (skipCheck) {
       return true;
@@ -85,19 +85,14 @@ export class TaskAccessGuard implements CanActivate {
 
     // Check if user has access to the task's project
     if (task.projectId) {
-      const hasProjectAccess = await this.projectService.checkAccess(
-        task.projectId,
-        user.id,
-      );
+      const hasProjectAccess = await this.projectService.checkAccess(task.projectId, user.id);
       if (hasProjectAccess) {
         return true;
       }
     }
 
     this.logger.warn(`Access denied for user ${user.id} to task ${taskId}`);
-    throw new ForbiddenException(
-      'You do not have permission to access this task',
-    );
+    throw new ForbiddenException('You do not have permission to access this task');
   }
 
   /**

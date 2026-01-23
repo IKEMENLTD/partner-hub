@@ -108,7 +108,7 @@ export function MyTodayPage() {
             <Calendar className="h-6 w-6 text-primary-600" />
           </div>
           <div>
-            <p className="text-sm text-gray-500">今日のタスク</p>
+            <p className="text-sm text-gray-500">本日期限のタスク</p>
             <p className="text-2xl font-bold text-gray-900">{tasksForToday.length}</p>
           </div>
         </Card>
@@ -240,7 +240,7 @@ export function MyTodayPage() {
         {/* Today's Tasks */}
         <Card padding="none">
           <CardHeader className="px-6 pt-6">
-            今日のタスク
+            本日期限のタスク
             {tasksForToday.length > 0 && (
               <span className="ml-2 text-sm font-normal text-gray-500">
                 ({tasksForToday.length}件)
@@ -250,8 +250,8 @@ export function MyTodayPage() {
           <CardContent className="px-6 pb-6">
             {tasksForToday.length === 0 ? (
               <EmptyState
-                title="今日のタスクはありません"
-                description="新しいタスクを追加するか、明日の予定を確認してください"
+                title="本日期限のタスクはありません"
+                description="新しいタスクを追加するか、今後の期限を確認してください"
                 className="py-8"
               />
             ) : (
@@ -267,7 +267,7 @@ export function MyTodayPage() {
         {/* Upcoming Deadlines */}
         <Card padding="none">
           <CardHeader className="px-6 pt-6">
-            今後の期限
+            期限が1週間以内のタスク
             {upcomingDeadlines.length > 0 && (
               <span className="ml-2 text-sm font-normal text-gray-500">
                 ({upcomingDeadlines.length}件)
@@ -277,8 +277,8 @@ export function MyTodayPage() {
           <CardContent className="px-6 pb-6">
             {upcomingDeadlines.length === 0 ? (
               <EmptyState
-                title="今後の期限はありません"
-                description="期限が設定されたタスクがここに表示されます"
+                title="期限が1週間以内のタスクはありません"
+                description="1週間以内に期限を迎えるタスクがここに表示されます"
                 className="py-8"
               />
             ) : (

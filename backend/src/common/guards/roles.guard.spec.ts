@@ -98,10 +98,7 @@ describe('RolesGuard', () => {
         email: 'manager@example.com',
         role: UserRole.MANAGER,
       };
-      const context = mockExecutionContext(user, [
-        UserRole.ADMIN,
-        UserRole.MANAGER,
-      ]);
+      const context = mockExecutionContext(user, [UserRole.ADMIN, UserRole.MANAGER]);
 
       const result = guard.canActivate(context);
 
@@ -114,10 +111,7 @@ describe('RolesGuard', () => {
         email: 'partner@example.com',
         role: UserRole.PARTNER,
       };
-      const context = mockExecutionContext(user, [
-        UserRole.ADMIN,
-        UserRole.MANAGER,
-      ]);
+      const context = mockExecutionContext(user, [UserRole.ADMIN, UserRole.MANAGER]);
 
       const result = guard.canActivate(context);
 

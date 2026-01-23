@@ -11,7 +11,7 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
   if (!databaseUrl) {
     throw new Error(
       'DATABASE_URL is required. Set it in your .env file. ' +
-      'Get it from: Supabase Dashboard > Project Settings > Database > Connection string'
+        'Get it from: Supabase Dashboard > Project Settings > Database > Connection string',
     );
   }
 

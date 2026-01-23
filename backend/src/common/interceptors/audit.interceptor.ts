@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
@@ -27,10 +21,7 @@ export class AuditInterceptor implements NestInterceptor {
     const { method, url, user, ip, headers, body, params } = request;
 
     // Check if audit should be skipped for this handler
-    const skipAudit = this.reflector.get<boolean>(
-      SKIP_AUDIT_KEY,
-      context.getHandler(),
-    );
+    const skipAudit = this.reflector.get<boolean>(SKIP_AUDIT_KEY, context.getHandler());
     if (skipAudit) {
       return next.handle();
     }
@@ -76,7 +67,9 @@ export class AuditInterceptor implements NestInterceptor {
               };
 
               await this.auditService.createLog(auditLog);
-              this.logger.debug(`Audit log created for ${action} on ${entityInfo.entityName}:${entityInfo.entityId}`);
+              this.logger.debug(
+                `Audit log created for ${action} on ${entityInfo.entityName}:${entityInfo.entityId}`,
+              );
             }
           } catch (error) {
             this.logger.error(`Failed to create audit log: ${error.message}`, error.stack);
@@ -150,9 +143,10 @@ export class AuditInterceptor implements NestInterceptor {
     // Extract entity name from URL path
     const urlParts = url.split('/').filter(Boolean);
     const apiIndex = urlParts.indexOf('api');
-    const entityName = apiIndex >= 0 && urlParts[apiIndex + 2]
-      ? urlParts[apiIndex + 2]
-      : urlParts[urlParts.length - 2] || urlParts[urlParts.length - 1];
+    const entityName =
+      apiIndex >= 0 && urlParts[apiIndex + 2]
+        ? urlParts[apiIndex + 2]
+        : urlParts[urlParts.length - 2] || urlParts[urlParts.length - 1];
 
     // Extract entity ID
     let entityId = params?.id || body?.id || responseData?.id || responseData?.data?.id;
@@ -176,7 +170,14 @@ export class AuditInterceptor implements NestInterceptor {
   private sanitizeData(data: any): any {
     if (!data) return data;
 
-    const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'accessToken', 'refreshToken'];
+    const sensitiveFields = [
+      'password',
+      'token',
+      'secret',
+      'apiKey',
+      'accessToken',
+      'refreshToken',
+    ];
     const sanitized = { ...data };
 
     for (const field of sensitiveFields) {

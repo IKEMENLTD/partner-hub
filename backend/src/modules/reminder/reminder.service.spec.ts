@@ -132,9 +132,7 @@ describe('ReminderService', () => {
     it('should throw NotFoundException when reminder not found', async () => {
       mockReminderRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(NotFoundException);
     });
   });
 

@@ -8,18 +8,9 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { PartnerEvaluationService } from './services/partner-evaluation.service';
-import {
-  CreatePartnerEvaluationDto,
-  QueryPartnerEvaluationDto,
-} from './dto';
+import { CreatePartnerEvaluationDto, QueryPartnerEvaluationDto } from './dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -30,9 +21,7 @@ import { UserRole } from '../auth/enums/user-role.enum';
 @UseGuards(RolesGuard)
 @Controller('partners/:partnerId/evaluation')
 export class PartnerEvaluationController {
-  constructor(
-    private readonly evaluationService: PartnerEvaluationService,
-  ) {}
+  constructor(private readonly evaluationService: PartnerEvaluationService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get partner evaluation summary' })
@@ -42,9 +31,7 @@ export class PartnerEvaluationController {
     description: 'Partner evaluation summary including auto metrics and manual evaluations',
   })
   @ApiResponse({ status: 404, description: 'Partner not found' })
-  async getEvaluationSummary(
-    @Param('partnerId', ParseUUIDPipe) partnerId: string,
-  ) {
+  async getEvaluationSummary(@Param('partnerId', ParseUUIDPipe) partnerId: string) {
     return this.evaluationService.getEvaluationSummary(partnerId);
   }
 
@@ -72,11 +59,7 @@ export class PartnerEvaluationController {
     @Body() createEvaluationDto: CreatePartnerEvaluationDto,
     @CurrentUser('id') userId: string,
   ) {
-    return this.evaluationService.createEvaluation(
-      partnerId,
-      userId,
-      createEvaluationDto,
-    );
+    return this.evaluationService.createEvaluation(partnerId, userId, createEvaluationDto);
   }
 
   @Get('auto-metrics')
@@ -84,12 +67,11 @@ export class PartnerEvaluationController {
   @ApiParam({ name: 'partnerId', description: 'Partner ID' })
   @ApiResponse({
     status: 200,
-    description: 'Auto-calculated metrics including deadline compliance, report submission rate, and response time',
+    description:
+      'Auto-calculated metrics including deadline compliance, report submission rate, and response time',
   })
   @ApiResponse({ status: 404, description: 'Partner not found' })
-  async getAutoMetrics(
-    @Param('partnerId', ParseUUIDPipe) partnerId: string,
-  ) {
+  async getAutoMetrics(@Param('partnerId', ParseUUIDPipe) partnerId: string) {
     return this.evaluationService.getAutoMetrics(partnerId);
   }
 }

@@ -1,10 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  NotificationSettings,
-  DigestTime,
-} from '../entities/notification-settings.entity';
+import { NotificationSettings, DigestTime } from '../entities/notification-settings.entity';
 import { UpdateNotificationSettingsDto } from '../dto/update-notification-settings.dto';
 
 @Injectable()
@@ -54,7 +51,7 @@ export class NotificationSettingsService {
     updateDto: UpdateNotificationSettingsDto,
   ): Promise<NotificationSettings> {
     // 既存の設定を取得(なければ作成)
-    let settings = await this.getSettingsByUserId(userId);
+    const settings = await this.getSettingsByUserId(userId);
 
     // 設定を更新
     const updateData: Partial<NotificationSettings> = {};

@@ -25,7 +25,8 @@ interface ProjectTemplateData {
 const templates: ProjectTemplateData[] = [
   {
     name: '補助金営業テンプレート',
-    description: '補助金申請支援プロジェクトの標準テンプレート。ヒアリングから申請フォローまでの一連のプロセスを管理します。',
+    description:
+      '補助金申請支援プロジェクトの標準テンプレート。ヒアリングから申請フォローまでの一連のプロセスを管理します。',
     projectType: 'consulting',
     isActive: true,
     phases: [
@@ -126,7 +127,8 @@ const templates: ProjectTemplateData[] = [
   },
   {
     name: 'ASP案件テンプレート',
-    description: 'ASP/SaaSサービス提供プロジェクトの標準テンプレート。要件定義から本番導入までの一連のプロセスを管理します。',
+    description:
+      'ASP/SaaSサービス提供プロジェクトの標準テンプレート。要件定義から本番導入までの一連のプロセスを管理します。',
     projectType: 'other',
     isActive: true,
     phases: [
@@ -227,7 +229,8 @@ const templates: ProjectTemplateData[] = [
   },
   {
     name: '開発案件テンプレート',
-    description: 'カスタム開発プロジェクトの標準テンプレート。要件定義から本番リリースまでの開発プロセスを管理します。',
+    description:
+      'カスタム開発プロジェクトの標準テンプレート。要件定義から本番リリースまでの開発プロセスを管理します。',
     projectType: 'joint_development',
     isActive: true,
     phases: [
@@ -336,7 +339,7 @@ export async function seedProjectTemplates(dataSource: DataSource): Promise<void
     // Check if templates already exist in project_templates table
     const existingCount = await queryRunner.query(
       `SELECT COUNT(*) as count FROM project_templates WHERE name IN ($1, $2, $3)`,
-      ['補助金営業テンプレート', 'ASP案件テンプレート', '開発案件テンプレート']
+      ['補助金営業テンプレート', 'ASP案件テンプレート', '開発案件テンプレート'],
     );
 
     if (parseInt(existingCount[0].count, 10) >= 3) {
@@ -346,10 +349,9 @@ export async function seedProjectTemplates(dataSource: DataSource): Promise<void
 
     for (const template of templates) {
       // Check if this specific template exists
-      const existing = await queryRunner.query(
-        `SELECT id FROM project_templates WHERE name = $1`,
-        [template.name]
-      );
+      const existing = await queryRunner.query(`SELECT id FROM project_templates WHERE name = $1`, [
+        template.name,
+      ]);
 
       if (existing.length > 0) {
         // Update existing template
@@ -363,7 +365,7 @@ export async function seedProjectTemplates(dataSource: DataSource): Promise<void
             template.isActive,
             JSON.stringify(template.phases),
             template.name,
-          ]
+          ],
         );
         console.log(`Updated template: ${template.name} (${existing[0].id})`);
       } else {
@@ -378,7 +380,7 @@ export async function seedProjectTemplates(dataSource: DataSource): Promise<void
             template.projectType,
             template.isActive,
             JSON.stringify(template.phases),
-          ]
+          ],
         );
         console.log(`Created template: ${template.name} (${result[0].id})`);
       }

@@ -55,7 +55,9 @@ describe('ProjectService', () => {
       addSelect: jest.fn().mockReturnThis(),
       groupBy: jest.fn().mockReturnThis(),
       getRawMany: jest.fn().mockResolvedValue([]),
-      getRawOne: jest.fn().mockResolvedValue({ avgProgress: '50', totalBudget: '100000', totalActualCost: '50000' }),
+      getRawOne: jest
+        .fn()
+        .mockResolvedValue({ avgProgress: '50', totalBudget: '100000', totalActualCost: '50000' }),
     })),
   };
 
@@ -137,9 +139,7 @@ describe('ProjectService', () => {
     it('should throw NotFoundException when project not found', async () => {
       mockProjectRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -160,10 +160,7 @@ describe('ProjectService', () => {
         status: ProjectStatus.COMPLETED,
       });
 
-      const result = await service.updateStatus(
-        'test-project-uuid',
-        ProjectStatus.COMPLETED,
-      );
+      const result = await service.updateStatus('test-project-uuid', ProjectStatus.COMPLETED);
 
       expect(result.status).toBe(ProjectStatus.COMPLETED);
     });
@@ -229,10 +226,7 @@ describe('ProjectService', () => {
         partners: [mockPartner],
       });
 
-      const result = await service.addPartner(
-        'test-project-uuid',
-        'test-partner-uuid',
-      );
+      const result = await service.addPartner('test-project-uuid', 'test-partner-uuid');
 
       expect(mockProjectRepository.save).toHaveBeenCalled();
     });
@@ -241,9 +235,9 @@ describe('ProjectService', () => {
       mockProjectRepository.findOne.mockResolvedValue(mockProject);
       mockPartnerRepository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.addPartner('test-project-uuid', 'non-existent-partner'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.addPartner('test-project-uuid', 'non-existent-partner')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should not add duplicate partner', async () => {
@@ -276,10 +270,7 @@ describe('ProjectService', () => {
         partners: [],
       });
 
-      const result = await service.removePartner(
-        'test-project-uuid',
-        'test-partner-uuid',
-      );
+      const result = await service.removePartner('test-project-uuid', 'test-partner-uuid');
 
       expect(mockProjectRepository.save).toHaveBeenCalled();
     });
@@ -370,10 +361,7 @@ describe('ProjectService', () => {
       });
       mockProjectRepository.save.mockResolvedValue(mockProject);
 
-      const result = await service.updateStatus(
-        'test-project-uuid',
-        ProjectStatus.IN_PROGRESS,
-      );
+      const result = await service.updateStatus('test-project-uuid', ProjectStatus.IN_PROGRESS);
 
       expect(result).toBeDefined();
     });

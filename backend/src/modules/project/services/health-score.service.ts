@@ -151,9 +151,7 @@ export class HealthScoreService {
 
     // Count total tasks and completed tasks
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(
-      (t) => t.status === TaskStatus.COMPLETED,
-    ).length;
+    const completedTasks = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
 
     // Count on-time completed tasks (completed before or on due date)
     const onTimeCompletedTasks = tasks.filter((t) => {
@@ -178,8 +176,8 @@ export class HealthScoreService {
 
     this.logger.debug(
       `Health score calculated for project ${projectId}: ` +
-      `OnTimeRate=${onTimeRate.toFixed(1)}%, CompletionRate=${completionRate.toFixed(1)}%, ` +
-      `BudgetHealth=${budgetHealth.toFixed(1)}%, Total=${totalScore}`,
+        `OnTimeRate=${onTimeRate.toFixed(1)}%, CompletionRate=${completionRate.toFixed(1)}%, ` +
+        `BudgetHealth=${budgetHealth.toFixed(1)}%, Total=${totalScore}`,
     );
 
     return {
@@ -209,9 +207,7 @@ export class HealthScoreService {
       healthScore: breakdown.totalScore,
     });
 
-    this.logger.log(
-      `Health score updated for project ${projectId}: ${breakdown.totalScore}`,
-    );
+    this.logger.log(`Health score updated for project ${projectId}: ${breakdown.totalScore}`);
 
     return this.projectRepository.findOne({
       where: { id: projectId },
@@ -287,9 +283,7 @@ export class HealthScoreService {
 
     try {
       await this.updateProjectHealthScore(projectId);
-      this.logger.debug(
-        `Health score recalculated for project ${projectId} due to task change`,
-      );
+      this.logger.debug(`Health score recalculated for project ${projectId} due to task change`);
     } catch (error) {
       this.logger.error(
         `Failed to recalculate health score for project ${projectId}: ${error.message}`,
@@ -355,14 +349,14 @@ export class HealthScoreService {
         totalCompletionRate += breakdown.completionRate;
         totalBudgetHealth += breakdown.budgetHealth;
       } catch (error) {
-        this.logger.warn(`Failed to calculate breakdown for project ${project.id}: ${error.message}`);
+        this.logger.warn(
+          `Failed to calculate breakdown for project ${project.id}: ${error.message}`,
+        );
       }
     }
 
     const scores = projects.map((p) => p.healthScore);
-    const averageScore = Math.round(
-      scores.reduce((a, b) => a + b, 0) / scores.length,
-    );
+    const averageScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 
     const scoreDistribution = {
       excellent: scores.filter((s) => s >= 80).length,
@@ -388,12 +382,14 @@ export class HealthScoreService {
    * Get health score breakdown for all active projects
    * Useful for dashboard display and reporting
    */
-  async getAllProjectsHealthScores(): Promise<Array<{
-    projectId: string;
-    projectName: string;
-    healthScore: number;
-    breakdown: HealthScoreBreakdown;
-  }>> {
+  async getAllProjectsHealthScores(): Promise<
+    Array<{
+      projectId: string;
+      projectName: string;
+      healthScore: number;
+      breakdown: HealthScoreBreakdown;
+    }>
+  > {
     const projects = await this.projectRepository.find({
       where: {
         status: Not(In([ProjectStatus.COMPLETED, ProjectStatus.CANCELLED])),

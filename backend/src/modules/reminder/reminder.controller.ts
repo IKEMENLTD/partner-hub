@@ -38,10 +38,7 @@ export class ReminderController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Create a new reminder' })
   @ApiResponse({ status: 201, description: 'Reminder created successfully' })
-  async create(
-    @Body() createReminderDto: CreateReminderDto,
-    @CurrentUser('id') userId: string,
-  ) {
+  async create(@Body() createReminderDto: CreateReminderDto, @CurrentUser('id') userId: string) {
     return this.reminderService.create(createReminderDto, userId);
   }
 

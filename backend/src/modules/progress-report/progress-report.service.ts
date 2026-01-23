@@ -103,10 +103,7 @@ export class ProgressReportService {
   /**
    * Send report request email
    */
-  private async sendReportRequestEmail(
-    report: ProgressReport,
-    task: Task,
-  ): Promise<void> {
+  private async sendReportRequestEmail(report: ProgressReport, task: Task): Promise<void> {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const reportUrl = `${frontendUrl}/progress-report/${report.reportToken}`;
 
@@ -259,10 +256,7 @@ export class ProgressReportService {
   /**
    * Get all reports for a task
    */
-  async getReportsByTask(
-    taskId: string,
-    includeUnsubmitted = false,
-  ): Promise<ProgressReport[]> {
+  async getReportsByTask(taskId: string, includeUnsubmitted = false): Promise<ProgressReport[]> {
     const whereCondition: any = { taskId };
 
     if (!includeUnsubmitted) {

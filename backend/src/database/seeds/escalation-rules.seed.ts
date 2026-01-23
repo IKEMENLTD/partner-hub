@@ -82,9 +82,7 @@ export async function seedEscalationRules(dataSource: DataSource): Promise<void>
 
   try {
     // Check if rules already exist
-    const existingCount = await queryRunner.query(
-      `SELECT COUNT(*) as count FROM escalation_rules`
-    );
+    const existingCount = await queryRunner.query(`SELECT COUNT(*) as count FROM escalation_rules`);
 
     if (parseInt(existingCount[0].count, 10) > 0) {
       console.log('Escalation rules already exist, skipping seed...');
@@ -109,7 +107,7 @@ export async function seedEscalationRules(dataSource: DataSource): Promise<void>
           rule.action,
           rule.status,
           rule.priority,
-        ]
+        ],
       );
 
       console.log(`Created escalation rule: ${rule.name} (${result[0].id})`);

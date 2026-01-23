@@ -8,9 +8,7 @@ import { Task } from '../task/entities/task.entity';
 import { Partner } from '../partner/entities/partner.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Template, Project, Task, Partner]),
-  ],
+  imports: [TypeOrmModule.forFeature([Template, Project, Task, Partner])],
   controllers: [TemplateController],
   providers: [TemplateService],
   exports: [TemplateService],

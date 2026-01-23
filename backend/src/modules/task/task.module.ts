@@ -7,10 +7,7 @@ import { Task } from './entities/task.entity';
 import { ProjectModule } from '../project/project.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Task]),
-    forwardRef(() => ProjectModule),
-  ],
+  imports: [TypeOrmModule.forFeature([Task]), forwardRef(() => ProjectModule)],
   controllers: [TaskController],
   providers: [TaskService, TaskAccessGuard],
   exports: [TaskService, TaskAccessGuard],

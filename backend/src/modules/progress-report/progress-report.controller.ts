@@ -10,13 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { ProgressReportService } from './progress-report.service';
 import { RequestReportDto } from './dto/request-report.dto';
 import { SubmitReportDto } from './dto/submit-report.dto';
@@ -40,14 +34,8 @@ export class ProgressReportController {
     status: 404,
     description: 'Task not found',
   })
-  async requestReport(
-    @Body() dto: RequestReportDto,
-    @Request() req: any,
-  ) {
-    const report = await this.progressReportService.requestReport(
-      dto,
-      req.user.id,
-    );
+  async requestReport(@Body() dto: RequestReportDto, @Request() req: any) {
+    const report = await this.progressReportService.requestReport(dto, req.user.id);
     return {
       success: true,
       data: {
@@ -124,10 +112,7 @@ export class ProgressReportController {
     status: 404,
     description: 'Invalid token',
   })
-  async submitReport(
-    @Param('token') token: string,
-    @Body() dto: SubmitReportDto,
-  ) {
+  async submitReport(@Param('token') token: string, @Body() dto: SubmitReportDto) {
     const report = await this.progressReportService.submitReport(token, dto);
     return {
       success: true,
@@ -204,16 +189,8 @@ export class ProgressReportController {
     status: 404,
     description: 'Report not found',
   })
-  async reviewReport(
-    @Param('id') id: string,
-    @Body() dto: ReviewReportDto,
-    @Request() req: any,
-  ) {
-    const report = await this.progressReportService.reviewReport(
-      id,
-      dto,
-      req.user.id,
-    );
+  async reviewReport(@Param('id') id: string, @Body() dto: ReviewReportDto, @Request() req: any) {
+    const report = await this.progressReportService.reviewReport(id, dto, req.user.id);
     return {
       success: true,
       data: {

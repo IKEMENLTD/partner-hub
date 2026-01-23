@@ -7,7 +7,9 @@ async function seed() {
   // SECURITY: Block execution in production environment
   if (process.env.NODE_ENV === 'production') {
     console.error('ERROR: Seed script is disabled in production environment');
-    console.error('This script creates demo users with known credentials and must not run in production.');
+    console.error(
+      'This script creates demo users with known credentials and must not run in production.',
+    );
     process.exit(1);
   }
 

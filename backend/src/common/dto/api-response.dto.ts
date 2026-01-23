@@ -32,11 +32,7 @@ export class ApiResponseDto<T> {
     });
   }
 
-  static error<T>(
-    message: string,
-    code: string,
-    details?: any,
-  ): ApiResponseDto<T> {
+  static error<T>(message: string, code: string, details?: any): ApiResponseDto<T> {
     return new ApiResponseDto({
       success: false,
       message,

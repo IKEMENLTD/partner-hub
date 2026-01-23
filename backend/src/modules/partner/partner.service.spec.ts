@@ -90,9 +90,7 @@ describe('PartnerService', () => {
     it('should throw ConflictException if email already exists', async () => {
       mockRepository.findOne.mockResolvedValue(mockPartner);
 
-      await expect(service.create(createDto, 'user-uuid')).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.create(createDto, 'user-uuid')).rejects.toThrow(ConflictException);
     });
   });
 
@@ -108,9 +106,7 @@ describe('PartnerService', () => {
     it('should throw NotFoundException when partner not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -147,10 +143,7 @@ describe('PartnerService', () => {
         status: PartnerStatus.INACTIVE,
       });
 
-      const result = await service.updateStatus(
-        'test-partner-uuid',
-        PartnerStatus.INACTIVE,
-      );
+      const result = await service.updateStatus('test-partner-uuid', PartnerStatus.INACTIVE);
 
       expect(result.status).toBe(PartnerStatus.INACTIVE);
     });
