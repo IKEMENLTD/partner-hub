@@ -259,27 +259,6 @@ export function SettingsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">プッシュ通知</p>
-                  <p className="text-sm text-gray-500">
-                    ブラウザでプッシュ通知を受け取ります
-                  </p>
-                </div>
-                <ToggleSwitch
-                  checked={localSettings.pushNotification}
-                  onChange={(checked) =>
-                    handleSettingChange('pushNotification', checked)
-                  }
-                  disabled={isLoadingSettings}
-                />
-              </div>
-
-              <div className="rounded-lg bg-gray-50 p-3">
-                <p className="text-xs text-gray-600">
-                  両方ONの場合、同じ通知がメールとブラウザの両方に届きます。
-                </p>
-              </div>
             </CardContent>
           </Card>
 
@@ -304,17 +283,6 @@ export function SettingsPage() {
               />
 
               <NotificationItem
-                icon={<UserCheck className="h-4 w-4" />}
-                title="担当者変更通知"
-                description="タスクの担当者が変更されると通知を受け取ります"
-                checked={localSettings.assigneeChangeNotification}
-                onChange={(checked) =>
-                  handleSettingChange('assigneeChangeNotification', checked)
-                }
-                disabled={isLoadingSettings}
-              />
-
-              <NotificationItem
                 icon={<AtSign className="h-4 w-4" />}
                 title="メンション通知"
                 description="コメントでメンションされると通知を受け取ります"
@@ -326,12 +294,12 @@ export function SettingsPage() {
               />
 
               <NotificationItem
-                icon={<RefreshCw className="h-4 w-4" />}
-                title="ステータス変更通知"
-                description="タスクやプロジェクトのステータスが変更されると通知を受け取ります"
-                checked={localSettings.statusChangeNotification}
+                icon={<UserCheck className="h-4 w-4" />}
+                title="担当者アサイン通知"
+                description="自分がタスクの担当者に設定されると通知を受け取ります"
+                checked={localSettings.assigneeChangeNotification}
                 onChange={(checked) =>
-                  handleSettingChange('statusChangeNotification', checked)
+                  handleSettingChange('assigneeChangeNotification', checked)
                 }
                 disabled={isLoadingSettings}
               />
