@@ -416,31 +416,6 @@ export type ViewType = 'list' | 'kanban' | 'calendar';
 // タブタイプ
 export type ProjectDetailTab = 'overview' | 'members' | 'tasks' | 'timeline' | 'files';
 
-// テンプレート関連の型定義
-export interface TemplatePhase {
-  name: string;
-  order: number;
-  tasks: TemplateTask[];
-}
-
-export interface TemplateTask {
-  name: string;
-  description?: string;
-  estimatedDays?: number;
-  order: number;
-}
-
-export interface ProjectTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  projectType?: ProjectType;
-  phases?: TemplatePhase[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 // パートナー評価関連の型定義
 
 // 自動計算指標

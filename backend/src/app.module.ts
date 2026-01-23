@@ -26,7 +26,6 @@ import { TaskModule } from './modules/task/task.module';
 import { ReminderModule } from './modules/reminder/reminder.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
-import { TemplateModule } from './modules/template/template.module';
 import { EscalationModule } from './modules/escalation/escalation.module';
 import { FileStorageModule } from './modules/file-storage/file-storage.module';
 import { ProgressReportModule } from './modules/progress-report/progress-report.module';
@@ -115,7 +114,6 @@ import { NotificationModule } from './modules/notification/notification.module';
     TaskModule,
     ReminderModule,
     DashboardModule,
-    TemplateModule,
     EscalationModule,
     FileStorageModule,
     ProgressReportModule,

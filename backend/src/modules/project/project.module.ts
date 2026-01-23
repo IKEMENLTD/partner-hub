@@ -8,14 +8,13 @@ import { HealthScoreService } from './services/health-score.service';
 import { ProjectAccessGuard } from './guards/project-access.guard';
 import { Project } from './entities/project.entity';
 import { ProjectStakeholder } from './entities/project-stakeholder.entity';
-import { ProjectTemplate } from './entities/project-template.entity';
 import { Partner } from '../partner/entities/partner.entity';
 import { Task } from '../task/entities/task.entity';
 import { TaskModule } from '../task/task.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Project, ProjectStakeholder, ProjectTemplate, Partner, Task]),
+    TypeOrmModule.forFeature([Project, ProjectStakeholder, Partner, Task]),
     forwardRef(() => TaskModule),
   ],
   controllers: [ProjectController, StakeholderController],
