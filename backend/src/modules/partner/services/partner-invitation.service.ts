@@ -96,8 +96,8 @@ export class PartnerInvitationService {
       invitedByName = inviter?.fullName || inviter?.email;
     }
 
-    // Send invitation email
-    const invitationUrl = `${this.frontendUrl}/auth/accept-invitation?token=${token}`;
+    // Send invitation email - directs to signup page with invitation token
+    const invitationUrl = `${this.frontendUrl}/auth/signup?invitation=${token}`;
     await this.emailService.sendPartnerInvitationEmail(
       partner,
       invitationUrl,
