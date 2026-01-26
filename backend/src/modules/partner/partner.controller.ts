@@ -185,19 +185,17 @@ export class PartnerController {
     };
   }
 
+  @Public()
   @Post('invitation/accept')
   @ApiOperation({ summary: 'Accept invitation and link partner to user account' })
   @ApiResponse({ status: 200, description: 'Invitation accepted, partner linked' })
   @ApiResponse({ status: 400, description: 'Token expired, already used, or email mismatch' })
   @ApiResponse({ status: 404, description: 'Invalid token' })
   @ApiResponse({ status: 409, description: 'Partner already linked' })
-  async acceptInvitation(
-    @Body() acceptDto: AcceptInvitationDto,
-    @CurrentUser('id') userId: string,
-  ) {
+  async acceptInvitation(@Body() acceptDto: AcceptInvitationDto) {
     const partner = await this.partnerInvitationService.acceptInvitation(
       acceptDto.token,
-      userId,
+      acceptDto.userId,
     );
     return {
       message: 'Invitation accepted successfully',

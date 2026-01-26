@@ -86,10 +86,11 @@ export const partnerService = {
     return extractData(response);
   },
 
-  acceptInvitation: async (token: string): Promise<Partner> => {
+  acceptInvitation: async (token: string, userId: string): Promise<Partner> => {
     const response = await api.post<{ success: boolean; data: Partner }>(
       '/partners/invitation/accept',
-      { token }
+      { token, userId },
+      true // skipAuth - this endpoint is public
     );
     return extractData(response);
   },

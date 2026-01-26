@@ -170,11 +170,11 @@ export function RegisterPage() {
         lastName: formData.lastName.trim(),
       },
       {
-        onSuccess: async () => {
+        onSuccess: async (data) => {
           // If this is an invitation registration, accept the invitation
-          if (invitationToken && invitationData) {
+          if (invitationToken && invitationData && data?.user?.id) {
             try {
-              await partnerService.acceptInvitation(invitationToken);
+              await partnerService.acceptInvitation(invitationToken, data.user.id);
               console.log('Invitation accepted successfully');
             } catch (err) {
               console.error('Failed to accept invitation:', err);
