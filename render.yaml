@@ -31,6 +31,21 @@ services:
         value: info
       - key: CORS_ORIGIN
         value: https://partner-hub-frontend.onrender.com
+      # Email Settings (Resend SMTP)
+      - key: SMTP_HOST
+        value: smtp.resend.com
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_SECURE
+        value: "true"
+      - key: SMTP_USER
+        value: resend
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        value: noreply@partnerhub.ikemen.ltd
+      - key: SMTP_FROM_NAME
+        value: Partner Collaboration Platform
 
   - type: web
     name: partner-hub-frontend

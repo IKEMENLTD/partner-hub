@@ -21,7 +21,8 @@ export default registerAs(
     pass: process.env.SMTP_PASS || '',
     from: process.env.SMTP_FROM || 'noreply@example.com',
     fromName: process.env.SMTP_FROM_NAME || 'Partner Collaboration Platform',
-    // Disable email sending in development environment (console output only)
-    enabled: process.env.NODE_ENV === 'production' && !!process.env.SMTP_HOST,
+    // Enable email sending when SMTP is configured (any environment)
+    // Set SMTP_ENABLED=false to force disable
+    enabled: process.env.SMTP_ENABLED !== 'false' && !!process.env.SMTP_HOST && !!process.env.SMTP_PASS,
   }),
 );
