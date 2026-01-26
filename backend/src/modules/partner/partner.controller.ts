@@ -12,19 +12,22 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { PartnerService } from './partner.service';
+import { PartnerInvitationService } from './services/partner-invitation.service';
 import {
   CreatePartnerDto,
   UpdatePartnerDto,
   QueryPartnerDto,
   UpdatePartnerStatusDto,
   UpdatePartnerRatingDto,
+  AcceptInvitationDto,
 } from './dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PartnerAccessGuard } from './guards/partner-access.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Partners')
@@ -32,7 +35,10 @@ import { UserRole } from '../auth/enums/user-role.enum';
 @UseGuards(RolesGuard)
 @Controller('partners')
 export class PartnerController {
-  constructor(private readonly partnerService: PartnerService) {}
+  constructor(
+    private readonly partnerService: PartnerService,
+    private readonly partnerInvitationService: PartnerInvitationService,
+  ) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
@@ -138,6 +144,90 @@ export class PartnerController {
   ) {
     return this.partnerService.updateRating(id, updateRatingDto.rating);
   }
+
+  // ==================== Invitation Endpoints ====================
+
+  @Post(':id/invite')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Send invitation email to partner' })
+  @ApiParam({ name: 'id', description: 'Partner ID' })
+  @ApiResponse({ status: 201, description: 'Invitation sent successfully' })
+  @ApiResponse({ status: 404, description: 'Partner not found' })
+  @ApiResponse({ status: 409, description: 'Partner already has a linked account' })
+  async sendInvitation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    const invitation = await this.partnerInvitationService.sendInvitation(id, userId);
+    return {
+      message: 'Invitation sent successfully',
+      expiresAt: invitation.expiresAt,
+    };
+  }
+
+  @Get('invitation/verify')
+  @Public()
+  @ApiOperation({ summary: 'Verify invitation token' })
+  @ApiQuery({ name: 'token', required: true, description: 'Invitation token' })
+  @ApiResponse({ status: 200, description: 'Token is valid' })
+  @ApiResponse({ status: 400, description: 'Token expired or already used' })
+  @ApiResponse({ status: 404, description: 'Invalid token' })
+  async verifyInvitation(@Query('token') token: string) {
+    const { partner } = await this.partnerInvitationService.verifyToken(token);
+    return {
+      valid: true,
+      partner: {
+        id: partner.id,
+        name: partner.name,
+        email: partner.email,
+        companyName: partner.companyName,
+      },
+    };
+  }
+
+  @Post('invitation/accept')
+  @ApiOperation({ summary: 'Accept invitation and link partner to user account' })
+  @ApiResponse({ status: 200, description: 'Invitation accepted, partner linked' })
+  @ApiResponse({ status: 400, description: 'Token expired, already used, or email mismatch' })
+  @ApiResponse({ status: 404, description: 'Invalid token' })
+  @ApiResponse({ status: 409, description: 'Partner already linked' })
+  async acceptInvitation(
+    @Body() acceptDto: AcceptInvitationDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    const partner = await this.partnerInvitationService.acceptInvitation(
+      acceptDto.token,
+      userId,
+    );
+    return {
+      message: 'Invitation accepted successfully',
+      partner: {
+        id: partner.id,
+        name: partner.name,
+        email: partner.email,
+      },
+    };
+  }
+
+  @Post(':id/resend-invitation')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Resend invitation email to partner' })
+  @ApiParam({ name: 'id', description: 'Partner ID' })
+  @ApiResponse({ status: 201, description: 'Invitation resent successfully' })
+  @ApiResponse({ status: 404, description: 'Partner not found' })
+  @ApiResponse({ status: 409, description: 'Partner already has a linked account' })
+  async resendInvitation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    const invitation = await this.partnerInvitationService.resendInvitation(id, userId);
+    return {
+      message: 'Invitation resent successfully',
+      expiresAt: invitation.expiresAt,
+    };
+  }
+
+  // ==================== Delete Endpoint ====================
 
   @Delete(':id')
   @UseGuards(PartnerAccessGuard)

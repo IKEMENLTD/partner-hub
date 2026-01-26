@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, In } from 'typeorm';
 import { Partner } from './entities/partner.entity';
@@ -7,6 +7,7 @@ import { CreatePartnerDto, UpdatePartnerDto, QueryPartnerDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { PartnerStatus } from './enums/partner-status.enum';
 import { EmailService } from '../notification/services/email.service';
+import { PartnerInvitationService } from './services/partner-invitation.service';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -33,6 +34,8 @@ export class PartnerService {
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
     private emailService: EmailService,
+    @Inject(forwardRef(() => PartnerInvitationService))
+    private partnerInvitationService: PartnerInvitationService,
   ) {}
 
   async create(createPartnerDto: CreatePartnerDto, createdById: string): Promise<Partner> {
@@ -44,18 +47,28 @@ export class PartnerService {
       throw new ConflictException('Partner with this email already exists');
     }
 
+    const { sendInvitation = true, ...partnerData } = createPartnerDto;
+
     const partner = this.partnerRepository.create({
-      ...createPartnerDto,
+      ...partnerData,
       createdById,
     });
 
     await this.partnerRepository.save(partner);
     this.logger.log(`Partner created: ${partner.name} (${partner.id})`);
 
-    // Send welcome email to the new partner (async, don't block response)
-    this.emailService.sendWelcomeEmail(partner).catch((error) => {
-      this.logger.error(`Failed to send welcome email to ${partner.email}`, error);
-    });
+    // Send email based on sendInvitation flag (async, don't block response)
+    if (sendInvitation) {
+      // Send invitation email with magic link for account activation
+      this.partnerInvitationService.sendInvitation(partner.id, createdById).catch((error) => {
+        this.logger.error(`Failed to send invitation to ${partner.email}`, error);
+      });
+    } else {
+      // Send simple welcome email (informational only)
+      this.emailService.sendWelcomeEmail(partner).catch((error) => {
+        this.logger.error(`Failed to send welcome email to ${partner.email}`, error);
+      });
+    }
 
     return partner;
   }
