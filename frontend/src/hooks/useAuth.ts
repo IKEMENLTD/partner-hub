@@ -15,7 +15,15 @@ import type { User } from '@/types';
 
 // エラーメッセージを日本語に変換
 function getErrorMessage(error: AuthError): string {
-  switch (error.message) {
+  const message = error.message || '';
+
+  // Rate limit error (dynamic seconds)
+  const rateLimitMatch = message.match(/For security purposes, you can only request this after (\d+) seconds/);
+  if (rateLimitMatch) {
+    return `セキュリティのため、${rateLimitMatch[1]}秒後に再試行してください`;
+  }
+
+  switch (message) {
     case 'Invalid login credentials':
       return 'メールアドレスまたはパスワードが正しくありません';
     case 'Email not confirmed':
@@ -28,8 +36,10 @@ function getErrorMessage(error: AuthError): string {
       return '有効なメールアドレスを入力してください';
     case 'New password should be different from the old password.':
       return '新しいパスワードは現在のパスワードと異なる必要があります';
+    case 'Email rate limit exceeded':
+      return 'メール送信の制限に達しました。しばらくしてから再試行してください';
     default:
-      return error.message || '認証エラーが発生しました';
+      return message || '認証エラーが発生しました';
   }
 }
 
