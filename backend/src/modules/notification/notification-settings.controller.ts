@@ -75,7 +75,7 @@ export class NotificationSettingsController {
       });
       return ApiResponseDto.success({ sent: result }, 'テストメールを送信しました');
     } catch (error) {
-      return ApiResponseDto.error(`メール送信失敗: ${error.message}`);
+      return ApiResponseDto.error(`メール送信失敗: ${error.message}`, 'EMAIL_SEND_FAILED');
     }
   }
 
