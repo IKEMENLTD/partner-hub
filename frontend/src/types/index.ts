@@ -613,3 +613,56 @@ export interface InAppNotificationResponse {
   total: number;
   unreadCount: number;
 }
+
+// カスタムフィールド関連の型定義
+
+export type CustomFieldType = 'text' | 'number' | 'date' | 'select';
+
+// カスタムフィールド定義（テンプレート用）
+export interface CustomFieldDefinition {
+  id: string;
+  name: string;
+  type: CustomFieldType;
+  required: boolean;
+  order: number;
+  options?: string[];
+}
+
+// カスタムフィールド値（案件保存用）
+export interface CustomFieldValue {
+  fieldId: string;
+  name: string;
+  type: CustomFieldType;
+  value: string | number | null;
+}
+
+// カスタムフィールドテンプレート
+export interface CustomFieldTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  fields: CustomFieldDefinition[];
+  isActive: boolean;
+  usageCount: number;
+  createdById?: string;
+  createdBy?: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// テンプレート作成入力
+export interface CustomFieldTemplateInput {
+  name: string;
+  description?: string;
+  fields: Omit<CustomFieldDefinition, 'id'>[];
+}
+
+// テンプレートクエリパラメータ
+export interface CustomFieldTemplateFilter {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+  sortBy?: 'name' | 'usageCount' | 'createdAt';
+  sortOrder?: 'ASC' | 'DESC';
+}

@@ -81,3 +81,10 @@ export {
   useUpdateNotificationSettings,
 } from './useNotificationSettings';
 export { useInAppNotifications } from './useInAppNotifications';
+export {
+  useCustomFieldTemplates,
+  useCustomFieldTemplate,
+  useCreateCustomFieldTemplate,
+  useDeleteCustomFieldTemplate,
+  useIncrementTemplateUsage,
+} from './useCustomFieldTemplates';

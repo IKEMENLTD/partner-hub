@@ -31,6 +31,7 @@ import { FileStorageModule } from './modules/file-storage/file-storage.module';
 import { ProgressReportModule } from './modules/progress-report/progress-report.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { CustomFieldTemplateModule } from './modules/custom-field-template/custom-field-template.module';
 
 @Module({
   imports: [
@@ -119,6 +120,7 @@ import { NotificationModule } from './modules/notification/notification.module';
     ProgressReportModule,
     AuditModule,
     NotificationModule,
+    CustomFieldTemplateModule,
   ],
   providers: [
     // Global Exception Filter

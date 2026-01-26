@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, X } from 'lucide-react';
-import { useCreateProject, useUpdateProject, useProject, usePartners } from '@/hooks';
-import type { ProjectInput, ProjectStatus, Priority } from '@/types';
+import { ArrowLeft, Save, X, Plus } from 'lucide-react';
+import { useCreateProject, useUpdateProject, useProject, usePartners, useIncrementTemplateUsage } from '@/hooks';
+import type { ProjectInput, ProjectStatus, Priority, CustomFieldDefinition, CustomFieldValue, CustomFieldTemplate } from '@/types';
+import {
+  CustomFieldBuilder,
+  CustomFieldRenderer,
+  CustomFieldTemplateSelect,
+  SaveTemplateModal,
+} from '@/components/custom-fields';
 import {
   Button,
   Input,
@@ -65,6 +71,16 @@ export function ProjectCreatePage() {
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // カスタムフィールド関連の状態
+  const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<CustomFieldValue[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [showCustomFieldBuilder, setShowCustomFieldBuilder] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+
+  const { mutate: incrementTemplateUsage } = useIncrementTemplateUsage();
+
   // Load existing project data when editing
   useEffect(() => {
     if (isEditMode && projectData) {
@@ -83,6 +99,27 @@ export function ProjectCreatePage() {
         partnerIds: projectData.partners?.map((p: any) => p.id) || [],
         tags: Array.isArray(projectData.tags) ? projectData.tags : [],
       });
+
+      // カスタムフィールドデータを読み込み
+      const metadata = projectData.metadata as { customFields?: CustomFieldValue[]; customFieldTemplateId?: string } | undefined;
+      if (metadata?.customFields) {
+        setCustomFieldValues(metadata.customFields);
+        // 値からフィールド定義を再構築
+        const fieldsFromValues: CustomFieldDefinition[] = metadata.customFields.map((v, i) => ({
+          id: v.fieldId,
+          name: v.name,
+          type: v.type,
+          required: false,
+          order: i,
+        }));
+        setCustomFields(fieldsFromValues);
+        if (fieldsFromValues.length > 0) {
+          setShowCustomFieldBuilder(true);
+        }
+      }
+      if (metadata?.customFieldTemplateId) {
+        setSelectedTemplateId(metadata.customFieldTemplateId);
+      }
     }
   }, [isEditMode, projectData]);
 
@@ -117,9 +154,28 @@ export function ProjectCreatePage() {
     e.preventDefault();
     if (!validateForm()) return;
 
+    // カスタムフィールドをmetadataに含める
+    const metadata: Record<string, unknown> = {
+      ...(formData.metadata || {}),
+    };
+
+    // 値が入力されているカスタムフィールドのみ保存
+    const filledValues = customFieldValues.filter((v) => v.value !== null && v.value !== '');
+    if (filledValues.length > 0) {
+      metadata.customFields = filledValues;
+    }
+    if (selectedTemplateId) {
+      metadata.customFieldTemplateId = selectedTemplateId;
+    }
+
+    const submitData: ProjectInput = {
+      ...formData,
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+    };
+
     if (isEditMode && id) {
       updateProject(
-        { id, data: formData },
+        { id, data: submitData },
         {
           onSuccess: (response) => {
             navigate(`/projects/${response.id}`);
@@ -127,9 +183,15 @@ export function ProjectCreatePage() {
         }
       );
     } else {
-      createProject(formData, {
+      createProject(submitData, {
         onSuccess: (response) => {
-          navigate(`/projects/${response.id}`);
+          // カスタムフィールドがあり、新規テンプレートとして保存する場合
+          if (customFields.length > 0 && !selectedTemplateId) {
+            setPendingNavigation(`/projects/${response.id}`);
+            setShowSaveTemplateModal(true);
+          } else {
+            navigate(`/projects/${response.id}`);
+          }
         },
       });
     }
@@ -165,6 +227,30 @@ export function ProjectCreatePage() {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddTag();
+    }
+  };
+
+  // テンプレート選択時のハンドラー
+  const handleTemplateSelect = (template: CustomFieldTemplate | null) => {
+    if (template) {
+      setSelectedTemplateId(template.id);
+      setCustomFields(template.fields);
+      // 空の値で初期化
+      setCustomFieldValues(
+        template.fields.map((f) => ({
+          fieldId: f.id,
+          name: f.name,
+          type: f.type,
+          value: null,
+        }))
+      );
+      setShowCustomFieldBuilder(true);
+      // 使用回数をインクリメント
+      incrementTemplateUsage(template.id);
+    } else {
+      setSelectedTemplateId(null);
+      setCustomFields([]);
+      setCustomFieldValues([]);
     }
   };
 
@@ -342,6 +428,90 @@ export function ProjectCreatePage() {
                 </div>
               )}
             </div>
+
+            {/* カスタムフィールドセクション */}
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">カスタムフィールド</h3>
+                {!showCustomFieldBuilder && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCustomFieldBuilder(true)}
+                    leftIcon={<Plus className="h-4 w-4" />}
+                  >
+                    フィールドを追加
+                  </Button>
+                )}
+              </div>
+
+              {showCustomFieldBuilder && (
+                <div className="space-y-4">
+                  {/* テンプレート選択 */}
+                  <CustomFieldTemplateSelect
+                    value={selectedTemplateId}
+                    onChange={handleTemplateSelect}
+                  />
+
+                  {/* フィールド値入力 */}
+                  {customFields.length > 0 && (
+                    <div className="rounded-lg border border-gray-200 p-4">
+                      <CustomFieldRenderer
+                        fields={customFields}
+                        values={customFieldValues}
+                        onChange={setCustomFieldValues}
+                      />
+                    </div>
+                  )}
+
+                  {/* フィールド追加・編集 */}
+                  <div className="rounded-lg border-2 border-dashed border-gray-200 p-4">
+                    <div className="text-sm font-medium text-gray-700 mb-3">
+                      フィールドを追加・編集
+                    </div>
+                    <CustomFieldBuilder
+                      fields={customFields}
+                      onChange={(newFields) => {
+                        setCustomFields(newFields);
+                        // テンプレートから外れた場合はIDをクリア
+                        setSelectedTemplateId(null);
+                        // 新しいフィールドに対応する値を追加
+                        setCustomFieldValues((prev) => {
+                          const existingIds = prev.map((v) => v.fieldId);
+                          const newValues = [...prev];
+                          newFields.forEach((f) => {
+                            if (!existingIds.includes(f.id)) {
+                              newValues.push({
+                                fieldId: f.id,
+                                name: f.name,
+                                type: f.type,
+                                value: null,
+                              });
+                            }
+                          });
+                          // 削除されたフィールドの値を除去
+                          const newFieldIds = newFields.map((f) => f.id);
+                          return newValues.filter((v) => newFieldIds.includes(v.fieldId));
+                        });
+                      }}
+                    />
+                  </div>
+
+                  {/* 折りたたみボタン */}
+                  {customFields.length === 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCustomFieldBuilder(false)}
+                    >
+                      カスタムフィールドを閉じる
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
 
           <CardFooter>
@@ -362,6 +532,25 @@ export function ProjectCreatePage() {
           </CardFooter>
         </Card>
       </form>
+
+      {/* テンプレート保存モーダル */}
+      <SaveTemplateModal
+        isOpen={showSaveTemplateModal}
+        onClose={() => {
+          setShowSaveTemplateModal(false);
+          if (pendingNavigation) {
+            navigate(pendingNavigation);
+            setPendingNavigation(null);
+          }
+        }}
+        fields={customFields}
+        onSaved={() => {
+          if (pendingNavigation) {
+            navigate(pendingNavigation);
+            setPendingNavigation(null);
+          }
+        }}
+      />
     </div>
   );
 }
