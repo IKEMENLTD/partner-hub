@@ -11,11 +11,13 @@ import { ProjectStakeholder } from './entities/project-stakeholder.entity';
 import { Partner } from '../partner/entities/partner.entity';
 import { Task } from '../task/entities/task.entity';
 import { TaskModule } from '../task/task.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Project, ProjectStakeholder, Partner, Task]),
     forwardRef(() => TaskModule),
+    NotificationModule,
   ],
   controllers: [ProjectController, StakeholderController],
   providers: [ProjectService, StakeholderService, HealthScoreService, ProjectAccessGuard],

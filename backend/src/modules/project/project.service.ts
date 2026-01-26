@@ -12,6 +12,7 @@ import { Partner } from '../partner/entities/partner.entity';
 import { CreateProjectDto, UpdateProjectDto, QueryProjectDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { ProjectStatus } from './enums/project-status.enum';
+import { EmailService } from '../notification/services/email.service';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 // TypeORM QueryBuilder uses property names (camelCase), not DB column names
@@ -38,6 +39,7 @@ export class ProjectService {
     private projectRepository: Repository<Project>,
     @InjectRepository(Partner)
     private partnerRepository: Repository<Partner>,
+    private emailService: EmailService,
   ) {}
 
   async create(createProjectDto: CreateProjectDto, createdById: string): Promise<Project> {
@@ -323,6 +325,11 @@ export class ProjectService {
       project.partners.push(partner);
       await this.projectRepository.save(project);
       this.logger.log(`Partner added to project: ${partner.name} -> ${project.name}`);
+
+      // Send email notification to the partner (async, don't block response)
+      this.emailService.sendProjectInvitationEmail(project, partner).catch((error) => {
+        this.logger.error(`Failed to send project invitation email to ${partner.email}`, error);
+      });
     }
 
     return this.findOne(projectId);

@@ -18,6 +18,18 @@ import {
   generateWelcomeEmailHtml,
   generateWelcomeEmailText,
 } from '../templates/welcome.template';
+import {
+  generateTaskAssignmentEmailHtml,
+  generateTaskAssignmentEmailText,
+} from '../templates/task-assignment.template';
+import {
+  generateProjectInvitationEmailHtml,
+  generateProjectInvitationEmailText,
+} from '../templates/project-invitation.template';
+import {
+  generateStakeholderAddedEmailHtml,
+  generateStakeholderAddedEmailText,
+} from '../templates/stakeholder-added.template';
 import { Partner } from '../../partner/entities/partner.entity';
 
 export interface SendEmailOptions {
@@ -220,6 +232,86 @@ export class EmailService {
       return result;
     } catch (error) {
       this.logger.error(`Failed to send welcome email to ${partner.email}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send task assignment notification email to a partner
+   */
+  async sendTaskAssignmentEmail(
+    task: Task,
+    partner: Partner,
+    assignedBy?: string,
+  ): Promise<boolean> {
+    const html = generateTaskAssignmentEmailHtml({ task, partner, assignedBy });
+    const text = generateTaskAssignmentEmailText({ task, partner, assignedBy });
+
+    try {
+      const result = await this.sendEmail({
+        to: partner.email,
+        subject: `【Partner Hub】タスクが割り当てられました: ${task.title}`,
+        html,
+        text,
+      });
+      this.logger.log(`Task assignment email sent to partner: ${partner.email} for task: ${task.id}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to send task assignment email to ${partner.email}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send project invitation email to a partner
+   */
+  async sendProjectInvitationEmail(
+    project: Project,
+    partner: Partner,
+    invitedBy?: string,
+    role?: string,
+  ): Promise<boolean> {
+    const html = generateProjectInvitationEmailHtml({ project, partner, invitedBy, role });
+    const text = generateProjectInvitationEmailText({ project, partner, invitedBy, role });
+
+    try {
+      const result = await this.sendEmail({
+        to: partner.email,
+        subject: `【Partner Hub】プロジェクトに招待されました: ${project.name}`,
+        html,
+        text,
+      });
+      this.logger.log(`Project invitation email sent to partner: ${partner.email} for project: ${project.id}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to send project invitation email to ${partner.email}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send stakeholder added notification email to a partner
+   */
+  async sendStakeholderAddedEmail(
+    project: Project,
+    partner: Partner,
+    stakeholderRole: string,
+    addedBy?: string,
+  ): Promise<boolean> {
+    const html = generateStakeholderAddedEmailHtml({ project, partner, stakeholderRole, addedBy });
+    const text = generateStakeholderAddedEmailText({ project, partner, stakeholderRole, addedBy });
+
+    try {
+      const result = await this.sendEmail({
+        to: partner.email,
+        subject: `【Partner Hub】プロジェクト関係者として追加されました: ${project.name}`,
+        html,
+        text,
+      });
+      this.logger.log(`Stakeholder added email sent to partner: ${partner.email} for project: ${project.id}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to send stakeholder added email to ${partner.email}`, error);
       return false;
     }
   }

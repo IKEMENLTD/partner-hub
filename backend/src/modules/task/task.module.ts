@@ -5,9 +5,15 @@ import { TaskService } from './task.service';
 import { TaskAccessGuard } from './guards/task-access.guard';
 import { Task } from './entities/task.entity';
 import { ProjectModule } from '../project/project.module';
+import { NotificationModule } from '../notification/notification.module';
+import { Partner } from '../partner/entities/partner.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Task]), forwardRef(() => ProjectModule)],
+  imports: [
+    TypeOrmModule.forFeature([Task, Partner]),
+    forwardRef(() => ProjectModule),
+    NotificationModule,
+  ],
   controllers: [TaskController],
   providers: [TaskService, TaskAccessGuard],
   exports: [TaskService, TaskAccessGuard],

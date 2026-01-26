@@ -12,6 +12,7 @@ import {
   StakeholderTreeResponseDto,
 } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
+import { EmailService } from '../notification/services/email.service';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -34,6 +35,7 @@ export class StakeholderService {
     private projectRepository: Repository<Project>,
     @InjectRepository(Partner)
     private partnerRepository: Repository<Partner>,
+    private emailService: EmailService,
   ) {}
 
   /**
@@ -85,6 +87,17 @@ export class StakeholderService {
 
     await this.stakeholderRepository.save(stakeholder);
     this.logger.log(`Stakeholder created: ${stakeholder.id} for project ${projectId}`);
+
+    // Send email notification if partner is associated (async, don't block response)
+    if (partnerId) {
+      const partner = await this.partnerRepository.findOne({ where: { id: partnerId } });
+      if (partner) {
+        const roleDescription = stakeholderData.roleDescription || 'プロジェクト関係者';
+        this.emailService.sendStakeholderAddedEmail(project, partner, roleDescription).catch((error) => {
+          this.logger.error(`Failed to send stakeholder added email to ${partner.email}`, error);
+        });
+      }
+    }
 
     return this.findOne(stakeholder.id);
   }

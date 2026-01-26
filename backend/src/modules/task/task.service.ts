@@ -13,6 +13,8 @@ import { CreateTaskDto, UpdateTaskDto, QueryTaskDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { TaskStatus } from './enums/task-status.enum';
 import { HealthScoreService } from '../project/services/health-score.service';
+import { EmailService } from '../notification/services/email.service';
+import { Partner } from '../partner/entities/partner.entity';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -36,8 +38,11 @@ export class TaskService {
   constructor(
     @InjectRepository(Task)
     private taskRepository: Repository<Task>,
+    @InjectRepository(Partner)
+    private partnerRepository: Repository<Partner>,
     @Inject(forwardRef(() => HealthScoreService))
     private healthScoreService: HealthScoreService,
+    private emailService: EmailService,
   ) {}
 
   async create(createTaskDto: CreateTaskDto, createdById: string): Promise<Task> {
@@ -279,6 +284,14 @@ export class TaskService {
     await this.taskRepository.save(task);
 
     this.logger.log(`Task assigned to partner: ${task.title} -> ${partnerId}`);
+
+    // Send email notification to the partner (async, don't block response)
+    const partner = await this.partnerRepository.findOne({ where: { id: partnerId } });
+    if (partner) {
+      this.emailService.sendTaskAssignmentEmail(task, partner).catch((error) => {
+        this.logger.error(`Failed to send task assignment email to ${partner.email}`, error);
+      });
+    }
 
     return this.findOne(taskId);
   }
