@@ -43,7 +43,7 @@ services:
       - key: SMTP_PASS
         sync: false
       - key: SMTP_FROM
-        value: noreply@partnerhub.ikemen.ltd
+        value: noreply@mail.partnerhub.ikemen.ltd
       - key: SMTP_FROM_NAME
         value: Partner Collaboration Platform
 
