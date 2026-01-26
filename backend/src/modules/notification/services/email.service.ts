@@ -335,7 +335,7 @@ export class EmailService {
     try {
       const result = await this.sendEmail({
         to: partner.email,
-        subject: '【Partner Hub】アカウント有効化のご案内',
+        subject: '【Partner Hub】新規アカウント作成のご案内',
         html,
         text,
       });

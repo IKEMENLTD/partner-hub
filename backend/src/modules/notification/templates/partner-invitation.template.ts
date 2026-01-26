@@ -35,7 +35,7 @@ export function generatePartnerInvitationEmailHtml(data: PartnerInvitationEmailD
 
     <p style="font-size: 15px; color: #555;">
       Partner Collaboration Platform へのパートナー登録が完了しました。<br>
-      下のボタンをクリックしてアカウントを有効化してください。
+      下のボタンをクリックして新規アカウントを作成してください。
     </p>
 
     ${invitedBy ? `
@@ -46,7 +46,7 @@ export function generatePartnerInvitationEmailHtml(data: PartnerInvitationEmailD
 
     <div style="margin: 30px 0; text-align: center;">
       <a href="${invitationUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">
-        アカウントを有効化する
+        アカウントを作成する
       </a>
     </div>
 
@@ -113,7 +113,7 @@ ${partner.name} 様
 Partner Hub への招待
 
 Partner Collaboration Platform へのパートナー登録が完了しました。
-以下のリンクをクリックしてアカウントを有効化してください。
+以下のリンクをクリックして新規アカウントを作成してください。
 
 ${invitationUrl}
 
