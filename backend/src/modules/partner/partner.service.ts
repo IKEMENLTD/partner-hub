@@ -6,6 +6,7 @@ import { Project } from '../project/entities/project.entity';
 import { CreatePartnerDto, UpdatePartnerDto, QueryPartnerDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { PartnerStatus } from './enums/partner-status.enum';
+import { EmailService } from '../notification/services/email.service';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -31,6 +32,7 @@ export class PartnerService {
     private partnerRepository: Repository<Partner>,
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
+    private emailService: EmailService,
   ) {}
 
   async create(createPartnerDto: CreatePartnerDto, createdById: string): Promise<Partner> {
@@ -49,6 +51,11 @@ export class PartnerService {
 
     await this.partnerRepository.save(partner);
     this.logger.log(`Partner created: ${partner.name} (${partner.id})`);
+
+    // Send welcome email to the new partner (async, don't block response)
+    this.emailService.sendWelcomeEmail(partner).catch((error) => {
+      this.logger.error(`Failed to send welcome email to ${partner.email}`, error);
+    });
 
     return partner;
   }

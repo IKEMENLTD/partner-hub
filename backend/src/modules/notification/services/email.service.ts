@@ -14,6 +14,11 @@ import {
   generateEscalationEmailHtml,
   generateEscalationEmailText,
 } from '../templates/escalation.template';
+import {
+  generateWelcomeEmailHtml,
+  generateWelcomeEmailText,
+} from '../templates/welcome.template';
+import { Partner } from '../../partner/entities/partner.entity';
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -195,6 +200,28 @@ export class EmailService {
     }
 
     return results;
+  }
+
+  /**
+   * Send a welcome email to a new partner
+   */
+  async sendWelcomeEmail(partner: Partner, loginUrl?: string): Promise<boolean> {
+    const html = generateWelcomeEmailHtml({ partner, loginUrl });
+    const text = generateWelcomeEmailText({ partner, loginUrl });
+
+    try {
+      const result = await this.sendEmail({
+        to: partner.email,
+        subject: '【Partner Hub】パートナー登録完了のお知らせ',
+        html,
+        text,
+      });
+      this.logger.log(`Welcome email sent to partner: ${partner.email}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to send welcome email to ${partner.email}`, error);
+      return false;
+    }
   }
 
   /**
