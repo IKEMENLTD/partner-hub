@@ -1,6 +1,16 @@
 import { api, PaginatedResponse, transformPaginatedResponse, extractData } from './api';
 import type { Partner, PartnerInput, PartnerFilter, Project } from '@/types';
 
+// Invitation verification response
+export interface InvitationVerifyResponse {
+  invitation: {
+    id: string;
+    email: string;
+    expiresAt: string;
+  };
+  partner: Partner;
+}
+
 interface PartnerListParams extends PartnerFilter {
   page?: number;
   pageSize?: number;
@@ -65,5 +75,22 @@ export const partnerService = {
   getProjects: async (partnerId: string): Promise<Project[]> => {
     const response = await api.get<{ success: boolean; data: { projects: Project[] } }>(`/partners/${partnerId}/projects`);
     return response.data.projects;
+  },
+
+  // Invitation methods (public - no auth required)
+  verifyInvitation: async (token: string): Promise<InvitationVerifyResponse> => {
+    const response = await api.get<{ success: boolean; data: InvitationVerifyResponse }>(
+      `/partners/invitation/verify?token=${token}`,
+      true // skipAuth
+    );
+    return extractData(response);
+  },
+
+  acceptInvitation: async (token: string): Promise<Partner> => {
+    const response = await api.post<{ success: boolean; data: Partner }>(
+      '/partners/invitation/accept',
+      { token }
+    );
+    return extractData(response);
   },
 };
