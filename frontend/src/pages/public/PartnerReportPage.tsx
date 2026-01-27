@@ -184,12 +184,12 @@ export function PartnerReportPage() {
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0 h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center">
               <span className="text-xl font-semibold text-primary-600">
-                {formInfo?.partner.name.charAt(0)}
+                {formInfo?.partner?.name?.charAt(0) || '?'}
               </span>
             </div>
             <div>
-              <p className="text-lg font-semibold text-gray-900">{formInfo?.partner.name} 様</p>
-              {formInfo?.partner.companyName && (
+              <p className="text-lg font-semibold text-gray-900">{formInfo?.partner?.name || 'パートナー'} 様</p>
+              {formInfo?.partner?.companyName && (
                 <p className="text-sm text-gray-500">{formInfo.partner.companyName}</p>
               )}
             </div>
