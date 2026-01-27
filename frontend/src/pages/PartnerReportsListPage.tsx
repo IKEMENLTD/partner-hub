@@ -105,7 +105,7 @@ export function PartnerReportsListPage() {
       const reports = reportsResponse?.data.filter((r) => !r.isRead) || [];
       const ids = reports.map((r) => r.id);
       if (ids.length > 0) {
-        await api.patch('/partner-reports/mark-read', { ids });
+        await api.post('/partner-reports/mark-read', { ids });
       }
     },
     onSuccess: () => {
