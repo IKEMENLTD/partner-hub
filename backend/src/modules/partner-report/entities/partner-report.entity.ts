@@ -18,6 +18,12 @@ export enum ReportType {
   GENERAL = 'general',
 }
 
+export enum ProgressStatus {
+  ON_TRACK = 'on_track',           // 順調
+  SLIGHTLY_DELAYED = 'slightly_delayed', // やや遅れ
+  HAS_ISSUES = 'has_issues',       // 問題あり
+}
+
 export enum ReportSource {
   WEB_FORM = 'web_form',
   EMAIL = 'email',
@@ -59,8 +65,22 @@ export class PartnerReport {
   })
   reportType: ReportType;
 
-  @Column({ type: 'text' })
-  content: string;
+  @Column({
+    name: 'progress_status',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
+  progressStatus: ProgressStatus | null;
+
+  @Column({ type: 'text', nullable: true })
+  content: string | null;
+
+  @Column({ name: 'weekly_accomplishments', type: 'text', nullable: true })
+  weeklyAccomplishments: string | null;
+
+  @Column({ name: 'next_week_plan', type: 'text', nullable: true })
+  nextWeekPlan: string | null;
 
   @Column({ type: 'jsonb', default: [] })
   attachments: string[];

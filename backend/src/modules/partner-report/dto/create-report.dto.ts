@@ -6,10 +6,11 @@ import {
   IsUUID,
   IsArray,
   IsObject,
-  MinLength,
   MaxLength,
+  ValidateIf,
+  IsNotEmpty,
 } from 'class-validator';
-import { ReportType } from '../entities/partner-report.entity';
+import { ReportType, ProgressStatus } from '../entities/partner-report.entity';
 
 export class CreateReportDto {
   @ApiPropertyOptional({
@@ -38,16 +39,48 @@ export class CreateReportDto {
   })
   reportType: ReportType;
 
-  @ApiProperty({
-    description: '報告内容',
+  @ApiPropertyOptional({
+    description: '進捗ステータス（クイック報告用）',
+    enum: ProgressStatus,
+    example: ProgressStatus.ON_TRACK,
+  })
+  @IsOptional()
+  @IsEnum(ProgressStatus, {
+    message: '進捗ステータスは on_track, slightly_delayed, has_issues のいずれかを指定してください',
+  })
+  progressStatus?: ProgressStatus;
+
+  @ApiPropertyOptional({
+    description: '報告内容（従来形式）',
     example: '本日、デザインカンプの初稿を完成しました。',
-    minLength: 1,
     maxLength: 10000,
   })
+  @IsOptional()
   @IsString({ message: '報告内容は文字列で入力してください' })
-  @MinLength(1, { message: '報告内容を入力してください' })
   @MaxLength(10000, { message: '報告内容は10000文字以内で入力してください' })
-  content: string;
+  content?: string;
+
+  @ApiPropertyOptional({
+    description: '今週の実施内容（順調以外は必須）',
+    example: 'デザインカンプの初稿を作成しました。',
+    maxLength: 5000,
+  })
+  @ValidateIf((o) => o.progressStatus && o.progressStatus !== ProgressStatus.ON_TRACK)
+  @IsNotEmpty({ message: '順調以外の場合は今週の実施内容を入力してください' })
+  @IsOptional()
+  @IsString({ message: '今週の実施内容は文字列で入力してください' })
+  @MaxLength(5000, { message: '今週の実施内容は5000文字以内で入力してください' })
+  weeklyAccomplishments?: string;
+
+  @ApiPropertyOptional({
+    description: '来週の予定',
+    example: 'クライアントレビューを実施予定です。',
+    maxLength: 5000,
+  })
+  @IsOptional()
+  @IsString({ message: '来週の予定は文字列で入力してください' })
+  @MaxLength(5000, { message: '来週の予定は5000文字以内で入力してください' })
+  nextWeekPlan?: string;
 
   @ApiPropertyOptional({
     description: '添付ファイルURL一覧',

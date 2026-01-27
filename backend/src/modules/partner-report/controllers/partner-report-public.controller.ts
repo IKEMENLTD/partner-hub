@@ -145,13 +145,25 @@ export class PartnerReportPublicController {
     const reports = await this.reportService.getPartnerReportHistory(partner.id, 20);
 
     return {
-      reports: reports.map((r) => ({
-        id: r.id,
-        reportType: r.reportType,
-        content: r.content.substring(0, 100) + (r.content.length > 100 ? '...' : ''),
-        projectName: r.project?.name || null,
-        createdAt: r.createdAt,
-      })),
+      reports: reports.map((r) => {
+        const content = r.content || '';
+        const weeklyAccomplishments = r.weeklyAccomplishments || '';
+        const displayContent = weeklyAccomplishments || content;
+
+        return {
+          id: r.id,
+          reportType: r.reportType,
+          progressStatus: r.progressStatus || null,
+          content: displayContent
+            ? displayContent.substring(0, 100) + (displayContent.length > 100 ? '...' : '')
+            : null,
+          weeklyAccomplishments: weeklyAccomplishments
+            ? weeklyAccomplishments.substring(0, 100) + (weeklyAccomplishments.length > 100 ? '...' : '')
+            : null,
+          projectName: r.project?.name || null,
+          createdAt: r.createdAt,
+        };
+      }),
     };
   }
 }

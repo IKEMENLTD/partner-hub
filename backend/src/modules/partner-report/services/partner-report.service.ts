@@ -31,13 +31,22 @@ export class PartnerReportService {
     source: ReportSource = ReportSource.WEB_FORM,
     sourceReference?: string,
   ): Promise<PartnerReport> {
+    // コンテンツの構築: クイック報告の場合はweeklyAccomplishmentsをcontentにも設定
+    let content = dto.content || null;
+    if (!content && dto.weeklyAccomplishments) {
+      content = dto.weeklyAccomplishments;
+    }
+
     const report = this.reportRepository.create({
       partnerId,
       organizationId,
       projectId: dto.projectId || null,
       taskId: dto.taskId || null,
       reportType: dto.reportType,
-      content: dto.content,
+      progressStatus: dto.progressStatus || null,
+      content,
+      weeklyAccomplishments: dto.weeklyAccomplishments || null,
+      nextWeekPlan: dto.nextWeekPlan || null,
       attachments: dto.attachments || [],
       metadata: dto.metadata || {},
       source,
@@ -46,7 +55,9 @@ export class PartnerReportService {
 
     await this.reportRepository.save(report);
 
-    this.logger.log(`パートナー報告作成: パートナー=${partnerId}, 種別=${dto.reportType}`);
+    this.logger.log(
+      `パートナー報告作成: パートナー=${partnerId}, 種別=${dto.reportType}, ステータス=${dto.progressStatus || 'なし'}`,
+    );
 
     return report;
   }
