@@ -80,6 +80,9 @@ export class Partner {
   @Column({ name: 'organization_id', nullable: true })
   organizationId: string;
 
+  @Column({ name: 'login_enabled', default: false })
+  loginEnabled: boolean;
+
   @Column({ name: 'created_by', nullable: true })
   createdById: string;
 

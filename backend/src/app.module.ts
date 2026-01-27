@@ -32,6 +32,7 @@ import { ProgressReportModule } from './modules/progress-report/progress-report.
 import { AuditModule } from './modules/audit/audit.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { CustomFieldTemplateModule } from './modules/custom-field-template/custom-field-template.module';
+import { PartnerReportModule } from './modules/partner-report/partner-report.module';
 
 @Module({
   imports: [
@@ -121,6 +122,7 @@ import { CustomFieldTemplateModule } from './modules/custom-field-template/custo
     AuditModule,
     NotificationModule,
     CustomFieldTemplateModule,
+    PartnerReportModule,
   ],
   providers: [
     // Global Exception Filter

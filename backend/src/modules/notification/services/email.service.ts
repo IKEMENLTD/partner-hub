@@ -34,6 +34,10 @@ import {
   generatePartnerInvitationEmailHtml,
   generatePartnerInvitationEmailText,
 } from '../templates/partner-invitation.template';
+import {
+  generateReportUrlEmailHtml,
+  generateReportUrlEmailText,
+} from '../templates/report-url.template';
 import { Partner } from '../../partner/entities/partner.entity';
 
 export interface SendEmailOptions {
@@ -343,6 +347,28 @@ export class EmailService {
       return result;
     } catch (error) {
       this.logger.error(`Failed to send partner invitation email to ${partner.email}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send report URL email to partner (for login-free reporting)
+   */
+  async sendReportUrlEmail(partner: Partner, reportUrl: string): Promise<boolean> {
+    const html = generateReportUrlEmailHtml({ partner, reportUrl });
+    const text = generateReportUrlEmailText({ partner, reportUrl });
+
+    try {
+      const result = await this.sendEmail({
+        to: partner.email,
+        subject: '【Partner Hub】進捗報告用URLのご案内',
+        html,
+        text,
+      });
+      this.logger.log(`Report URL email sent to partner: ${partner.email}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to send report URL email to ${partner.email}`, error);
       return false;
     }
   }

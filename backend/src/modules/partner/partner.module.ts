@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { PartnerController } from './partner.controller';
 import { PartnerEvaluationController } from './partner-evaluation.controller';
 import { PartnerService } from './partner.service';
@@ -11,11 +12,14 @@ import { Project } from '../project/entities/project.entity';
 import { Task } from '../task/entities/task.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { NotificationModule } from '../notification/notification.module';
+import { PartnerReportModule } from '../partner-report/partner-report.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Partner, PartnerEvaluation, PartnerInvitation, Project, Task, UserProfile]),
+    ConfigModule,
     NotificationModule,
+    forwardRef(() => PartnerReportModule),
   ],
   controllers: [PartnerController, PartnerEvaluationController],
   providers: [PartnerService, PartnerEvaluationService, PartnerInvitationService, PartnerAccessGuard],

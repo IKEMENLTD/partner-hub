@@ -8,8 +8,10 @@ import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { PartnerStatus } from './enums/partner-status.enum';
 import { EmailService } from '../notification/services/email.service';
 import { PartnerInvitationService } from './services/partner-invitation.service';
+import { PartnerReportTokenService } from '../partner-report/services/partner-report-token.service';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { UserRole } from '../auth/enums/user-role.enum';
+import { ConfigService } from '@nestjs/config';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -40,6 +42,9 @@ export class PartnerService {
     private emailService: EmailService,
     @Inject(forwardRef(() => PartnerInvitationService))
     private partnerInvitationService: PartnerInvitationService,
+    @Inject(forwardRef(() => PartnerReportTokenService))
+    private partnerReportTokenService: PartnerReportTokenService,
+    private configService: ConfigService,
   ) {}
 
   async create(createPartnerDto: CreatePartnerDto, createdById: string): Promise<Partner> {
@@ -68,20 +73,48 @@ export class PartnerService {
     await this.partnerRepository.save(partner);
     this.logger.log(`Partner created: ${partner.name} (${partner.id})`);
 
-    // Send email based on sendInvitation flag (async, don't block response)
+    // 報告用トークンを生成し、報告用URLメールを送信（デフォルト動作）
+    // sendInvitation=true の場合はログイン招待（複数案件を持つパートナー向け）
     if (sendInvitation) {
-      // Send invitation email with magic link for account activation
+      // ログイン招待メール（マジックリンク）を送信
+      // これは案件が複数になった場合など、明示的にログインが必要な場合のみ
+      partner.loginEnabled = true;
+      await this.partnerRepository.save(partner);
       this.partnerInvitationService.sendInvitation(partner.id, createdById).catch((error) => {
-        this.logger.error(`Failed to send invitation to ${partner.email}`, error);
+        this.logger.error(`Failed to send login invitation to ${partner.email}`, error);
       });
     } else {
-      // Send simple welcome email (informational only)
-      this.emailService.sendWelcomeEmail(partner).catch((error) => {
-        this.logger.error(`Failed to send welcome email to ${partner.email}`, error);
+      // 報告用トークンを生成してメール送信（ログイン不要）
+      this.generateReportTokenAndSendEmail(partner).catch((error) => {
+        this.logger.error(`Failed to send report URL email to ${partner.email}`, error);
       });
     }
 
     return partner;
+  }
+
+  /**
+   * 報告用トークンを生成し、報告用URLメールを送信
+   */
+  private async generateReportTokenAndSendEmail(partner: Partner): Promise<void> {
+    try {
+      // 報告用トークンを生成
+      const token = await this.partnerReportTokenService.generateToken(partner.id);
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173');
+      const reportUrl = `${frontendUrl}/report/${token.token}`;
+
+      // パートナーのステータスをアクティブに
+      partner.status = PartnerStatus.ACTIVE;
+      await this.partnerRepository.save(partner);
+
+      // 報告用URLメールを送信
+      await this.emailService.sendReportUrlEmail(partner, reportUrl);
+
+      this.logger.log(`Report URL email sent to ${partner.email}`);
+    } catch (error) {
+      this.logger.error(`Failed to generate report token for ${partner.email}`, error);
+      throw error;
+    }
   }
 
   async findAll(queryDto: QueryPartnerDto, userId?: string): Promise<PaginatedResponseDto<Partner>> {

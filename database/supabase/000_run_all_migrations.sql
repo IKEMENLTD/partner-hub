@@ -24,6 +24,7 @@
 -- 012_fix_organizations.sql (ポリシー重複修正)
 -- 013_migrate_to_organizations.sql (既存データ移行)
 -- 014_fix_existing_data.sql (既存データ修正)
+-- 015_partner_reports.sql (パートナー報告システム)
 
 -- =============================================================================
 -- 注意事項

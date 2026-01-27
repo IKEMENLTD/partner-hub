@@ -666,3 +666,88 @@ export interface CustomFieldTemplateFilter {
   sortBy?: 'name' | 'usageCount' | 'createdAt';
   sortOrder?: 'ASC' | 'DESC';
 }
+
+// パートナー報告関連の型定義
+
+export type ReportType = 'progress' | 'issue' | 'completion' | 'general';
+
+export type ReportSource = 'web_form' | 'email' | 'line' | 'teams' | 'api';
+
+// パートナー報告
+export interface PartnerReport {
+  id: string;
+  partnerId: string;
+  partner?: Partner;
+  projectId?: string;
+  project?: Project;
+  taskId?: string;
+  task?: Task;
+  reportType: ReportType;
+  content: string;
+  attachments: string[];
+  source: ReportSource;
+  sourceReference?: string;
+  metadata?: Record<string, unknown>;
+  isRead: boolean;
+  readAt?: string;
+  readById?: string;
+  readBy?: User;
+  createdAt: string;
+  organizationId?: string;
+}
+
+// 報告用トークン
+export interface PartnerReportToken {
+  id: string;
+  partnerId: string;
+  projectId?: string;
+  token: string;
+  expiresAt?: string;
+  isActive: boolean;
+  lastUsedAt?: string;
+  createdAt: string;
+}
+
+// 報告フォーム情報（公開API用）
+export interface ReportFormInfo {
+  partner: {
+    id: string;
+    name: string;
+    email: string;
+    companyName?: string;
+  };
+  projects: Array<{
+    id: string;
+    name: string;
+    status: ProjectStatus;
+  }>;
+  reportTypes: Array<{
+    value: ReportType;
+    label: string;
+  }>;
+  tokenInfo: {
+    expiresAt?: string;
+    projectRestriction: boolean;
+  };
+}
+
+// 報告入力
+export interface ReportInput {
+  projectId?: string;
+  taskId?: string;
+  reportType: ReportType;
+  content: string;
+  attachments?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+// 報告クエリパラメータ
+export interface PartnerReportFilter {
+  page?: number;
+  limit?: number;
+  partnerId?: string;
+  projectId?: string;
+  reportType?: ReportType;
+  source?: ReportSource;
+  unreadOnly?: boolean;
+}
