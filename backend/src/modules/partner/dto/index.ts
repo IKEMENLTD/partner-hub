@@ -5,3 +5,4 @@ export { UpdatePartnerStatusDto, UpdatePartnerRatingDto } from './update-partner
 export * from './create-partner-evaluation.dto';
 export * from './query-partner-evaluation.dto';
 export * from './accept-invitation.dto';
+export * from './register-with-invitation.dto';

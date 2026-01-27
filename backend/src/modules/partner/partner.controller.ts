@@ -22,6 +22,8 @@ import {
   UpdatePartnerStatusDto,
   UpdatePartnerRatingDto,
   AcceptInvitationDto,
+  RegisterWithInvitationDto,
+  InvitationRegisterResponseDto,
 } from './dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PartnerAccessGuard } from './guards/partner-access.guard';
@@ -205,6 +207,28 @@ export class PartnerController {
         email: partner.email,
       },
     };
+  }
+
+  @Public()
+  @Post('invitation/register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Register new user via invitation (skips email verification)',
+    description: 'Creates a new user account with email verification skipped, links to partner, and returns a login session.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'User registered and linked to partner successfully',
+    type: InvitationRegisterResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid data, token expired, or email mismatch' })
+  @ApiResponse({ status: 404, description: 'Invalid invitation token' })
+  @ApiResponse({ status: 409, description: 'Partner already linked or email already registered' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async registerWithInvitation(
+    @Body() registerDto: RegisterWithInvitationDto,
+  ): Promise<InvitationRegisterResponseDto> {
+    return this.partnerInvitationService.registerWithInvitation(registerDto);
   }
 
   @Post(':id/resend-invitation')

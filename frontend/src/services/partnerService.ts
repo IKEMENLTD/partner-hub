@@ -11,6 +11,26 @@ export interface InvitationVerifyResponse {
   partner: Partner;
 }
 
+// Invitation registration request/response
+export interface RegisterWithInvitationRequest {
+  token: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface RegisterWithInvitationResponse {
+  message: string;
+  user: { id: string; email: string; firstName: string; lastName: string };
+  partner: { id: string; name: string; email: string };
+  session?: {
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+    expiresAt: number;
+  };
+}
+
 interface PartnerListParams extends PartnerFilter {
   page?: number;
   pageSize?: number;
@@ -90,6 +110,18 @@ export const partnerService = {
     const response = await api.post<{ success: boolean; data: Partner }>(
       '/partners/invitation/accept',
       { token, userId },
+      true // skipAuth - this endpoint is public
+    );
+    return extractData(response);
+  },
+
+  // Register with invitation (new user registration via invitation)
+  registerWithInvitation: async (
+    request: RegisterWithInvitationRequest
+  ): Promise<RegisterWithInvitationResponse> => {
+    const response = await api.post<{ success: boolean; data: RegisterWithInvitationResponse }>(
+      '/partners/invitation/register',
+      request,
       true // skipAuth - this endpoint is public
     );
     return extractData(response);

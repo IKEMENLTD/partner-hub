@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, MoreThan } from 'typeorm';
@@ -13,6 +14,9 @@ import { PartnerInvitation } from '../entities/partner-invitation.entity';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { EmailService } from '../../notification/services/email.service';
 import { ConfigService } from '@nestjs/config';
+import { SupabaseService } from '../../supabase/supabase.service';
+import { UserRole } from '../../auth/enums/user-role.enum';
+import { RegisterWithInvitationDto, InvitationRegisterResponseDto } from '../dto/register-with-invitation.dto';
 
 @Injectable()
 export class PartnerInvitationService {
@@ -29,6 +33,7 @@ export class PartnerInvitationService {
     private userProfileRepository: Repository<UserProfile>,
     private emailService: EmailService,
     private configService: ConfigService,
+    private supabaseService: SupabaseService,
   ) {
     this.frontendUrl = this.configService.get<string>('app.frontendUrl') || 'https://partner-hub-frontend.onrender.com';
   }
@@ -248,5 +253,138 @@ export class PartnerInvitationService {
       },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  /**
+   * Register a new user via invitation and link to partner
+   * Uses Supabase Admin API to create user with email_confirm: true (skips email verification)
+   */
+  async registerWithInvitation(
+    dto: RegisterWithInvitationDto,
+  ): Promise<InvitationRegisterResponseDto> {
+    // 1. Verify the invitation token
+    const { invitation, partner } = await this.verifyToken(dto.token);
+
+    // 2. Check if partner already has a linked user
+    if (partner.userId) {
+      throw new ConflictException('Partner already has a linked user account');
+    }
+
+    // 4. Check if Supabase Admin is available
+    const supabaseAdmin = this.supabaseService.admin;
+    if (!supabaseAdmin) {
+      throw new InternalServerErrorException(
+        'Supabase Admin is not configured. Please contact support.',
+      );
+    }
+
+    // 5. Create user in Supabase with email_confirm: true (skip email verification)
+    // Note: Do NOT store invitation_token in user_metadata (security risk - visible in JWT)
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: partner.email,
+      password: dto.password,
+      email_confirm: true, // Skip email verification for invited users
+      user_metadata: {
+        first_name: dto.firstName,
+        last_name: dto.lastName,
+        partner_id: partner.id,
+        registered_via: 'invitation',
+      },
+    });
+
+    if (authError) {
+      this.logger.error(`Supabase user creation failed: ${authError.message}`);
+      if (authError.message.includes('already registered')) {
+        throw new ConflictException('Email is already registered. Please login instead.');
+      }
+      throw new BadRequestException(`Failed to create user: ${authError.message}`);
+    }
+
+    const supabaseUser = authData.user;
+    if (!supabaseUser) {
+      throw new InternalServerErrorException('Failed to create user in authentication system');
+    }
+
+    try {
+      // 6. Create user profile in our database
+      const userProfile = this.userProfileRepository.create({
+        id: supabaseUser.id,
+        email: partner.email.toLowerCase(),
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        role: UserRole.PARTNER,
+        isActive: true,
+      });
+      await this.userProfileRepository.save(userProfile);
+
+      // 7. Link partner to user
+      partner.userId = supabaseUser.id;
+      await this.partnerRepository.save(partner);
+
+      // 8. Mark invitation as used
+      invitation.usedAt = new Date();
+      await this.invitationRepository.save(invitation);
+
+      this.logger.log(
+        `Partner ${partner.email} registered and linked to user ${supabaseUser.id} via invitation`,
+      );
+
+      // 9. Sign in the user to get a session
+      const supabaseClient = this.supabaseService.client;
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.signInWithPassword({
+        email: partner.email,
+        password: dto.password,
+      });
+
+      if (sessionError || !sessionData.session) {
+        this.logger.warn(`Session creation failed: ${sessionError?.message}`);
+        // Return response without session - user can login manually
+        return {
+          message: 'Registration successful. Please login with your credentials.',
+          user: {
+            id: supabaseUser.id,
+            email: partner.email,
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+          },
+          partner: {
+            id: partner.id,
+            name: partner.name,
+            email: partner.email,
+          },
+          session: undefined,
+        };
+      }
+
+      return {
+        message: 'Registration successful',
+        user: {
+          id: supabaseUser.id,
+          email: partner.email,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+        },
+        partner: {
+          id: partner.id,
+          name: partner.name,
+          email: partner.email,
+        },
+        session: {
+          accessToken: sessionData.session.access_token,
+          refreshToken: sessionData.session.refresh_token,
+          expiresIn: sessionData.session.expires_in ?? 3600,
+          expiresAt: sessionData.session.expires_at ?? Math.floor(Date.now() / 1000) + 3600,
+        },
+      };
+    } catch (error) {
+      // Rollback: delete the Supabase user if profile/partner linking fails
+      this.logger.error(`Registration failed, rolling back: ${error.message}`);
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(supabaseUser.id);
+      } catch (rollbackError) {
+        this.logger.error(`Rollback failed: ${rollbackError.message}`);
+      }
+      throw error;
+    }
   }
 }

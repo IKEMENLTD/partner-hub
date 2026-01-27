@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, UserPlus, Mail } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { useRegister } from '@/hooks';
 import { Button, Input, Alert } from '@/components/common';
 import { partnerService, InvitationVerifyResponse } from '@/services/partnerService';
+import { supabase } from '@/lib/supabase';
 
 export function RegisterPage() {
-  const { isAuthenticated, error, isLoading } = useAuthStore();
+  const { isAuthenticated, error, isLoading, setSession, setError, setLoading } = useAuthStore();
   const { mutate: register } = useRegister();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const invitationToken = searchParams.get('invitation');
 
   // Invitation state
@@ -161,28 +163,65 @@ export function RegisterPage() {
       return;
     }
 
-    // Register with Supabase
+    // 招待トークンがある場合は新しいAPIを使用
+    if (invitationToken && invitationData) {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // バックエンドの招待登録APIを呼び出し
+        const result = await partnerService.registerWithInvitation({
+          token: invitationToken,
+          password: formData.password,
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+        });
+
+        // セッションが返された場合はSupabaseにセット
+        if (result.session) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: result.session.accessToken,
+            refresh_token: result.session.refreshToken,
+          });
+
+          if (sessionError) {
+            throw new Error('セッションの設定に失敗しました');
+          }
+
+          // Supabaseからセッションを取得してストアに設定
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setSession(session);
+          }
+
+          // 登録成功 - ダッシュボードへリダイレクト
+          navigate('/today', { replace: true });
+        } else {
+          // セッションが返されなかった場合はログインページへ
+          navigate('/login', {
+            replace: true,
+            state: { message: '登録が完了しました。ログインしてください。' }
+          });
+        }
+      } catch (err) {
+        console.error('Invitation registration failed:', err);
+        const errorMessage = err instanceof Error
+          ? err.message
+          : '登録に失敗しました。再度お試しください。';
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // 通常の登録フロー（招待なし）
     register(
       {
         email: formData.email.trim(),
         password: formData.password,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-      },
-      {
-        onSuccess: async (data) => {
-          // If this is an invitation registration, accept the invitation
-          if (invitationToken && invitationData && data?.user?.id) {
-            try {
-              await partnerService.acceptInvitation(invitationToken, data.user.id);
-              console.log('Invitation accepted successfully');
-            } catch (err) {
-              console.error('Failed to accept invitation:', err);
-              // Note: User is already registered, so we just log the error
-              // They can be linked manually if needed
-            }
-          }
-        },
       }
     );
   };
