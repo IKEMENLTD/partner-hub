@@ -57,12 +57,12 @@ export class PartnerInvitationService {
       where: { id: partnerId },
     });
     if (!partner) {
-      throw new NotFoundException(`Partner with ID "${partnerId}" not found`);
+      throw new NotFoundException(`パートナーが見つかりません (ID: ${partnerId})`);
     }
 
     // Check if partner already has a linked user
     if (partner.userId) {
-      throw new ConflictException('Partner already has a linked user account');
+      throw new ConflictException('このパートナーは既にユーザーアカウントに紐付けられています');
     }
 
     // Invalidate any existing pending invitations
@@ -123,15 +123,15 @@ export class PartnerInvitationService {
     });
 
     if (!invitation) {
-      throw new NotFoundException('Invalid invitation token');
+      throw new NotFoundException('無効な招待トークンです');
     }
 
     if (invitation.usedAt) {
-      throw new BadRequestException('This invitation has already been used');
+      throw new BadRequestException('この招待は既に使用されています');
     }
 
     if (new Date() > invitation.expiresAt) {
-      throw new BadRequestException('This invitation has expired');
+      throw new BadRequestException('この招待は有効期限が切れています');
     }
 
     return { invitation, partner: invitation.partner };
@@ -151,19 +151,19 @@ export class PartnerInvitationService {
       where: { id: userId },
     });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('ユーザーが見つかりません');
     }
 
     // Check if user email matches partner email (security check)
     if (user.email.toLowerCase() !== partner.email.toLowerCase()) {
       throw new BadRequestException(
-        'User email does not match the invited partner email',
+        'ユーザーのメールアドレスが招待先のパートナーと一致しません',
       );
     }
 
     // Check if partner already has a linked user
     if (partner.userId) {
-      throw new ConflictException('Partner already has a linked user account');
+      throw new ConflictException('このパートナーは既にユーザーアカウントに紐付けられています');
     }
 
     // Link partner to user
@@ -267,14 +267,14 @@ export class PartnerInvitationService {
 
     // 2. Check if partner already has a linked user
     if (partner.userId) {
-      throw new ConflictException('Partner already has a linked user account');
+      throw new ConflictException('このパートナーは既にユーザーアカウントに紐付けられています');
     }
 
     // 4. Check if Supabase Admin is available
     const supabaseAdmin = this.supabaseService.admin;
     if (!supabaseAdmin) {
       throw new InternalServerErrorException(
-        'Supabase Admin is not configured. Please contact support.',
+        '認証システムの設定が完了していません。管理者にお問い合わせください。',
       );
     }
 
@@ -295,14 +295,14 @@ export class PartnerInvitationService {
     if (authError) {
       this.logger.error(`Supabase user creation failed: ${authError.message}`);
       if (authError.message.includes('already registered')) {
-        throw new ConflictException('Email is already registered. Please login instead.');
+        throw new ConflictException('このメールアドレスは既に登録されています。ログインしてください。');
       }
-      throw new BadRequestException(`Failed to create user: ${authError.message}`);
+      throw new BadRequestException(`ユーザー作成に失敗しました: ${authError.message}`);
     }
 
     const supabaseUser = authData.user;
     if (!supabaseUser) {
-      throw new InternalServerErrorException('Failed to create user in authentication system');
+      throw new InternalServerErrorException('認証システムでのユーザー作成に失敗しました');
     }
 
     try {
@@ -340,7 +340,7 @@ export class PartnerInvitationService {
         this.logger.warn(`Session creation failed: ${sessionError?.message}`);
         // Return response without session - user can login manually
         return {
-          message: 'Registration successful. Please login with your credentials.',
+          message: '登録が完了しました。ログインしてください。',
           user: {
             id: supabaseUser.id,
             email: partner.email,
@@ -357,7 +357,7 @@ export class PartnerInvitationService {
       }
 
       return {
-        message: 'Registration successful',
+        message: '登録が完了しました',
         user: {
           id: supabaseUser.id,
           email: partner.email,

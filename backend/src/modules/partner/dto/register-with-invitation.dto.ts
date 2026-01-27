@@ -1,45 +1,67 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsNotEmpty, IsString, MinLength, MaxLength, Validate, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
+
+/**
+ * カスタムパスワードバリデータ
+ * 4条件（大文字、小文字、数字、特殊文字）のうち2つ以上を満たす必要がある
+ */
+@ValidatorConstraint({ name: 'passwordStrength', async: false })
+export class PasswordStrengthValidator implements ValidatorConstraintInterface {
+  validate(password: string): boolean {
+    if (!password) return false;
+
+    const conditions = [
+      /[a-z]/.test(password),  // 小文字
+      /[A-Z]/.test(password),  // 大文字
+      /\d/.test(password),     // 数字
+      /[@$!%*?&#^()_+\-=\[\]{}|;:'",.<>?/\\`~]/.test(password), // 特殊文字
+    ];
+
+    const conditionsMet = conditions.filter(Boolean).length;
+    return conditionsMet >= 2;
+  }
+
+  defaultMessage(): string {
+    return 'パスワードは大文字、小文字、数字、特殊文字のうち2種類以上を含めてください';
+  }
+}
 
 export class RegisterWithInvitationDto {
   @ApiProperty({
-    description: 'Invitation token from the email link',
+    description: '招待メールのトークン',
     example: 'abc123def456...',
   })
   @IsString()
-  @IsNotEmpty({ message: 'Invitation token is required' })
+  @IsNotEmpty({ message: '招待トークンは必須です' })
   token: string;
 
   @ApiProperty({
-    description: 'Password for the new account',
+    description: 'アカウントのパスワード',
     example: 'SecurePassword123!',
     minLength: 8,
   })
   @IsString()
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
-  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-    { message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' }
-  )
+  @MinLength(8, { message: 'パスワードは8文字以上で入力してください' })
+  @MaxLength(128, { message: 'パスワードは128文字以内で入力してください' })
+  @Validate(PasswordStrengthValidator)
   password: string;
 
   @ApiProperty({
-    description: 'First name',
-    example: 'John',
+    description: '姓',
+    example: '山田',
   })
   @IsString()
-  @IsNotEmpty({ message: 'First name is required' })
-  @MaxLength(100, { message: 'First name must not exceed 100 characters' })
+  @IsNotEmpty({ message: '姓は必須です' })
+  @MaxLength(100, { message: '姓は100文字以内で入力してください' })
   firstName: string;
 
   @ApiProperty({
-    description: 'Last name',
-    example: 'Doe',
+    description: '名',
+    example: '太郎',
   })
   @IsString()
-  @IsNotEmpty({ message: 'Last name is required' })
-  @MaxLength(100, { message: 'Last name must not exceed 100 characters' })
+  @IsNotEmpty({ message: '名は必須です' })
+  @MaxLength(100, { message: '名は100文字以内で入力してください' })
   lastName: string;
 }
 

@@ -1,31 +1,53 @@
-import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, Validate, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * カスタムパスワードバリデータ
+ * 4条件（大文字、小文字、数字、特殊文字）のうち2つ以上を満たす必要がある
+ */
+@ValidatorConstraint({ name: 'passwordStrength', async: false })
+export class PasswordStrengthValidator implements ValidatorConstraintInterface {
+  validate(password: string): boolean {
+    if (!password) return false;
+
+    const conditions = [
+      /[a-z]/.test(password),  // 小文字
+      /[A-Z]/.test(password),  // 大文字
+      /\d/.test(password),     // 数字
+      /[@$!%*?&#^()_+\-=\[\]{}|;:'",.<>?/\\`~]/.test(password), // 特殊文字
+    ];
+
+    const conditionsMet = conditions.filter(Boolean).length;
+    return conditionsMet >= 2;
+  }
+
+  defaultMessage(): string {
+    return 'パスワードは大文字、小文字、数字、特殊文字のうち2種類以上を含めてください';
+  }
+}
+
 export class RegisterDto {
-  @ApiProperty({ description: 'User email address', example: 'user@example.com' })
-  @IsEmail({}, { message: 'Valid email address is required' })
+  @ApiProperty({ description: 'メールアドレス', example: 'user@example.com' })
+  @IsEmail({}, { message: '有効なメールアドレスを入力してください' })
   email: string;
 
-  @ApiProperty({ description: 'User password', minLength: 8 })
+  @ApiProperty({ description: 'パスワード', minLength: 8 })
   @IsString()
-  @MinLength(8, { message: 'Password must be at least 8 characters long' })
-  @MaxLength(50, { message: 'Password must be at most 50 characters long' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/, {
-    message:
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-  })
+  @MinLength(8, { message: 'パスワードは8文字以上で入力してください' })
+  @MaxLength(50, { message: 'パスワードは50文字以内で入力してください' })
+  @Validate(PasswordStrengthValidator)
   password: string;
 
-  @ApiProperty({ description: 'User first name', example: 'John' })
+  @ApiProperty({ description: '姓', example: '山田' })
   @IsString()
-  @MinLength(1, { message: 'First name is required' })
-  @MaxLength(50, { message: 'First name must be at most 50 characters long' })
+  @MinLength(1, { message: '姓は必須です' })
+  @MaxLength(50, { message: '姓は50文字以内で入力してください' })
   firstName: string;
 
-  @ApiProperty({ description: 'User last name', example: 'Doe' })
+  @ApiProperty({ description: '名', example: '太郎' })
   @IsString()
-  @MinLength(1, { message: 'Last name is required' })
-  @MaxLength(50, { message: 'Last name must be at most 50 characters long' })
+  @MinLength(1, { message: '名は必須です' })
+  @MaxLength(50, { message: '名は50文字以内で入力してください' })
   lastName: string;
 
   // SECURITY FIX: Removed role from registration DTO
