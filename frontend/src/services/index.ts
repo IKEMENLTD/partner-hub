@@ -10,3 +10,5 @@ export { fileService } from './fileService';
 export { progressReportService } from './progressReportService';
 export { notificationSettingsService } from './notificationSettingsService';
 export { customFieldTemplateService } from './customFieldTemplateService';
+export { searchService } from './searchService';
+export type { SearchType, SearchResultItem, SearchResults, SearchParams } from './searchService';

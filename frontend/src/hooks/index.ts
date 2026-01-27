@@ -96,3 +96,4 @@ export {
   getProgressStatusLabel,
   getProgressStatusColor,
 } from './usePartnerReports';
+export { useSearch, useGlobalSearch } from './useSearch';
