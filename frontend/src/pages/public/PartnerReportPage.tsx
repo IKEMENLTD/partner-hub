@@ -296,7 +296,7 @@ export function PartnerReportPage() {
         </Card>
 
         {/* Token Info */}
-        {formInfo?.tokenInfo.expiresAt && (
+        {formInfo?.tokenInfo?.expiresAt && (
           <p className="mt-4 text-sm text-gray-500 text-center">
             <Clock className="inline-block h-4 w-4 mr-1" />
             このリンクの有効期限: {new Date(formInfo.tokenInfo.expiresAt).toLocaleDateString('ja-JP')}
