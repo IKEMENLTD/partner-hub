@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { PartnerReport, ReportSource } from '../entities/partner-report.entity';
+import { ReportRequest, RequestStatus } from '../entities/report-request.entity';
 import { CreateReportDto, QueryReportDto } from '../dto';
 import { PaginatedResponseDto } from '../../../common/dto/pagination.dto';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
@@ -19,6 +20,8 @@ export class PartnerReportService {
     private reportRepository: Repository<PartnerReport>,
     @InjectRepository(UserProfile)
     private userProfileRepository: Repository<UserProfile>,
+    @InjectRepository(ReportRequest)
+    private requestRepository: Repository<ReportRequest>,
   ) {}
 
   /**
@@ -55,11 +58,54 @@ export class PartnerReportService {
 
     await this.reportRepository.save(report);
 
+    // Mark any pending or overdue report requests as submitted
+    await this.markPendingRequestsAsSubmitted(partnerId, report.id);
+
     this.logger.log(
       `パートナー報告作成: パートナー=${partnerId}, 種別=${dto.reportType}, ステータス=${dto.progressStatus || 'なし'}`,
     );
 
     return report;
+  }
+
+  /**
+   * Mark pending/overdue report requests as submitted
+   */
+  private async markPendingRequestsAsSubmitted(
+    partnerId: string,
+    reportId: string,
+  ): Promise<void> {
+    // Find pending request
+    const pendingRequest = await this.requestRepository.findOne({
+      where: {
+        partnerId,
+        status: RequestStatus.PENDING,
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (pendingRequest) {
+      pendingRequest.status = RequestStatus.SUBMITTED;
+      pendingRequest.reportId = reportId;
+      await this.requestRepository.save(pendingRequest);
+      this.logger.log(`Report request ${pendingRequest.id} marked as submitted`);
+    }
+
+    // Also check for overdue requests
+    const overdueRequest = await this.requestRepository.findOne({
+      where: {
+        partnerId,
+        status: RequestStatus.OVERDUE,
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (overdueRequest) {
+      overdueRequest.status = RequestStatus.SUBMITTED;
+      overdueRequest.reportId = reportId;
+      await this.requestRepository.save(overdueRequest);
+      this.logger.log(`Overdue request ${overdueRequest.id} marked as submitted`);
+    }
   }
 
   /**

@@ -1,9 +1,13 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PartnerReport, PartnerReportToken } from './entities';
+import { ReportSchedule } from './entities/report-schedule.entity';
+import { ReportRequest } from './entities/report-request.entity';
 import { PartnerReportService } from './services/partner-report.service';
 import { PartnerReportTokenService } from './services/partner-report-token.service';
+import { ReportReminderService } from './services/report-reminder.service';
 import {
   PartnerReportController,
   PartnerReportTokenController,
@@ -15,19 +19,24 @@ import { Project } from '../project/entities/project.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { AuthModule } from '../auth/auth.module';
 import { PartnerModule } from '../partner/partner.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       PartnerReport,
       PartnerReportToken,
+      ReportSchedule,
+      ReportRequest,
       Partner,
       Project,
       UserProfile,
     ]),
     ConfigModule,
+    ScheduleModule.forRoot(),
     forwardRef(() => AuthModule),
     forwardRef(() => PartnerModule),
+    NotificationModule,
   ],
   controllers: [
     PartnerReportController,
@@ -37,11 +46,13 @@ import { PartnerModule } from '../partner/partner.module';
   providers: [
     PartnerReportService,
     PartnerReportTokenService,
+    ReportReminderService,
     ReportTokenGuard,
   ],
   exports: [
     PartnerReportService,
     PartnerReportTokenService,
+    ReportReminderService,
   ],
 })
 export class PartnerReportModule {}
