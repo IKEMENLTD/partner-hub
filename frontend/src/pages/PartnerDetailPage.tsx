@@ -89,12 +89,15 @@ export function PartnerDetailPage() {
   };
 
   // Generate report token
-  const handleGenerateToken = async () => {
+  const handleGenerateToken = async (regenerate: boolean = false) => {
     if (!id) return;
     setIsGeneratingToken(true);
     setTokenError(null);
     try {
-      const response = await api.post<{ success: boolean; data: ReportTokenInfo & { message?: string } }>(`/partners/${id}/report-token`, {});
+      const endpoint = regenerate
+        ? `/partners/${id}/report-token/regenerate`
+        : `/partners/${id}/report-token`;
+      const response = await api.post<{ success: boolean; data: ReportTokenInfo & { message?: string } }>(endpoint, {});
       console.log('Generated token response:', response);
       // Handle wrapped response { success: true, data: {...} }
       const tokenData = response.data || response;
@@ -312,7 +315,7 @@ export function PartnerDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleGenerateToken}
+                    onClick={() => handleGenerateToken(true)}
                     isLoading={isGeneratingToken}
                   >
                     URLを再生成
@@ -326,7 +329,7 @@ export function PartnerDetailPage() {
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={handleGenerateToken}
+                    onClick={() => handleGenerateToken(false)}
                     isLoading={isGeneratingToken}
                     leftIcon={<LinkIcon className="h-4 w-4" />}
                   >
