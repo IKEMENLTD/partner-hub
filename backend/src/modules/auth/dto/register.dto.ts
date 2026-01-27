@@ -41,13 +41,13 @@ export class RegisterDto {
   @ApiProperty({ description: '姓', example: '山田' })
   @IsString()
   @MinLength(1, { message: '姓は必須です' })
-  @MaxLength(50, { message: '姓は50文字以内で入力してください' })
+  @MaxLength(100, { message: '姓は100文字以内で入力してください' })
   firstName: string;
 
   @ApiProperty({ description: '名', example: '太郎' })
   @IsString()
   @MinLength(1, { message: '名は必須です' })
-  @MaxLength(50, { message: '名は50文字以内で入力してください' })
+  @MaxLength(100, { message: '名は100文字以内で入力してください' })
   lastName: string;
 
   // SECURITY FIX: Removed role from registration DTO
