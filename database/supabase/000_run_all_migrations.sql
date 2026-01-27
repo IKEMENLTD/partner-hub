@@ -21,7 +21,9 @@
 -- 010_add_metadata_column.sql
 -- 011_add_soft_delete.sql
 -- 012_create_organizations.sql (マルチテナント対応)
+-- 012_fix_organizations.sql (ポリシー重複修正)
 -- 013_migrate_to_organizations.sql (既存データ移行)
+-- 014_fix_existing_data.sql (既存データ修正)
 
 -- =============================================================================
 -- 注意事項
