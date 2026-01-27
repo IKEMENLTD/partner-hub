@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, MoreThan } from 'typeorm';
 import { randomBytes } from 'crypto';
 import { Partner } from '../entities/partner.entity';
+import { PartnerStatus } from '../enums/partner-status.enum';
 import { PartnerInvitation } from '../entities/partner-invitation.entity';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { EmailService } from '../../notification/services/email.service';
@@ -166,15 +167,16 @@ export class PartnerInvitationService {
       throw new ConflictException('このパートナーは既にユーザーアカウントに紐付けられています');
     }
 
-    // Link partner to user
+    // Link partner to user and activate
     partner.userId = userId;
+    partner.status = PartnerStatus.ACTIVE; // 招待経由のリンクでアクティブに
     await this.partnerRepository.save(partner);
 
     // Mark invitation as used
     invitation.usedAt = new Date();
     await this.invitationRepository.save(invitation);
 
-    this.logger.log(`Partner ${partner.email} linked to user ${userId}`);
+    this.logger.log(`Partner ${partner.email} linked to user ${userId} and activated`);
 
     return partner;
   }
@@ -221,15 +223,16 @@ export class PartnerInvitationService {
       return null;
     }
 
-    // Link the partner
+    // Link the partner and activate
     partner.userId = userId;
+    partner.status = PartnerStatus.ACTIVE; // 自動リンク時にアクティブに
     await this.partnerRepository.save(partner);
 
     // Mark invitation as used
     invitation.usedAt = new Date();
     await this.invitationRepository.save(invitation);
 
-    this.logger.log(`Auto-linked partner ${email} to user ${userId} on login`);
+    this.logger.log(`Auto-linked partner ${email} to user ${userId} on login and activated`);
 
     return partner;
   }
@@ -319,11 +322,13 @@ export class PartnerInvitationService {
         lastName: sanitizedLastName,
         role: UserRole.PARTNER,
         isActive: true,
+        organizationId: partner.organizationId, // パートナーの組織IDを継承
       });
       await this.userProfileRepository.save(userProfile);
 
-      // 7. Link partner to user
+      // 7. Link partner to user and activate
       partner.userId = supabaseUser.id;
+      partner.status = PartnerStatus.ACTIVE; // 招待経由の登録完了でアクティブに
       await this.partnerRepository.save(partner);
 
       // 8. Mark invitation as used

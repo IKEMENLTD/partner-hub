@@ -9,6 +9,7 @@ import { PartnerStatus } from './enums/partner-status.enum';
 import { EmailService } from '../notification/services/email.service';
 import { PartnerInvitationService } from './services/partner-invitation.service';
 import { UserProfile } from '../auth/entities/user-profile.entity';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -101,8 +102,22 @@ export class PartnerService {
     // Multi-tenancy: Filter by organization
     if (userId) {
       const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+
       if (user?.organizationId) {
+        // 組織に所属している場合、同じ組織のパートナーのみ表示
         queryBuilder.andWhere('partner.organization_id = :orgId', { orgId: user.organizationId });
+      } else if (user?.role === UserRole.ADMIN) {
+        // 管理者で組織未設定の場合は全件表示（システム管理者向け）
+        // フィルターなし
+      } else {
+        // 組織に所属していない一般ユーザーは、自分に紐付いたパートナーのみ表示
+        const linkedPartner = await this.partnerRepository.findOne({ where: { userId } });
+        if (linkedPartner) {
+          queryBuilder.andWhere('partner.id = :linkedPartnerId', { linkedPartnerId: linkedPartner.id });
+        } else {
+          // 紐付けもない場合は結果なし
+          queryBuilder.andWhere('1 = 0');
+        }
       }
     }
 
