@@ -62,7 +62,7 @@ export class PartnerService {
     });
     const organizationId = creator?.organizationId;
 
-    const { sendInvitation = true, ...partnerData } = createPartnerDto;
+    const { sendInvitation = false, ...partnerData } = createPartnerDto;
 
     const partner = this.partnerRepository.create({
       ...partnerData,
