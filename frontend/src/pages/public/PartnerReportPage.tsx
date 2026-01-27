@@ -29,23 +29,29 @@ interface QuickReportInput {
   nextWeekPlan?: string;
 }
 
-const progressStatusOptions = [
+const progressStatusOptions: {
+  value: ProgressStatus;
+  label: string;
+  icon: typeof Smile;
+  color: 'green' | 'yellow' | 'red';
+  description: string;
+}[] = [
   {
-    value: 'on_track' as ProgressStatus,
+    value: 'on_track',
     label: '順調',
     icon: Smile,
     color: 'green',
     description: '予定通り進んでいます'
   },
   {
-    value: 'slightly_delayed' as ProgressStatus,
+    value: 'slightly_delayed',
     label: 'やや遅れ',
     icon: AlertTriangle,
     color: 'yellow',
     description: '少し遅れが出ています'
   },
   {
-    value: 'has_issues' as ProgressStatus,
+    value: 'has_issues',
     label: '問題あり',
     icon: XCircle,
     color: 'red',
@@ -182,15 +188,6 @@ export function PartnerReportPage() {
       } finally {
         setIsSubmitting(false);
       }
-    }
-  };
-
-  const getStatusColor = (status: ProgressStatus) => {
-    switch (status) {
-      case 'on_track': return 'green';
-      case 'slightly_delayed': return 'yellow';
-      case 'has_issues': return 'red';
-      default: return 'gray';
     }
   };
 
