@@ -1,7 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { ScheduleModule } from '@nestjs/schedule';
 import { PartnerReport, PartnerReportToken } from './entities';
 import { ReportSchedule } from './entities/report-schedule.entity';
 import { ReportRequest } from './entities/report-request.entity';
@@ -33,7 +32,6 @@ import { NotificationModule } from '../notification/notification.module';
       UserProfile,
     ]),
     ConfigModule,
-    ScheduleModule.forRoot(),
     forwardRef(() => AuthModule),
     forwardRef(() => PartnerModule),
     NotificationModule,
