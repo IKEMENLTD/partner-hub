@@ -26,6 +26,7 @@ import {
   NotificationsPage,
   ProgressReportPage,
   PartnerReportPage,
+  PartnerReportsListPage,
 } from '@/pages';
 
 // Create a client
@@ -122,6 +123,7 @@ function App() {
             <Route path="/projects/:id/tasks/:taskId/edit" element={<TaskCreatePage />} />
 
             {/* Partner routes */}
+            <Route path="/partner-reports" element={<PartnerReportsListPage />} />
             <Route path="/partners" element={<PartnerListPage />} />
             <Route path="/partners/new" element={<PartnerCreatePage />} />
             <Route path="/partners/:id" element={<PartnerDetailPage />} />
