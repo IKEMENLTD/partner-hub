@@ -270,6 +270,10 @@ export class PartnerInvitationService {
       throw new ConflictException('このパートナーは既にユーザーアカウントに紐付けられています');
     }
 
+    // 3. 入力値のサニタイズ
+    const sanitizedFirstName = dto.firstName.trim();
+    const sanitizedLastName = dto.lastName.trim();
+
     // 4. Check if Supabase Admin is available
     const supabaseAdmin = this.supabaseService.admin;
     if (!supabaseAdmin) {
@@ -285,8 +289,8 @@ export class PartnerInvitationService {
       password: dto.password,
       email_confirm: true, // Skip email verification for invited users
       user_metadata: {
-        first_name: dto.firstName,
-        last_name: dto.lastName,
+        first_name: sanitizedFirstName,
+        last_name: sanitizedLastName,
         partner_id: partner.id,
         registered_via: 'invitation',
       },
@@ -297,7 +301,8 @@ export class PartnerInvitationService {
       if (authError.message.includes('already registered')) {
         throw new ConflictException('このメールアドレスは既に登録されています。ログインしてください。');
       }
-      throw new BadRequestException(`ユーザー作成に失敗しました: ${authError.message}`);
+      // 内部エラーメッセージをユーザーに露出しない
+      throw new BadRequestException('ユーザー作成に失敗しました。入力内容を確認して再度お試しください。');
     }
 
     const supabaseUser = authData.user;
@@ -310,8 +315,8 @@ export class PartnerInvitationService {
       const userProfile = this.userProfileRepository.create({
         id: supabaseUser.id,
         email: partner.email.toLowerCase(),
-        firstName: dto.firstName,
-        lastName: dto.lastName,
+        firstName: sanitizedFirstName,
+        lastName: sanitizedLastName,
         role: UserRole.PARTNER,
         isActive: true,
       });
@@ -344,8 +349,8 @@ export class PartnerInvitationService {
           user: {
             id: supabaseUser.id,
             email: partner.email,
-            firstName: dto.firstName,
-            lastName: dto.lastName,
+            firstName: sanitizedFirstName,
+            lastName: sanitizedLastName,
           },
           partner: {
             id: partner.id,
@@ -361,8 +366,8 @@ export class PartnerInvitationService {
         user: {
           id: supabaseUser.id,
           email: partner.email,
-          firstName: dto.firstName,
-          lastName: dto.lastName,
+          firstName: sanitizedFirstName,
+          lastName: sanitizedLastName,
         },
         partner: {
           id: partner.id,

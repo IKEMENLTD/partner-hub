@@ -34,7 +34,7 @@ export class RegisterDto {
   @ApiProperty({ description: 'パスワード', minLength: 8 })
   @IsString()
   @MinLength(8, { message: 'パスワードは8文字以上で入力してください' })
-  @MaxLength(50, { message: 'パスワードは50文字以内で入力してください' })
+  @MaxLength(128, { message: 'パスワードは128文字以内で入力してください' })
   @Validate(PasswordStrengthValidator)
   password: string;
 

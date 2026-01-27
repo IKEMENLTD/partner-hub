@@ -66,10 +66,10 @@ export class RegisterWithInvitationDto {
 }
 
 export class InvitationRegisterResponseDto {
-  @ApiProperty({ description: 'Success message' })
+  @ApiProperty({ description: '結果メッセージ' })
   message: string;
 
-  @ApiProperty({ description: 'User information' })
+  @ApiProperty({ description: 'ユーザー情報' })
   user: {
     id: string;
     email: string;
@@ -77,14 +77,14 @@ export class InvitationRegisterResponseDto {
     lastName: string;
   };
 
-  @ApiProperty({ description: 'Partner information' })
+  @ApiProperty({ description: 'パートナー情報' })
   partner: {
     id: string;
     name: string;
     email: string;
   };
 
-  @ApiProperty({ description: 'Authentication session (may be undefined if session creation fails)', required: false })
+  @ApiProperty({ description: '認証セッション（セッション作成に失敗した場合は未定義）', required: false })
   session?: {
     accessToken: string;
     refreshToken: string;
