@@ -125,10 +125,8 @@ export class PartnerReportService {
       unreadOnly,
     } = queryDto;
 
-    const queryBuilder = this.reportRepository
-      .createQueryBuilder('report')
-      .leftJoinAndSelect('report.partner', 'partner')
-      .leftJoinAndSelect('report.project', 'project');
+    // Build where conditions
+    const where: any = {};
 
     // 組織フィルター
     if (userId) {
@@ -136,41 +134,40 @@ export class PartnerReportService {
         where: { id: userId },
       });
       if (user?.organizationId) {
-        queryBuilder.andWhere('report.organization_id = :orgId', {
-          orgId: user.organizationId,
-        });
+        where.organizationId = user.organizationId;
       }
     }
 
     // フィルター適用
     if (partnerId) {
-      queryBuilder.andWhere('report.partner_id = :partnerId', { partnerId });
+      where.partnerId = partnerId;
     }
 
     if (projectId) {
-      queryBuilder.andWhere('report.project_id = :projectId', { projectId });
+      where.projectId = projectId;
     }
 
     if (reportType) {
-      queryBuilder.andWhere('report.report_type = :reportType', { reportType });
+      where.reportType = reportType;
     }
 
     if (source) {
-      queryBuilder.andWhere('report.source = :source', { source });
+      where.source = source;
     }
 
     if (unreadOnly) {
-      queryBuilder.andWhere('report.is_read = false');
+      where.isRead = false;
     }
 
-    // ソート
-    queryBuilder.orderBy('report.created_at', 'DESC');
-
-    // ページネーション
     const skip = (page - 1) * limit;
-    queryBuilder.skip(skip).take(limit);
 
-    const [data, total] = await queryBuilder.getManyAndCount();
+    const [data, total] = await this.reportRepository.findAndCount({
+      where,
+      relations: ['partner', 'project'],
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
 
     return new PaginatedResponseDto(data, total, page, limit);
   }
@@ -179,11 +176,7 @@ export class PartnerReportService {
    * 報告詳細を取得
    */
   async findOne(id: string, userId?: string): Promise<PartnerReport> {
-    const queryBuilder = this.reportRepository
-      .createQueryBuilder('report')
-      .leftJoinAndSelect('report.partner', 'partner')
-      .leftJoinAndSelect('report.project', 'project')
-      .where('report.id = :id', { id });
+    const where: any = { id };
 
     // 組織フィルター
     if (userId) {
@@ -191,13 +184,14 @@ export class PartnerReportService {
         where: { id: userId },
       });
       if (user?.organizationId) {
-        queryBuilder.andWhere('report.organization_id = :orgId', {
-          orgId: user.organizationId,
-        });
+        where.organizationId = user.organizationId;
       }
     }
 
-    const report = await queryBuilder.getOne();
+    const report = await this.reportRepository.findOne({
+      where,
+      relations: ['partner', 'project'],
+    });
 
     if (!report) {
       throw new NotFoundException('報告が見つかりません');
