@@ -8,6 +8,7 @@ import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { PartnerStatus } from './enums/partner-status.enum';
 import { EmailService } from '../notification/services/email.service';
 import { PartnerInvitationService } from './services/partner-invitation.service';
+import { UserProfile } from '../auth/entities/user-profile.entity';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -33,6 +34,8 @@ export class PartnerService {
     private partnerRepository: Repository<Partner>,
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
+    @InjectRepository(UserProfile)
+    private userProfileRepository: Repository<UserProfile>,
     private emailService: EmailService,
     @Inject(forwardRef(() => PartnerInvitationService))
     private partnerInvitationService: PartnerInvitationService,
@@ -47,11 +50,18 @@ export class PartnerService {
       throw new ConflictException('Partner with this email already exists');
     }
 
+    // Get creator's organization
+    const creator = await this.userProfileRepository.findOne({
+      where: { id: createdById },
+    });
+    const organizationId = creator?.organizationId;
+
     const { sendInvitation = true, ...partnerData } = createPartnerDto;
 
     const partner = this.partnerRepository.create({
       ...partnerData,
       createdById,
+      organizationId,
     });
 
     await this.partnerRepository.save(partner);
@@ -73,7 +83,7 @@ export class PartnerService {
     return partner;
   }
 
-  async findAll(queryDto: QueryPartnerDto): Promise<PaginatedResponseDto<Partner>> {
+  async findAll(queryDto: QueryPartnerDto, userId?: string): Promise<PaginatedResponseDto<Partner>> {
     const {
       page = 1,
       limit = 10,
@@ -87,6 +97,14 @@ export class PartnerService {
     } = queryDto;
 
     const queryBuilder = this.partnerRepository.createQueryBuilder('partner');
+
+    // Multi-tenancy: Filter by organization
+    if (userId) {
+      const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+      if (user?.organizationId) {
+        queryBuilder.andWhere('partner.organization_id = :orgId', { orgId: user.organizationId });
+      }
+    }
 
     // Apply filters
     if (status) {

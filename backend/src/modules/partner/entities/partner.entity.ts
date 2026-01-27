@@ -77,6 +77,9 @@ export class Partner {
   @JoinColumn({ name: 'user_id' })
   user: UserProfile;
 
+  @Column({ name: 'organization_id', nullable: true })
+  organizationId: string;
+
   @Column({ name: 'created_by', nullable: true })
   createdById: string;
 

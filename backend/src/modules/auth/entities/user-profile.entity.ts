@@ -35,6 +35,9 @@ export class UserProfile {
   @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, any>;
 
+  @Column({ name: 'organization_id', nullable: true })
+  organizationId?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

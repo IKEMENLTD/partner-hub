@@ -54,8 +54,8 @@ export class PartnerController {
   @Get()
   @ApiOperation({ summary: 'Get all partners with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of partners' })
-  async findAll(@Query() queryDto: QueryPartnerDto) {
-    return this.partnerService.findAll(queryDto);
+  async findAll(@Query() queryDto: QueryPartnerDto, @CurrentUser('id') userId: string) {
+    return this.partnerService.findAll(queryDto, userId);
   }
 
   @Get('statistics')
