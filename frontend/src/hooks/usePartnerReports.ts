@@ -40,13 +40,24 @@ interface UnreadCountResponse {
   unreadCount: number;
 }
 
+// Helper to unwrap API response
+function unwrapResponse<T>(response: any): T {
+  // Handle { success: true, data: {...} } wrapper
+  if (response && typeof response === 'object' && 'data' in response && 'success' in response) {
+    return response.data as T;
+  }
+  return response as T;
+}
+
 // Fetch unread report count
 export function useUnreadReportCount() {
   return useQuery({
     queryKey: ['partnerReports', 'unreadCount'],
     queryFn: async () => {
-      const response = await api.get<UnreadCountResponse>('/partner-reports/unread-count');
-      return response.unreadCount;
+      const response = await api.get<any>('/partner-reports/unread-count');
+      console.log('Unread count response:', response);
+      const data = unwrapResponse<UnreadCountResponse>(response);
+      return data.unreadCount;
     },
     refetchInterval: 60000, // Refetch every minute
     staleTime: 30000,
@@ -58,10 +69,12 @@ export function useUnreadReports(limit: number = 10) {
   return useQuery({
     queryKey: ['partnerReports', 'unread', limit],
     queryFn: async () => {
-      const response = await api.get<PaginatedReportsResponse>(
+      const response = await api.get<any>(
         `/partner-reports?unreadOnly=true&limit=${limit}`
       );
-      return response.data;
+      console.log('Unread reports response:', response);
+      const data = unwrapResponse<PaginatedReportsResponse>(response);
+      return data.data || [];
     },
     refetchInterval: 60000,
     staleTime: 30000,
@@ -73,10 +86,12 @@ export function usePartnerReports(partnerId: string | undefined, limit: number =
   return useQuery({
     queryKey: ['partnerReports', 'byPartner', partnerId, limit],
     queryFn: async () => {
-      const response = await api.get<PaginatedReportsResponse>(
+      const response = await api.get<any>(
         `/partner-reports?partnerId=${partnerId}&limit=${limit}`
       );
-      return response.data;
+      console.log('Partner reports response:', response);
+      const data = unwrapResponse<PaginatedReportsResponse>(response);
+      return data.data || [];
     },
     enabled: !!partnerId,
     staleTime: 30000,
