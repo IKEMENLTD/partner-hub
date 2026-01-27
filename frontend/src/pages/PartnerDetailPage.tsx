@@ -73,9 +73,11 @@ export function PartnerDetailPage() {
   const fetchReportToken = async () => {
     if (!id) return;
     try {
-      const response = await api.get<ReportTokenInfo>(`/partners/${id}/report-token`);
+      const response = await api.get<{ success: boolean; data: ReportTokenInfo }>(`/partners/${id}/report-token`);
       console.log('Fetched token response:', response);
-      setReportToken(response);
+      // Handle wrapped response { success: true, data: {...} }
+      const tokenData = response.data || response;
+      setReportToken(tokenData as ReportTokenInfo);
       setTokenError(null);
     } catch (err: any) {
       console.error('Failed to fetch report token:', err);
@@ -92,9 +94,11 @@ export function PartnerDetailPage() {
     setIsGeneratingToken(true);
     setTokenError(null);
     try {
-      const response = await api.post<ReportTokenInfo & { message?: string }>(`/partners/${id}/report-token`, {});
+      const response = await api.post<{ success: boolean; data: ReportTokenInfo & { message?: string } }>(`/partners/${id}/report-token`, {});
       console.log('Generated token response:', response);
-      setReportToken(response);
+      // Handle wrapped response { success: true, data: {...} }
+      const tokenData = response.data || response;
+      setReportToken(tokenData as ReportTokenInfo);
     } catch (err: any) {
       console.error('Failed to generate token:', err);
       setTokenError(err?.message || 'トークンの生成に失敗しました');
