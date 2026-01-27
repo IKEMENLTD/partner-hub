@@ -128,8 +128,7 @@ export class PartnerReportService {
     const queryBuilder = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.partner', 'partner')
-      .leftJoinAndSelect('report.project', 'project')
-      .leftJoinAndSelect('report.task', 'task');
+      .leftJoinAndSelect('report.project', 'project');
 
     // 組織フィルター
     if (userId) {
@@ -184,7 +183,6 @@ export class PartnerReportService {
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.partner', 'partner')
       .leftJoinAndSelect('report.project', 'project')
-      .leftJoinAndSelect('report.task', 'task')
       .where('report.id = :id', { id });
 
     // 組織フィルター
