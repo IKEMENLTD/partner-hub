@@ -29,7 +29,7 @@ import {
   EmptyState,
   Badge,
 } from '@/components/common';
-import { TaskCard } from '@/components/dashboard';
+import { TaskCard, UnreadReportsWidget } from '@/components/dashboard';
 
 export function MyTodayPage() {
   const { user } = useAuthStore();
@@ -332,6 +332,9 @@ export function MyTodayPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Partner Reports */}
+      <UnreadReportsWidget />
 
       {/* Additional Sections */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
