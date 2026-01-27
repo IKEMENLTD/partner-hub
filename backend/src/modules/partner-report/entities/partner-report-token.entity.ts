@@ -29,7 +29,7 @@ export class PartnerReportToken {
   @JoinColumn({ name: 'project_id' })
   project: Project | null;
 
-  @Column({ length: 64, unique: true })
+  @Column({ type: 'varchar', length: 64, unique: true })
   token: string;
 
   @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })

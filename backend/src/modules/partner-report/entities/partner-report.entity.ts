@@ -71,7 +71,7 @@ export class PartnerReport {
   })
   source: ReportSource;
 
-  @Column({ name: 'source_reference', length: 255, nullable: true })
+  @Column({ name: 'source_reference', type: 'varchar', length: 255, nullable: true })
   sourceReference: string | null;
 
   @Column({ type: 'jsonb', default: {} })
@@ -83,7 +83,7 @@ export class PartnerReport {
   @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
   readAt: Date | null;
 
-  @Column({ name: 'read_by', nullable: true })
+  @Column({ name: 'read_by', type: 'uuid', nullable: true })
   readById: string | null;
 
   @ManyToOne(() => UserProfile, { nullable: true })
