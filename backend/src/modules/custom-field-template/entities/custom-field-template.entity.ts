@@ -25,7 +25,7 @@ export class CustomFieldTemplate {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   name: string;
 
   @Column({ type: 'text', nullable: true })
@@ -40,7 +40,7 @@ export class CustomFieldTemplate {
   @Column({ name: 'usage_count', default: 0 })
   usageCount: number;
 
-  @Column({ name: 'created_by', nullable: true })
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdById: string;
 
   @ManyToOne(() => UserProfile, { nullable: true })
