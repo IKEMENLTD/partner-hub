@@ -18,6 +18,10 @@
 -- 007_views_and_functions.sql
 -- 008_data_migration.sql (必要に応じて)
 -- 009_seed_data.sql (開発環境のみ)
+-- 010_add_metadata_column.sql
+-- 011_add_soft_delete.sql
+-- 012_create_organizations.sql (マルチテナント対応)
+-- 013_migrate_to_organizations.sql (既存データ移行)
 
 -- =============================================================================
 -- 注意事項
