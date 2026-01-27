@@ -15,6 +15,7 @@ import { PartnerReportPublicController } from './controllers/partner-report-publ
 import { ReportTokenGuard } from './guards/report-token.guard';
 import { Partner } from '../partner/entities/partner.entity';
 import { Project } from '../project/entities/project.entity';
+import { Task } from '../task/entities/task.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { AuthModule } from '../auth/auth.module';
 import { PartnerModule } from '../partner/partner.module';
@@ -29,6 +30,7 @@ import { NotificationModule } from '../notification/notification.module';
       ReportRequest,
       Partner,
       Project,
+      Task,
       UserProfile,
     ]),
     ConfigModule,
