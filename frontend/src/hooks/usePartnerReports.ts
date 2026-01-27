@@ -68,6 +68,21 @@ export function useUnreadReports(limit: number = 10) {
   });
 }
 
+// Fetch reports by partner ID
+export function usePartnerReports(partnerId: string | undefined, limit: number = 20) {
+  return useQuery({
+    queryKey: ['partnerReports', 'byPartner', partnerId, limit],
+    queryFn: async () => {
+      const response = await api.get<PaginatedReportsResponse>(
+        `/partner-reports?partnerId=${partnerId}&limit=${limit}`
+      );
+      return response.data;
+    },
+    enabled: !!partnerId,
+    staleTime: 30000,
+  });
+}
+
 // Mark report as read
 export function useMarkReportAsRead() {
   const queryClient = useQueryClient();

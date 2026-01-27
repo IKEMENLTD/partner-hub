@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -12,8 +12,16 @@ import {
   MapPin,
   Star,
   FolderKanban,
+  FileText,
+  Link as LinkIcon,
+  Copy,
+  CheckCircle2,
+  Smile,
+  AlertTriangle,
+  XCircle,
 } from 'lucide-react';
-import { usePartner, usePartnerProjects, useDeletePartner } from '@/hooks';
+import { usePartner, usePartnerProjects, useDeletePartner, usePartnerReports, getProgressStatusLabel } from '@/hooks';
+import { api } from '@/services/api';
 import {
   Button,
   Badge,
@@ -35,15 +43,70 @@ const statusConfig = {
   suspended: { label: '停止中', variant: 'danger' as const },
 };
 
+interface ReportTokenInfo {
+  token: {
+    id: string;
+    token: string;
+    expiresAt: string;
+    isActive: boolean;
+  } | null;
+  reportUrl: string | null;
+}
+
 export function PartnerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const { data, isLoading, error, refetch } = usePartner(id);
   const { data: projectsData } = usePartnerProjects(id);
+  const { data: reportsData, isLoading: isLoadingReports } = usePartnerReports(id);
   const { mutate: deletePartner, isPending: isDeleting } = useDeletePartner();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [reportToken, setReportToken] = useState<ReportTokenInfo | null>(null);
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+
+  // Fetch report token
+  const fetchReportToken = async () => {
+    if (!id) return;
+    try {
+      const response = await api.get<ReportTokenInfo>(`/partners/${id}/report-token`);
+      setReportToken(response);
+    } catch (err) {
+      console.error('Failed to fetch report token:', err);
+    }
+  };
+
+  // Generate report token
+  const handleGenerateToken = async () => {
+    if (!id) return;
+    setIsGeneratingToken(true);
+    try {
+      const response = await api.post<ReportTokenInfo>(`/partners/${id}/report-token`, {});
+      setReportToken(response);
+    } catch (err) {
+      console.error('Failed to generate token:', err);
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
+
+  // Copy report URL
+  const handleCopyUrl = () => {
+    if (reportToken?.reportUrl) {
+      navigator.clipboard.writeText(reportToken.reportUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    }
+  };
+
+  // Fetch report token on mount
+  useEffect(() => {
+    if (id) {
+      fetchReportToken();
+    }
+  }, [id]);
 
   if (isLoading) {
     return <PageLoading />;
@@ -190,6 +253,120 @@ export function PartnerDetailPage() {
                     />
                   ))}
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Report URL */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <LinkIcon className="h-5 w-5 text-primary-500" />
+                <span>報告用URL</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {reportToken?.reportUrl ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={reportToken.reportUrl}
+                      className="flex-1 rounded-lg border-gray-300 bg-gray-50 text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyUrl}
+                      leftIcon={copiedUrl ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    >
+                      {copiedUrl ? 'コピー済み' : 'コピー'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    有効期限: {new Date(reportToken.token!.expiresAt).toLocaleDateString('ja-JP')}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500 mb-3">
+                    パートナーが報告を送信するためのURLを生成できます
+                  </p>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleGenerateToken}
+                    isLoading={isGeneratingToken}
+                    leftIcon={<LinkIcon className="h-4 w-4" />}
+                  >
+                    URLを生成
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Partner Reports */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary-500" />
+                <span>報告履歴</span>
+                {reportsData && reportsData.length > 0 && (
+                  <span className="text-sm font-normal text-gray-500">
+                    ({reportsData.length}件)
+                  </span>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingReports ? (
+                <div className="py-8 text-center text-gray-500">読み込み中...</div>
+              ) : reportsData && reportsData.length > 0 ? (
+                <div className="space-y-3">
+                  {reportsData.slice(0, 5).map((report) => (
+                    <div key={report.id} className="border rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        {report.progressStatus ? (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            report.progressStatus === 'on_track' ? 'bg-green-100 text-green-800' :
+                            report.progressStatus === 'slightly_delayed' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {report.progressStatus === 'on_track' && <Smile className="h-3 w-3" />}
+                            {report.progressStatus === 'slightly_delayed' && <AlertTriangle className="h-3 w-3" />}
+                            {report.progressStatus === 'has_issues' && <XCircle className="h-3 w-3" />}
+                            {getProgressStatusLabel(report.progressStatus)}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {report.reportType}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-500">
+                          {format(new Date(report.createdAt), 'M/d HH:mm', { locale: ja })}
+                        </span>
+                      </div>
+                      {report.project && (
+                        <p className="text-xs text-gray-500 mb-1">案件: {report.project.name}</p>
+                      )}
+                      <p className="text-sm text-gray-700 line-clamp-2">
+                        {report.weeklyAccomplishments || report.content || '（詳細なし）'}
+                      </p>
+                      {!report.isRead && (
+                        <span className="inline-block mt-2 text-xs text-primary-600 font-medium">未読</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={<FileText className="h-10 w-10" />}
+                  title="報告がありません"
+                  description="パートナーからの報告がここに表示されます"
+                  className="py-8"
+                />
               )}
             </CardContent>
           </Card>

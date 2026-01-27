@@ -91,6 +91,7 @@ export {
 export {
   useUnreadReports,
   useUnreadReportCount,
+  usePartnerReports,
   useMarkReportAsRead,
   getProgressStatusLabel,
   getProgressStatusColor,
