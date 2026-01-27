@@ -33,6 +33,7 @@ import {
   EmptyState,
   Modal,
   ModalFooter,
+  Alert,
 } from '@/components/common';
 import { ProjectCard } from '@/components/project';
 
@@ -66,15 +67,22 @@ export function PartnerDetailPage() {
   const [reportToken, setReportToken] = useState<ReportTokenInfo | null>(null);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   // Fetch report token
   const fetchReportToken = async () => {
     if (!id) return;
     try {
       const response = await api.get<ReportTokenInfo>(`/partners/${id}/report-token`);
+      console.log('Fetched token response:', response);
       setReportToken(response);
-    } catch (err) {
+      setTokenError(null);
+    } catch (err: any) {
       console.error('Failed to fetch report token:', err);
+      // Don't show error for 404 (no token yet)
+      if (err?.status !== 404) {
+        setTokenError('トークンの取得に失敗しました');
+      }
     }
   };
 
@@ -82,11 +90,14 @@ export function PartnerDetailPage() {
   const handleGenerateToken = async () => {
     if (!id) return;
     setIsGeneratingToken(true);
+    setTokenError(null);
     try {
-      const response = await api.post<ReportTokenInfo>(`/partners/${id}/report-token`, {});
+      const response = await api.post<ReportTokenInfo & { message?: string }>(`/partners/${id}/report-token`, {});
+      console.log('Generated token response:', response);
       setReportToken(response);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to generate token:', err);
+      setTokenError(err?.message || 'トークンの生成に失敗しました');
     } finally {
       setIsGeneratingToken(false);
     }
@@ -266,6 +277,11 @@ export function PartnerDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
+              {tokenError && (
+                <Alert variant="error" className="mb-3">
+                  {tokenError}
+                </Alert>
+              )}
               {reportToken?.reportUrl ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -273,7 +289,7 @@ export function PartnerDetailPage() {
                       type="text"
                       readOnly
                       value={reportToken.reportUrl}
-                      className="flex-1 rounded-lg border-gray-300 bg-gray-50 text-sm"
+                      className="flex-1 rounded-lg border-gray-300 bg-gray-50 text-sm px-3 py-2"
                     />
                     <Button
                       variant="outline"
@@ -284,9 +300,19 @@ export function PartnerDetailPage() {
                       {copiedUrl ? 'コピー済み' : 'コピー'}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    有効期限: {new Date(reportToken.token!.expiresAt).toLocaleDateString('ja-JP')}
-                  </p>
+                  {reportToken.token?.expiresAt && (
+                    <p className="text-xs text-gray-500">
+                      有効期限: {new Date(reportToken.token.expiresAt).toLocaleDateString('ja-JP')}
+                    </p>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateToken}
+                    isLoading={isGeneratingToken}
+                  >
+                    URLを再生成
+                  </Button>
                 </div>
               ) : (
                 <div className="text-center py-4">
