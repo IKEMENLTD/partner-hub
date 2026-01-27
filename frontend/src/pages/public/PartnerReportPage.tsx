@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Send, CheckCircle, AlertCircle, Clock, List, Smile, AlertTriangle, XCircle } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, Clock, List, Smile, AlertTriangle, XCircle, PartyPopper } from 'lucide-react';
 import { Button, Card, Loading, Alert } from '@/components/common';
 import { ReportFormInfo } from '@/types';
 import { api, ApiError } from '@/services/api';
 
 type ProgressStatus = 'on_track' | 'slightly_delayed' | 'has_issues';
+type ReportType = 'progress' | 'completion';
 
 interface ReportHistoryItem {
   id: string;
@@ -17,14 +18,11 @@ interface ReportHistoryItem {
   createdAt: string;
 }
 
-interface ReportHistoryResponse {
-  reports: ReportHistoryItem[];
-}
-
 interface QuickReportInput {
   projectId?: string;
-  reportType: 'progress';
-  progressStatus: ProgressStatus;
+  reportType: ReportType;
+  progressStatus?: ProgressStatus;
+  content?: string;
   weeklyAccomplishments?: string;
   nextWeekPlan?: string;
 }
@@ -85,11 +83,14 @@ export function PartnerReportPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get<ReportFormInfo>(`/report/${token}`, true);
-      setFormInfo(response);
+      const response = await api.get<{ success?: boolean; data?: ReportFormInfo } & ReportFormInfo>(`/report/${token}`, true);
+      console.log('Form info response:', response);
+      // Handle wrapped response { success: true, data: {...} }
+      const formData = response.data || response;
+      setFormInfo(formData as ReportFormInfo);
 
-      if (response.projects?.length === 1) {
-        setSelectedProjectId(response.projects[0].id);
+      if (formData.projects?.length === 1) {
+        setSelectedProjectId(formData.projects[0].id);
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -110,11 +111,16 @@ export function PartnerReportPage() {
 
   const fetchReportHistory = async () => {
     try {
-      const response = await api.get<ReportHistoryResponse>(`/report/${token}/history`, true);
-      setReportHistory(response.reports || []);
+      const response = await api.get<{ success?: boolean; data?: { reports: ReportHistoryItem[] }; reports?: ReportHistoryItem[] }>(`/report/${token}/history`, true);
+      console.log('Report history response:', response);
+      // Handle wrapped response { success: true, data: { reports: [...] } }
+      const historyData = response.data || response;
+      setReportHistory(historyData.reports || []);
       setShowHistory(true);
     } catch (err) {
       console.error('Failed to fetch report history:', err);
+      setReportHistory([]);
+      setShowHistory(true);
     }
   };
 
@@ -188,6 +194,31 @@ export function PartnerReportPage() {
       } finally {
         setIsSubmitting(false);
       }
+    }
+  };
+
+  // 完了報告を送信
+  const handleCompletionSubmit = async () => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const reportData: QuickReportInput = {
+        projectId: selectedProjectId || undefined,
+        reportType: 'completion',
+        content: '作業が完了しました',
+      };
+
+      await api.post(`/report/${token}`, reportData, true);
+      setSubmitSuccess(true);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || '報告の送信に失敗しました。再度お試しください。');
+      } else {
+        setError('報告の送信に失敗しました。再度お試しください。');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -359,6 +390,31 @@ export function PartnerReportPage() {
               </div>
             </div>
 
+            {/* Completion Button */}
+            <div className="pt-2">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">または</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCompletionSubmit}
+                disabled={isSubmitting}
+                className={`mt-4 w-full relative p-6 rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <PartyPopper className="h-10 w-10 mx-auto mb-3 text-blue-500" />
+                <p className="text-lg font-bold mb-1 text-gray-900">完了</p>
+                <p className="text-xs text-gray-500">作業が完了しました</p>
+                <span className="absolute top-2 right-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                  ワンクリック
+                </span>
+              </button>
+            </div>
+
             {/* Additional fields for non-on_track status */}
             {progressStatus && progressStatus !== 'on_track' && (
               <>
@@ -444,7 +500,11 @@ export function PartnerReportPage() {
                   {reportHistory.map((report) => (
                     <div key={report.id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        {report.progressStatus ? (
+                        {report.reportType === 'completion' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            完了
+                          </span>
+                        ) : report.progressStatus ? (
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             report.progressStatus === 'on_track' ? 'bg-green-100 text-green-800' :
                             report.progressStatus === 'slightly_delayed' ? 'bg-yellow-100 text-yellow-800' :
@@ -454,7 +514,9 @@ export function PartnerReportPage() {
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {report.reportType}
+                            {report.reportType === 'progress' ? '進捗報告' :
+                             report.reportType === 'issue' ? '課題報告' :
+                             report.reportType}
                           </span>
                         )}
                         <span className="text-sm text-gray-500">
