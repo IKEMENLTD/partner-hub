@@ -39,50 +39,52 @@ export function ResetPasswordPage() {
     let isMounted = true;
 
     const checkSession = async () => {
-      // URLハッシュにrecoveryトークンがあるか確認
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const type = hashParams.get('type');
-      const accessToken = hashParams.get('access_token');
+      // sessionStorageでリカバリーモードを確認（AuthListenerで設定される）
+      const isInRecoveryMode = sessionStorage.getItem('password_recovery_mode') === 'true';
 
-      // URLにrecoveryパラメータがある場合
-      if (type === 'recovery' || accessToken) {
+      if (isInRecoveryMode) {
+        // リカバリーモードが設定されている場合
         setIsRecoveryMode(true);
-        // リカバリーモードをsessionStorageに保存（他タブでの自動ログインを防ぐため）
-        sessionStorage.setItem('password_recovery_mode', 'true');
 
-        // Supabaseが自動的にセッションを設定するのを監視
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (isMounted && (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
-            setIsValidSession(true);
-          }
-        });
-
-        // 少し待ってからセッションを確認
-        setTimeout(async () => {
-          if (!isMounted) return;
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            setIsValidSession(true);
-          } else {
-            setIsValidSession(false);
-          }
-          subscription.unsubscribe();
-        }, 1500);
-      } else {
-        // URLにパラメータがない場合、sessionStorageでリカバリーモードを確認
-        const isInRecoveryMode = sessionStorage.getItem('password_recovery_mode') === 'true';
-
-        if (isInRecoveryMode) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            setIsRecoveryMode(true);
-            setIsValidSession(true);
-          } else {
-            // セッションがなくなった場合はリカバリーモードを解除
-            sessionStorage.removeItem('password_recovery_mode');
-            setIsValidSession(false);
-          }
+        // セッションを確認
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsValidSession(true);
         } else {
+          // セッションがない場合は少し待ってから再確認
+          setTimeout(async () => {
+            if (!isMounted) return;
+            const { data: { session: retrySession } } = await supabase.auth.getSession();
+            if (retrySession) {
+              setIsValidSession(true);
+            } else {
+              sessionStorage.removeItem('password_recovery_mode');
+              setIsValidSession(false);
+            }
+          }, 1000);
+        }
+      } else {
+        // URLハッシュにrecoveryトークンがあるか確認（フォールバック）
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const type = hashParams.get('type');
+        const accessToken = hashParams.get('access_token');
+
+        if (type === 'recovery' || accessToken) {
+          setIsRecoveryMode(true);
+          sessionStorage.setItem('password_recovery_mode', 'true');
+
+          // 少し待ってからセッションを確認
+          setTimeout(async () => {
+            if (!isMounted) return;
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              setIsValidSession(true);
+            } else {
+              setIsValidSession(false);
+            }
+          }, 1500);
+        } else {
+          // リカバリーモードでない
           setIsValidSession(false);
         }
       }
