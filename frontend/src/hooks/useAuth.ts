@@ -105,7 +105,6 @@ export function useAuthListener() {
       async (event, session) => {
         if (!isMounted) return;
 
-        console.log('Auth state changed:', event);
         setSession(session);
 
         if (session?.user) {

@@ -55,7 +55,6 @@ export function useUnreadReportCount() {
     queryKey: ['partnerReports', 'unreadCount'],
     queryFn: async () => {
       const response = await api.get<any>('/partner-reports/unread-count');
-      console.log('Unread count response:', response);
       const data = unwrapResponse<UnreadCountResponse>(response);
       return data.unreadCount;
     },
@@ -72,7 +71,6 @@ export function useUnreadReports(limit: number = 10) {
       const response = await api.get<any>(
         `/partner-reports?unreadOnly=true&limit=${limit}`
       );
-      console.log('Unread reports response:', response);
       const data = unwrapResponse<PaginatedReportsResponse>(response);
       return data.data || [];
     },
@@ -89,7 +87,6 @@ export function usePartnerReports(partnerId: string | undefined, limit: number =
       const response = await api.get<any>(
         `/partner-reports?partnerId=${partnerId}&limit=${limit}`
       );
-      console.log('Partner reports response:', response);
       const data = unwrapResponse<PaginatedReportsResponse>(response);
       return data.data || [];
     },
