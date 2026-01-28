@@ -68,7 +68,8 @@ export function ResetPasswordPage() {
   }, []);
 
   // 既にログイン中の場合はリダイレクト（ただしリセットフロー中は除く）
-  if (isAuthenticated && isValidSession !== true) {
+  // isValidSessionがnull（未判定）の場合はリダイレクトしない
+  if (isAuthenticated && isValidSession === false) {
     return <Navigate to="/today" replace />;
   }
 
