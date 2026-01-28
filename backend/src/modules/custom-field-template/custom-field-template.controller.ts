@@ -36,14 +36,17 @@ export class CustomFieldTemplateController {
     @Body() createDto: CreateCustomFieldTemplateDto,
     @CurrentUser() user: UserProfile,
   ) {
-    return this.templateService.create(createDto, user.id);
+    return this.templateService.create(createDto, user.id, user.organizationId);
   }
 
   @Get()
   @ApiOperation({ summary: 'カスタムフィールドテンプレート一覧を取得' })
   @ApiResponse({ status: 200, description: 'テンプレート一覧' })
-  async findAll(@Query() queryDto: QueryCustomFieldTemplateDto) {
-    return this.templateService.findAll(queryDto);
+  async findAll(
+    @Query() queryDto: QueryCustomFieldTemplateDto,
+    @CurrentUser() user: UserProfile,
+  ) {
+    return this.templateService.findAll(queryDto, user.organizationId);
   }
 
   @Get(':id')

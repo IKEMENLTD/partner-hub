@@ -40,6 +40,9 @@ export class CustomFieldTemplate {
   @Column({ name: 'usage_count', default: 0 })
   usageCount: number;
 
+  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
+  organizationId: string;
+
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdById: string;
 

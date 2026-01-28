@@ -18,6 +18,7 @@ export class CustomFieldTemplateService {
   async create(
     createDto: CreateCustomFieldTemplateDto,
     createdById: string,
+    organizationId?: string,
   ): Promise<CustomFieldTemplate> {
     // フィールド定義にIDを付与
     const fieldsWithIds: CustomFieldDefinition[] = createDto.fields.map((field, index) => ({
@@ -34,6 +35,7 @@ export class CustomFieldTemplateService {
       description: createDto.description,
       fields: fieldsWithIds,
       createdById,
+      organizationId,
     });
 
     await this.templateRepository.save(template);
@@ -42,7 +44,10 @@ export class CustomFieldTemplateService {
     return this.findOne(template.id);
   }
 
-  async findAll(queryDto: QueryCustomFieldTemplateDto): Promise<PaginatedResponseDto<CustomFieldTemplate>> {
+  async findAll(
+    queryDto: QueryCustomFieldTemplateDto,
+    organizationId?: string,
+  ): Promise<PaginatedResponseDto<CustomFieldTemplate>> {
     const {
       page = 1,
       limit = 20,
@@ -55,6 +60,11 @@ export class CustomFieldTemplateService {
     const queryBuilder = this.templateRepository
       .createQueryBuilder('template')
       .leftJoinAndSelect('template.createdBy', 'createdBy');
+
+    // 組織でフィルタ（同じ会社のテンプレートのみ表示）
+    if (organizationId) {
+      queryBuilder.andWhere('template.organizationId = :organizationId', { organizationId });
+    }
 
     // 検索
     if (search) {
