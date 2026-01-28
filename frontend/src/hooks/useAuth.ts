@@ -106,15 +106,19 @@ export function useAuthListener() {
         if (!isMounted) return;
 
         // PASSWORD_RECOVERYイベントを検知したらフラグを設定
-        // これにより、リカバリーリンクをクリックした時点でフラグが立つ
         if (event === 'PASSWORD_RECOVERY') {
           sessionStorage.setItem('password_recovery_mode', 'true');
-          // リカバリーモード中はセッションを設定しない（保護ページへのアクセスを防ぐ）
+          // リカバリーモード中はセッションを設定しない
           markInitialized();
           return;
         }
 
-        // リカバリーモード中は通常のセッション処理をスキップ
+        // ログアウト時はリカバリーモードフラグをクリア
+        if (event === 'SIGNED_OUT') {
+          sessionStorage.removeItem('password_recovery_mode');
+        }
+
+        // リカバリーモード中はセッションを設定しない（ただしログアウトは除く）
         const isInRecoveryMode = sessionStorage.getItem('password_recovery_mode') === 'true';
         if (isInRecoveryMode && event !== 'SIGNED_OUT') {
           markInitialized();

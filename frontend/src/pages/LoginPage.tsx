@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuthStore } from '@/store';
@@ -8,6 +8,11 @@ import { Button, Input, Alert } from '@/components/common';
 export function LoginPage() {
   const { isAuthenticated, error, isLoading } = useAuthStore();
   const { mutate: login } = useLogin();
+
+  // ログインページに来たらリカバリーモードをクリア
+  useEffect(() => {
+    sessionStorage.removeItem('password_recovery_mode');
+  }, []);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
