@@ -287,6 +287,9 @@ export function useResetPassword() {
 
       if (error) throw error;
 
+      // リカバリーモードフラグをクリア
+      sessionStorage.removeItem('password_recovery_mode');
+
       // パスワード更新後、セッションをクリアして再ログインを要求
       await supabase.auth.signOut();
     },

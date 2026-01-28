@@ -8,6 +8,12 @@ export function MainLayout() {
   const { isAuthenticated } = useAuthStore();
   const { sidebarOpen } = useUIStore();
 
+  // パスワードリカバリーモード中は保護されたページにアクセスできない
+  const isInRecoveryMode = sessionStorage.getItem('password_recovery_mode') === 'true';
+  if (isInRecoveryMode) {
+    return <Navigate to="/reset-password" replace />;
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }

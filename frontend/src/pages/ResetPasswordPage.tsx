@@ -47,6 +47,8 @@ export function ResetPasswordPage() {
       // URLにrecoveryパラメータがある場合
       if (type === 'recovery' || accessToken) {
         setIsRecoveryMode(true);
+        // リカバリーモードをsessionStorageに保存（他タブでの自動ログインを防ぐため）
+        sessionStorage.setItem('password_recovery_mode', 'true');
 
         // Supabaseが自動的にセッションを設定するのを監視
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -67,17 +69,19 @@ export function ResetPasswordPage() {
           subscription.unsubscribe();
         }, 1500);
       } else {
-        // URLにパラメータがない場合、既存セッションを確認
-        const { data: { session } } = await supabase.auth.getSession();
+        // URLにパラメータがない場合、sessionStorageでリカバリーモードを確認
+        const isInRecoveryMode = sessionStorage.getItem('password_recovery_mode') === 'true';
 
-        // セッションがあり、かつこのページに直接来た場合（リカバリーフロー中の可能性）
-        // ユーザーがリセットリンクをクリック後、ページが読み込まれた場合を考慮
-        if (session) {
-          // セッションはあるが、通常のログイン状態かリカバリー状態かを判断
-          // リカバリーリンクから来た場合、セッションは存在するがパスワード変更が必要
-          // ここではセッションがあればリカバリーモードとして扱う
-          setIsRecoveryMode(true);
-          setIsValidSession(true);
+        if (isInRecoveryMode) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setIsRecoveryMode(true);
+            setIsValidSession(true);
+          } else {
+            // セッションがなくなった場合はリカバリーモードを解除
+            sessionStorage.removeItem('password_recovery_mode');
+            setIsValidSession(false);
+          }
         } else {
           setIsValidSession(false);
         }
