@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Project } from './entities/project.entity';
 import { Partner } from '../partner/entities/partner.entity';
+import { UserProfile } from '../auth/entities/user-profile.entity';
 import { CreateProjectDto, UpdateProjectDto, QueryProjectDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { ProjectStatus } from './enums/project-status.enum';
@@ -39,11 +40,19 @@ export class ProjectService {
     private projectRepository: Repository<Project>,
     @InjectRepository(Partner)
     private partnerRepository: Repository<Partner>,
+    @InjectRepository(UserProfile)
+    private userProfileRepository: Repository<UserProfile>,
     private emailService: EmailService,
   ) {}
 
   async create(createProjectDto: CreateProjectDto, createdById: string): Promise<Project> {
     const { partnerIds, tags, ...projectData } = createProjectDto;
+
+    // Get creator's organization
+    const creator = await this.userProfileRepository.findOne({
+      where: { id: createdById },
+    });
+    const organizationId = creator?.organizationId;
 
     // Handle tags - convert empty string or invalid values to undefined
     const sanitizedTags =
@@ -55,6 +64,7 @@ export class ProjectService {
       ...projectData,
       tags: sanitizedTags,
       createdById,
+      organizationId,
       // ownerId が指定されていない場合は createdById を使用
       ownerId: projectData.ownerId || createdById,
     });
@@ -111,6 +121,14 @@ export class ProjectService {
         .leftJoinAndSelect('project.manager', 'manager')
         .leftJoinAndSelect('project.partners', 'partners')
         .leftJoinAndSelect('project.createdBy', 'createdBy');
+
+      // Multi-tenancy: Filter by organization
+      if (userId) {
+        const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+        if (user?.organizationId) {
+          queryBuilder.andWhere('project.organizationId = :orgId', { orgId: user.organizationId });
+        }
+      }
 
       // Apply access control filtering for non-admin users
       if (userId && userRole !== 'admin') {

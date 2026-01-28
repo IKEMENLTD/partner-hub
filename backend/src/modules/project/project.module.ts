@@ -9,13 +9,14 @@ import { ProjectAccessGuard } from './guards/project-access.guard';
 import { Project } from './entities/project.entity';
 import { ProjectStakeholder } from './entities/project-stakeholder.entity';
 import { Partner } from '../partner/entities/partner.entity';
+import { UserProfile } from '../auth/entities/user-profile.entity';
 import { Task } from '../task/entities/task.entity';
 import { TaskModule } from '../task/task.module';
 import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Project, ProjectStakeholder, Partner, Task]),
+    TypeOrmModule.forFeature([Project, ProjectStakeholder, Partner, UserProfile, Task]),
     forwardRef(() => TaskModule),
     NotificationModule,
   ],

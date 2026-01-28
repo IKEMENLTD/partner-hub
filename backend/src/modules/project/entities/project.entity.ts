@@ -115,6 +115,9 @@ export class Project {
   @JoinColumn({ name: 'created_by' })
   createdBy: UserProfile;
 
+  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
+  organizationId: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
