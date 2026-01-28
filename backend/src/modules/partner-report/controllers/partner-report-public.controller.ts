@@ -272,14 +272,14 @@ export class PartnerReportPublicController {
     const now = new Date();
     const taskStats = {
       total: tasks.length,
-      completed: tasks.filter((t) => t.status === TaskStatus.DONE).length,
+      completed: tasks.filter((t) => t.status === TaskStatus.COMPLETED).length,
       inProgress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
       todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
       overdue: tasks.filter(
         (t) =>
           t.dueDate &&
           new Date(t.dueDate) < now &&
-          t.status !== TaskStatus.DONE,
+          t.status !== TaskStatus.COMPLETED,
       ).length,
     };
 
@@ -289,7 +289,7 @@ export class PartnerReportPublicController {
           t.dueDate &&
           new Date(t.dueDate) >= now &&
           new Date(t.dueDate) <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) &&
-          t.status !== TaskStatus.DONE,
+          t.status !== TaskStatus.COMPLETED,
       )
       .slice(0, 5);
 
