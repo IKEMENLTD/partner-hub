@@ -9,6 +9,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 
@@ -21,6 +22,7 @@ const mainNavItems = [
 
 const managerNavItems = [
   { icon: LayoutDashboard, label: 'マネージャー', path: '/manager' },
+  { icon: FileText, label: '自動レポート', path: '/reports' },
 ];
 
 export function Sidebar() {

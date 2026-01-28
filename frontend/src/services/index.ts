@@ -12,3 +12,17 @@ export { notificationSettingsService } from './notificationSettingsService';
 export { customFieldTemplateService } from './customFieldTemplateService';
 export { searchService } from './searchService';
 export type { SearchType, SearchResultItem, SearchResults, SearchParams } from './searchService';
+export { reportService } from './reportService';
+export type {
+  ReportPeriod,
+  ReportConfigStatus,
+  GeneratedReportStatus,
+  ReportConfig,
+  ReportData,
+  GeneratedReport,
+  ReportConfigInput,
+  ReportConfigUpdateInput,
+  GenerateReportInput,
+  ReportConfigFilter,
+  GeneratedReportFilter,
+} from './reportService';

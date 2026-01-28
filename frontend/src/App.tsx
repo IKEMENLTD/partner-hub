@@ -27,6 +27,7 @@ import {
   ProgressReportPage,
   PartnerReportPage,
   PartnerReportsListPage,
+  ReportsPage,
 } from '@/pages';
 
 // Create a client
@@ -131,6 +132,7 @@ function App() {
 
             {/* Manager routes */}
             <Route path="/manager" element={<ManagerDashboardPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
 
             {/* User routes */}
             <Route path="/settings" element={<SettingsPage />} />
