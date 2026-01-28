@@ -16,8 +16,10 @@ import { PartnerReportService } from '../services/partner-report.service';
 import { CreateReportDto } from '../dto';
 import { ReportSource } from '../entities/partner-report.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Project } from '../../project/entities/project.entity';
+import { Task } from '../../task/entities/task.entity';
+import { TaskStatus } from '../../task/enums/task-status.enum';
 
 @ApiTags('Partner Reports (Public)')
 @Controller('report')
@@ -26,6 +28,8 @@ export class PartnerReportPublicController {
     private readonly reportService: PartnerReportService,
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
+    @InjectRepository(Task)
+    private taskRepository: Repository<Task>,
   ) {}
 
   @Get(':token')
@@ -164,6 +168,176 @@ export class PartnerReportPublicController {
           createdAt: r.createdAt,
         };
       }),
+    };
+  }
+
+  @Get(':token/tasks')
+  @Public()
+  @UseGuards(ReportTokenGuard)
+  @ApiOperation({ summary: '担当タスク一覧を取得（トークン認証）' })
+  @ApiParam({ name: 'token', description: '報告用トークン' })
+  @ApiResponse({ status: 200, description: '担当タスク一覧' })
+  async getPartnerTasks(@Req() req: any) {
+    const { partner, reportToken } = req;
+
+    const queryBuilder = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.project', 'project')
+      .where('task.partnerId = :partnerId', { partnerId: partner.id });
+
+    // プロジェクト制限がある場合
+    if (reportToken.projectId) {
+      queryBuilder.andWhere('task.projectId = :projectId', {
+        projectId: reportToken.projectId,
+      });
+    }
+
+    const tasks = await queryBuilder
+      .orderBy('task.dueDate', 'ASC', 'NULLS LAST')
+      .addOrderBy('task.priority', 'DESC')
+      .getMany();
+
+    return {
+      tasks: tasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description
+          ? t.description.substring(0, 150) + (t.description.length > 150 ? '...' : '')
+          : null,
+        status: t.status,
+        priority: t.priority,
+        dueDate: t.dueDate,
+        projectId: t.projectId,
+        projectName: t.project?.name || null,
+      })),
+    };
+  }
+
+  @Get(':token/dashboard')
+  @Public()
+  @UseGuards(ReportTokenGuard)
+  @ApiOperation({ summary: 'ダッシュボードデータを取得（トークン認証）' })
+  @ApiParam({ name: 'token', description: '報告用トークン' })
+  @ApiResponse({ status: 200, description: 'ダッシュボードデータ' })
+  async getDashboard(@Req() req: any) {
+    const { partner, reportToken } = req;
+
+    // パートナーが担当している案件を取得
+    let projectsQuery = this.projectRepository
+      .createQueryBuilder('project')
+      .innerJoin('project.partners', 'partners')
+      .where('partners.id = :partnerId', { partnerId: partner.id });
+
+    if (reportToken.projectId) {
+      projectsQuery = projectsQuery.andWhere('project.id = :projectId', {
+        projectId: reportToken.projectId,
+      });
+    }
+
+    const projects = await projectsQuery
+      .select([
+        'project.id',
+        'project.name',
+        'project.status',
+        'project.description',
+        'project.startDate',
+        'project.endDate',
+      ])
+      .orderBy('project.createdAt', 'DESC')
+      .getMany();
+
+    // パートナー担当のタスクを取得
+    let tasksQuery = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.project', 'project')
+      .where('task.partnerId = :partnerId', { partnerId: partner.id });
+
+    if (reportToken.projectId) {
+      tasksQuery = tasksQuery.andWhere('task.projectId = :projectId', {
+        projectId: reportToken.projectId,
+      });
+    }
+
+    const tasks = await tasksQuery
+      .orderBy('task.dueDate', 'ASC', 'NULLS LAST')
+      .getMany();
+
+    // 直近の報告を取得
+    const recentReports = await this.reportService.getPartnerReportHistory(
+      partner.id,
+      5,
+    );
+
+    // 統計情報を計算
+    const now = new Date();
+    const taskStats = {
+      total: tasks.length,
+      completed: tasks.filter((t) => t.status === TaskStatus.DONE).length,
+      inProgress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
+      todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
+      overdue: tasks.filter(
+        (t) =>
+          t.dueDate &&
+          new Date(t.dueDate) < now &&
+          t.status !== TaskStatus.DONE,
+      ).length,
+    };
+
+    const upcomingTasks = tasks
+      .filter(
+        (t) =>
+          t.dueDate &&
+          new Date(t.dueDate) >= now &&
+          new Date(t.dueDate) <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) &&
+          t.status !== TaskStatus.DONE,
+      )
+      .slice(0, 5);
+
+    return {
+      partner: {
+        id: partner.id,
+        name: partner.name,
+        email: partner.email,
+        companyName: partner.companyName,
+      },
+      tokenInfo: {
+        expiresAt: reportToken.expiresAt,
+        projectRestriction: !!reportToken.projectId,
+      },
+      stats: {
+        projects: projects.length,
+        tasks: taskStats,
+        reportsThisMonth: recentReports.filter(
+          (r) =>
+            new Date(r.createdAt).getMonth() === now.getMonth() &&
+            new Date(r.createdAt).getFullYear() === now.getFullYear(),
+        ).length,
+      },
+      projects: projects.map((p) => ({
+        id: p.id,
+        name: p.name,
+        status: p.status,
+        description: p.description
+          ? p.description.substring(0, 100) + (p.description.length > 100 ? '...' : '')
+          : null,
+        startDate: p.startDate,
+        endDate: p.endDate,
+      })),
+      upcomingTasks: upcomingTasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        dueDate: t.dueDate,
+        projectName: t.project?.name || null,
+      })),
+      recentReports: recentReports.map((r) => ({
+        id: r.id,
+        reportType: r.reportType,
+        progressStatus: r.progressStatus || null,
+        projectName: r.project?.name || null,
+        createdAt: r.createdAt,
+      })),
     };
   }
 }

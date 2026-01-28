@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Send, CheckCircle, AlertCircle, Clock, List, Smile, AlertTriangle, XCircle, PartyPopper } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Send, CheckCircle, AlertCircle, Clock, List, Smile, AlertTriangle, XCircle, PartyPopper, LayoutDashboard } from 'lucide-react';
 import { Button, Card, Loading, Alert } from '@/components/common';
 import { ReportFormInfo } from '@/types';
 import { api, ApiError } from '@/services/api';
@@ -59,6 +59,7 @@ const progressStatusOptions: {
 
 export function PartnerReportPage() {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const [formInfo, setFormInfo] = useState<ReportFormInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -276,14 +277,24 @@ export function PartnerReportPage() {
               <h1 className="text-2xl font-bold text-gray-900">Partner Hub</h1>
               <p className="text-sm text-gray-500">進捗報告フォーム</p>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={fetchReportHistory}
-            >
-              <List className="h-4 w-4 mr-1" />
-              報告履歴
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/dashboard/${token}`)}
+              >
+                <LayoutDashboard className="h-4 w-4 mr-1" />
+                ダッシュボード
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={fetchReportHistory}
+              >
+                <List className="h-4 w-4 mr-1" />
+                報告履歴
+              </Button>
+            </div>
           </div>
         </div>
       </header>

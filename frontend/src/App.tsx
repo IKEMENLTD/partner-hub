@@ -26,6 +26,7 @@ import {
   NotificationsPage,
   ProgressReportPage,
   PartnerReportPage,
+  PartnerDashboardPage,
   PartnerReportsListPage,
   ReportsPage,
 } from '@/pages';
@@ -106,6 +107,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/progress-report/:token" element={<ProgressReportPage />} />
           <Route path="/report/:token" element={<PartnerReportPage />} />
+          <Route path="/dashboard/:token" element={<PartnerDashboardPage />} />
 
           {/* Protected routes */}
           <Route element={<MainLayout />}>
