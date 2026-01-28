@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, In } from 'typeorm';
 import { Project } from '../project/entities/project.entity';
@@ -27,6 +27,8 @@ export interface SearchResults {
 
 @Injectable()
 export class SearchService {
+  private readonly logger = new Logger(SearchService.name);
+
   constructor(
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
@@ -44,6 +46,10 @@ export class SearchService {
   ): Promise<SearchResults> {
     const { q, type, limit } = query;
     const searchTerm = `%${q}%`;
+
+    this.logger.debug(
+      `Search request: q="${q}", type="${type}", userId="${userId}", userRole="${userRole}", organizationId="${organizationId}"`,
+    );
 
     const results: SearchResults = {
       projects: [],
@@ -87,6 +93,10 @@ export class SearchService {
     results.total =
       results.projects.length + results.partners.length + results.tasks.length;
 
+    this.logger.debug(
+      `Search results: projects=${results.projects.length}, partners=${results.partners.length}, tasks=${results.tasks.length}, total=${results.total}`,
+    );
+
     return results;
   }
 
@@ -109,23 +119,30 @@ export class SearchService {
 
     // Role-based filtering
     if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
+      this.logger.debug(
+        `Applying role filter for non-admin/manager user: userId="${userId}"`,
+      );
       queryBuilder.andWhere(
         '(project.ownerId = :userId OR project.managerId = :userId OR project.createdById = :userId)',
         { userId },
       );
+    } else {
+      this.logger.debug(`Skipping role filter - user is admin or manager`);
     }
 
-    // Prioritize active projects
-    queryBuilder.orderBy(
-      `CASE
-        WHEN project.status IN ('${ProjectStatus.IN_PROGRESS}', '${ProjectStatus.PLANNING}') THEN 0
-        WHEN project.status = '${ProjectStatus.REVIEW}' THEN 1
-        ELSE 2
-      END`,
-      'ASC',
-    );
-    queryBuilder.addOrderBy('project.updatedAt', 'DESC');
-    queryBuilder.take(limit);
+    // Prioritize active projects using addSelect with alias
+    queryBuilder
+      .addSelect(
+        `CASE
+          WHEN project.status IN ('${ProjectStatus.IN_PROGRESS}', '${ProjectStatus.PLANNING}') THEN 0
+          WHEN project.status = '${ProjectStatus.REVIEW}' THEN 1
+          ELSE 2
+        END`,
+        'status_priority',
+      )
+      .orderBy('status_priority', 'ASC')
+      .addOrderBy('project.updatedAt', 'DESC')
+      .take(limit);
 
     const projects = await queryBuilder.getMany();
 
@@ -172,17 +189,19 @@ export class SearchService {
       });
     }
 
-    // Prioritize active partners
-    queryBuilder.orderBy(
-      `CASE
-        WHEN partner.status = 'active' THEN 0
-        WHEN partner.status = 'pending' THEN 1
-        ELSE 2
-      END`,
-      'ASC',
-    );
-    queryBuilder.addOrderBy('partner.updatedAt', 'DESC');
-    queryBuilder.take(limit);
+    // Prioritize active partners using addSelect with alias
+    queryBuilder
+      .addSelect(
+        `CASE
+          WHEN partner.status = 'active' THEN 0
+          WHEN partner.status = 'pending' THEN 1
+          ELSE 2
+        END`,
+        'status_priority',
+      )
+      .orderBy('status_priority', 'ASC')
+      .addOrderBy('partner.updatedAt', 'DESC')
+      .take(limit);
 
     const partners = await queryBuilder.getMany();
 
@@ -233,19 +252,21 @@ export class SearchService {
       );
     }
 
-    // Prioritize pending and in-progress tasks
-    queryBuilder.orderBy(
-      `CASE
-        WHEN task.status = 'todo' THEN 0
-        WHEN task.status = 'in_progress' THEN 1
-        WHEN task.status = 'in_review' THEN 2
-        ELSE 3
-      END`,
-      'ASC',
-    );
-    queryBuilder.addOrderBy('task.dueDate', 'ASC', 'NULLS LAST');
-    queryBuilder.addOrderBy('task.updatedAt', 'DESC');
-    queryBuilder.take(limit);
+    // Prioritize pending and in-progress tasks using addSelect with alias
+    queryBuilder
+      .addSelect(
+        `CASE
+          WHEN task.status = 'todo' THEN 0
+          WHEN task.status = 'in_progress' THEN 1
+          WHEN task.status = 'in_review' THEN 2
+          ELSE 3
+        END`,
+        'status_priority',
+      )
+      .orderBy('status_priority', 'ASC')
+      .addOrderBy('task.dueDate', 'ASC', 'NULLS LAST')
+      .addOrderBy('task.updatedAt', 'DESC')
+      .take(limit);
 
     const tasks = await queryBuilder.getMany();
 
