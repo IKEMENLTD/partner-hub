@@ -27,6 +27,7 @@ import {
   ProgressReportPage,
   PartnerReportPage,
   PartnerDashboardPage,
+  PartnerPortalPage,
   PartnerReportsListPage,
   ReportsPage,
 } from '@/pages';
@@ -106,8 +107,10 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/progress-report/:token" element={<ProgressReportPage />} />
-          <Route path="/report/:token" element={<PartnerReportPage />} />
-          <Route path="/dashboard/:token" element={<PartnerDashboardPage />} />
+          <Route path="/partner/:token" element={<PartnerPortalPage />} />
+          {/* Legacy routes - redirect to new combined portal */}
+          <Route path="/report/:token" element={<PartnerPortalPage />} />
+          <Route path="/dashboard/:token" element={<PartnerPortalPage />} />
 
           {/* Protected routes */}
           <Route element={<MainLayout />}>
