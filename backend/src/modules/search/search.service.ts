@@ -1,12 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Project } from '../project/entities/project.entity';
 import { Partner } from '../partner/entities/partner.entity';
 import { Task } from '../task/entities/task.entity';
 import { SearchQueryDto, SearchType } from './dto/search-query.dto';
 import { UserRole } from '../auth/enums/user-role.enum';
-import { ProjectStatus } from '../project/enums/project-status.enum';
 
 export interface SearchResultItem {
   id: string;
@@ -130,18 +129,9 @@ export class SearchService {
       this.logger.debug(`Skipping role filter - user is admin or manager`);
     }
 
-    // Prioritize active projects using addSelect with alias
+    // Order by updated date (most recent first) and take limit
     queryBuilder
-      .addSelect(
-        `CASE
-          WHEN project.status IN ('${ProjectStatus.IN_PROGRESS}', '${ProjectStatus.PLANNING}') THEN 0
-          WHEN project.status = '${ProjectStatus.REVIEW}' THEN 1
-          ELSE 2
-        END`,
-        'status_priority',
-      )
-      .orderBy('status_priority', 'ASC')
-      .addOrderBy('project.updatedAt', 'DESC')
+      .orderBy('project.updatedAt', 'DESC')
       .take(limit);
 
     const projects = await queryBuilder.getMany();
@@ -189,18 +179,9 @@ export class SearchService {
       });
     }
 
-    // Prioritize active partners using addSelect with alias
+    // Order by updated date (most recent first) and take limit
     queryBuilder
-      .addSelect(
-        `CASE
-          WHEN partner.status = 'active' THEN 0
-          WHEN partner.status = 'pending' THEN 1
-          ELSE 2
-        END`,
-        'status_priority',
-      )
-      .orderBy('status_priority', 'ASC')
-      .addOrderBy('partner.updatedAt', 'DESC')
+      .orderBy('partner.updatedAt', 'DESC')
       .take(limit);
 
     const partners = await queryBuilder.getMany();
@@ -252,19 +233,9 @@ export class SearchService {
       );
     }
 
-    // Prioritize pending and in-progress tasks using addSelect with alias
+    // Order by due date (soonest first) and updated date, then take limit
     queryBuilder
-      .addSelect(
-        `CASE
-          WHEN task.status = 'todo' THEN 0
-          WHEN task.status = 'in_progress' THEN 1
-          WHEN task.status = 'in_review' THEN 2
-          ELSE 3
-        END`,
-        'status_priority',
-      )
-      .orderBy('status_priority', 'ASC')
-      .addOrderBy('task.dueDate', 'ASC', 'NULLS LAST')
+      .orderBy('task.dueDate', 'ASC', 'NULLS LAST')
       .addOrderBy('task.updatedAt', 'DESC')
       .take(limit);
 
