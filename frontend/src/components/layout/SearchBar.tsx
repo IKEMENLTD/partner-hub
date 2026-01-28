@@ -155,17 +155,6 @@ export function SearchBar({ className }: SearchBarProps) {
     }
   };
 
-  const getTypeLabel = (type: SearchResultItem['type']) => {
-    switch (type) {
-      case 'project':
-        return 'プロジェクト';
-      case 'partner':
-        return 'パートナー';
-      case 'task':
-        return 'タスク';
-    }
-  };
-
   const getTypeBadgeStyle = (type: SearchResultItem['type']) => {
     switch (type) {
       case 'project':
