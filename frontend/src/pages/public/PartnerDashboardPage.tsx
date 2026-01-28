@@ -6,13 +6,10 @@ import {
   FileText,
   Clock,
   AlertTriangle,
-  CheckCircle,
   AlertCircle,
-  ChevronRight,
   Smile,
   XCircle,
   Calendar,
-  BarChart3,
   Send,
 } from 'lucide-react';
 import { Button, Card, Loading, Badge } from '@/components/common';
@@ -86,13 +83,6 @@ const taskStatusLabels: Record<string, string> = {
   in_progress: '進行中',
   review: 'レビュー中',
   done: '完了',
-};
-
-const priorityLabels: Record<string, string> = {
-  low: '低',
-  medium: '中',
-  high: '高',
-  urgent: '緊急',
 };
 
 const progressStatusLabels: Record<string, { label: string; color: string }> = {

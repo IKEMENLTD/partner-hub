@@ -316,7 +316,6 @@ interface ResultSectionProps {
   onSelect: (item: SearchResultItem) => void;
   getTypeIcon: (type: SearchResultItem['type']) => React.ReactNode;
   getTypeBadgeStyle: (type: SearchResultItem['type']) => string;
-  getTypeLabel: (type: SearchResultItem['type']) => string;
 }
 
 function ResultSection({
@@ -327,7 +326,6 @@ function ResultSection({
   onSelect,
   getTypeIcon,
   getTypeBadgeStyle,
-  getTypeLabel,
 }: ResultSectionProps) {
   return (
     <div>
@@ -370,13 +368,13 @@ function ResultSection({
               {item.metadata && (
                 <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-400 dark:text-gray-500">
                   {item.type === 'project' && item.metadata.managerName && (
-                    <span>担当: {item.metadata.managerName as string}</span>
+                    <span>担当: {String(item.metadata.managerName)}</span>
                   )}
                   {item.type === 'partner' && item.metadata.contactPerson && (
-                    <span>担当者: {item.metadata.contactPerson as string}</span>
+                    <span>担当者: {String(item.metadata.contactPerson)}</span>
                   )}
                   {item.type === 'task' && item.metadata.projectName && (
-                    <span>案件: {item.metadata.projectName as string}</span>
+                    <span>案件: {String(item.metadata.projectName)}</span>
                   )}
                   {item.status && (
                     <span className="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-slate-600">

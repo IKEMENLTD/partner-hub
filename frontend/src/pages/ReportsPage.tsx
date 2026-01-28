@@ -20,6 +20,7 @@ import {
   Loading,
   EmptyState,
   Tabs,
+  TabList,
   Pagination,
 } from '@/components/common';
 import { ReportConfigForm, ReportViewer } from '@/components/reports';
@@ -44,8 +45,8 @@ import type {
 } from '@/services/reportService';
 
 const tabs = [
-  { id: 'reports', label: '生成されたレポート', icon: FileText },
-  { id: 'configs', label: 'レポート設定', icon: Settings },
+  { id: 'reports', label: '生成されたレポート', icon: <FileText className="h-4 w-4" /> },
+  { id: 'configs', label: 'レポート設定', icon: <Settings className="h-4 w-4" /> },
 ];
 
 export function ReportsPage() {
@@ -55,7 +56,7 @@ export function ReportsPage() {
   const [showConfigForm, setShowConfigForm] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ReportConfig | null>(null);
   const [viewingReport, setViewingReport] = useState<GeneratedReport | null>(null);
-  const { showToast } = useToast();
+  const { addToast } = useToast();
 
   // Queries
   const {
@@ -80,10 +81,10 @@ export function ReportsPage() {
   const handleCreateConfig = async (data: ReportConfigInput) => {
     try {
       await createConfig.mutateAsync(data);
-      showToast('レポート設定を作成しました', 'success');
+      addToast({ title: 'レポート設定を作成しました', type: 'success' });
       setShowConfigForm(false);
     } catch (error: any) {
-      showToast(error.message || 'エラーが発生しました', 'error');
+      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -91,11 +92,11 @@ export function ReportsPage() {
     if (!editingConfig) return;
     try {
       await updateConfig.mutateAsync({ id: editingConfig.id, data });
-      showToast('レポート設定を更新しました', 'success');
+      addToast({ title: 'レポート設定を更新しました', type: 'success' });
       setEditingConfig(null);
       setShowConfigForm(false);
     } catch (error: any) {
-      showToast(error.message || 'エラーが発生しました', 'error');
+      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -106,12 +107,12 @@ export function ReportsPage() {
         id: config.id,
         data: { status: newStatus },
       });
-      showToast(
-        newStatus === 'active' ? 'レポートを有効化しました' : 'レポートを一時停止しました',
-        'success'
-      );
+      addToast({
+        title: newStatus === 'active' ? 'レポートを有効化しました' : 'レポートを一時停止しました',
+        type: 'success',
+      });
     } catch (error: any) {
-      showToast(error.message || 'エラーが発生しました', 'error');
+      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -119,9 +120,9 @@ export function ReportsPage() {
     if (!confirm(`「${config.name}」を削除しますか？`)) return;
     try {
       await deleteConfig.mutateAsync(config.id);
-      showToast('レポート設定を削除しました', 'success');
+      addToast({ title: 'レポート設定を削除しました', type: 'success' });
     } catch (error: any) {
-      showToast(error.message || 'エラーが発生しました', 'error');
+      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -131,19 +132,19 @@ export function ReportsPage() {
         period: 'weekly',
         reportConfigId: configId,
       });
-      showToast('レポートを生成しました', 'success');
+      addToast({ title: 'レポートを生成しました', type: 'success' });
       setActiveTab('reports');
     } catch (error: any) {
-      showToast(error.message || 'エラーが発生しました', 'error');
+      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
     }
   };
 
   const handleTriggerScheduled = async () => {
     try {
       await triggerScheduled.mutateAsync();
-      showToast('スケジュール済みレポートの処理を開始しました', 'success');
+      addToast({ title: 'スケジュール済みレポートの処理を開始しました', type: 'success' });
     } catch (error: any) {
-      showToast(error.message || 'エラーが発生しました', 'error');
+      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -203,7 +204,9 @@ export function ReportsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+      <Tabs activeTab={activeTab} onTabChange={setActiveTab}>
+        <TabList tabs={tabs} />
+      </Tabs>
 
       {/* Generated Reports Tab */}
       {activeTab === 'reports' && (
@@ -241,7 +244,7 @@ export function ReportsPage() {
                           <Badge className={getStatusColor(report.status)}>
                             {getStatusLabel(report.status)}
                           </Badge>
-                          <Badge variant="secondary">{getPeriodLabel(report.period)}</Badge>
+                          <Badge variant="default">{getPeriodLabel(report.period)}</Badge>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             {report.dateRangeStart} 〜 {report.dateRangeEnd}
@@ -282,7 +285,7 @@ export function ReportsPage() {
             <EmptyState
               title="レポートがありません"
               description="「今すぐ生成」ボタンでレポートを作成するか、スケジュール設定を追加してください"
-              icon={FileText}
+              icon={<FileText className="h-12 w-12" />}
             />
           )}
         </div>
@@ -340,7 +343,7 @@ export function ReportsPage() {
                           </p>
                         )}
                         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                          <Badge variant="secondary">{getPeriodLabel(config.period)}</Badge>
+                          <Badge variant="default">{getPeriodLabel(config.period)}</Badge>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             {config.period === 'weekly'
@@ -420,7 +423,7 @@ export function ReportsPage() {
             <EmptyState
               title="レポート設定がありません"
               description="「新規設定」ボタンで定期レポートの送信設定を追加してください"
-              icon={Settings}
+              icon={<Settings className="h-12 w-12" />}
               action={
                 <Button onClick={() => setShowConfigForm(true)}>
                   <Plus className="h-4 w-4 mr-2" />

@@ -1,6 +1,6 @@
-import { X, Download, Mail, Calendar, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Mail, Calendar, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Modal, Badge, Card } from '@/components/common';
-import type { GeneratedReport, ReportData } from '@/services/reportService';
+import type { GeneratedReport } from '@/services/reportService';
 import { getPeriodLabel, getStatusLabel, getStatusColor } from '@/hooks/useReports';
 
 interface ReportViewerProps {
@@ -30,7 +30,7 @@ export function ReportViewer({ isOpen, onClose, report }: ReportViewerProps) {
           <Badge className={getStatusColor(report.status)}>
             {getStatusLabel(report.status)}
           </Badge>
-          <Badge variant="secondary">{getPeriodLabel(report.period)}</Badge>
+          <Badge variant="default">{getPeriodLabel(report.period)}</Badge>
           <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
             <Calendar className="h-4 w-4" />
             {reportData.dateRange.start} 〜 {reportData.dateRange.end}
@@ -248,7 +248,7 @@ export function ReportViewer({ isOpen, onClose, report }: ReportViewerProps) {
                       {reportData.highlights.upcomingDeadlines.map((deadline) => (
                         <tr key={`${deadline.type}-${deadline.id}`}>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            <Badge variant="secondary">
+                            <Badge variant="default">
                               {deadline.type === 'project' ? '案件' : 'タスク'}
                             </Badge>
                           </td>

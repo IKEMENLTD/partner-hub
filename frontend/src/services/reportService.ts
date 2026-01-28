@@ -138,6 +138,7 @@ export interface GenerateReportInput {
 }
 
 export interface ReportConfigFilter {
+  [key: string]: string | number | undefined;
   page?: number;
   limit?: number;
   period?: ReportPeriod;
@@ -148,6 +149,7 @@ export interface ReportConfigFilter {
 }
 
 export interface GeneratedReportFilter {
+  [key: string]: string | number | undefined;
   page?: number;
   limit?: number;
   reportConfigId?: string;
