@@ -174,6 +174,9 @@ export function useLogin() {
         throw new Error('認証システムが設定されていません');
       }
 
+      // ログイン前にリカバリーモードフラグをクリア
+      sessionStorage.removeItem('password_recovery_mode');
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
