@@ -25,8 +25,6 @@ import {
   ProfilePage,
   NotificationsPage,
   ProgressReportPage,
-  PartnerReportPage,
-  PartnerDashboardPage,
   PartnerPortalPage,
   PartnerReportsListPage,
   ReportsPage,
