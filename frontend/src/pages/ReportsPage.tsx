@@ -187,20 +187,10 @@ export function ReportsPage() {
             定期的な進捗レポートを自動生成・送信
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => handleGenerateNow()}
-            disabled={generateReport.isPending}
-          >
-            <Zap className="h-4 w-4 mr-2" />
-            {generateReport.isPending ? '生成中...' : '今すぐ生成'}
-          </Button>
-          <Button onClick={() => setShowConfigForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            新規設定
-          </Button>
-        </div>
+        <Button onClick={() => setShowConfigForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          新規設定
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -366,13 +356,13 @@ export function ReportsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
-                          variant="secondary"
+                          variant="primary"
                           size="sm"
                           onClick={() => handleGenerateNow(config.id)}
                           disabled={generateReport.isPending}
-                          title="今すぐ生成"
                         >
-                          <Zap className="h-4 w-4" />
+                          <Zap className="h-4 w-4 mr-1" />
+                          {generateReport.isPending ? '生成中...' : '今すぐ生成'}
                         </Button>
                         <Button
                           variant="secondary"
