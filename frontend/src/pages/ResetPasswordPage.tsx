@@ -32,24 +32,32 @@ export function ResetPasswordPage() {
     confirmPassword?: string;
   }>({});
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
   // Supabaseのパスワードリセットセッションを確認
   useEffect(() => {
+    let isMounted = true;
+
     const checkSession = async () => {
       // URLハッシュにrecoveryトークンがあるか確認
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const type = hashParams.get('type');
+      const accessToken = hashParams.get('access_token');
 
-      if (type === 'recovery') {
+      // URLにrecoveryパラメータがある場合
+      if (type === 'recovery' || accessToken) {
+        setIsRecoveryMode(true);
+
         // Supabaseが自動的にセッションを設定するのを監視
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'PASSWORD_RECOVERY' && session) {
+          if (isMounted && (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
             setIsValidSession(true);
           }
         });
 
         // 少し待ってからセッションを確認
         setTimeout(async () => {
+          if (!isMounted) return;
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
             setIsValidSession(true);
@@ -57,19 +65,34 @@ export function ResetPasswordPage() {
             setIsValidSession(false);
           }
           subscription.unsubscribe();
-        }, 1000);
+        }, 1500);
       } else {
-        // recoveryタイプでない場合は無効
-        setIsValidSession(false);
+        // URLにパラメータがない場合、既存セッションを確認
+        const { data: { session } } = await supabase.auth.getSession();
+
+        // セッションがあり、かつこのページに直接来た場合（リカバリーフロー中の可能性）
+        // ユーザーがリセットリンクをクリック後、ページが読み込まれた場合を考慮
+        if (session) {
+          // セッションはあるが、通常のログイン状態かリカバリー状態かを判断
+          // リカバリーリンクから来た場合、セッションは存在するがパスワード変更が必要
+          // ここではセッションがあればリカバリーモードとして扱う
+          setIsRecoveryMode(true);
+          setIsValidSession(true);
+        } else {
+          setIsValidSession(false);
+        }
       }
     };
 
     checkSession();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // 既にログイン中の場合はリダイレクト（ただしリセットフロー中は除く）
-  // isValidSessionがnull（未判定）の場合はリダイレクトしない
-  if (isAuthenticated && isValidSession === false) {
+  // リカバリーモードでない場合のみリダイレクト
+  if (isAuthenticated && !isRecoveryMode && isValidSession === false) {
     return <Navigate to="/today" replace />;
   }
 
