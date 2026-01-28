@@ -273,6 +273,8 @@ interface ResetPasswordInput {
 }
 
 export function useResetPassword() {
+  const { logout } = useAuthStore();
+
   return useMutation({
     mutationFn: async ({ newPassword }: ResetPasswordInput) => {
       if (!isSupabaseConfigured) {
@@ -284,6 +286,12 @@ export function useResetPassword() {
       });
 
       if (error) throw error;
+
+      // パスワード更新後、セッションをクリアして再ログインを要求
+      await supabase.auth.signOut();
+    },
+    onSuccess: () => {
+      logout();
     },
     onError: (error: AuthError) => {
       console.error('Reset password error:', getErrorMessage(error));
