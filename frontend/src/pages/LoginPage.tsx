@@ -11,7 +11,7 @@ export function LoginPage() {
 
   // ログインページに来たらリカバリーモードをクリア
   useEffect(() => {
-    sessionStorage.removeItem('password_recovery_mode');
+    localStorage.removeItem('password_recovery_mode');
   }, []);
 
   const [email, setEmail] = useState('');

@@ -40,7 +40,7 @@ export function ResetPasswordPage() {
 
     const checkSession = async () => {
       // sessionStorageでリカバリーモードを確認（AuthListenerで設定される）
-      const isInRecoveryMode = sessionStorage.getItem('password_recovery_mode') === 'true';
+      const isInRecoveryMode = localStorage.getItem('password_recovery_mode') === 'true';
 
       if (isInRecoveryMode) {
         // リカバリーモードが設定されている場合
@@ -58,7 +58,7 @@ export function ResetPasswordPage() {
             if (retrySession) {
               setIsValidSession(true);
             } else {
-              sessionStorage.removeItem('password_recovery_mode');
+              localStorage.removeItem('password_recovery_mode');
               setIsValidSession(false);
             }
           }, 1000);
@@ -71,7 +71,7 @@ export function ResetPasswordPage() {
 
         if (type === 'recovery' || accessToken) {
           setIsRecoveryMode(true);
-          sessionStorage.setItem('password_recovery_mode', 'true');
+          localStorage.setItem('password_recovery_mode', 'true');
 
           // 少し待ってからセッションを確認
           setTimeout(async () => {

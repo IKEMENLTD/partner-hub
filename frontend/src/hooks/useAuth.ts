@@ -106,8 +106,9 @@ export function useAuthListener() {
         if (!isMounted) return;
 
         // PASSWORD_RECOVERYイベントを検知したらフラグを設定
+        // localStorage を使用して全タブで共有する
         if (event === 'PASSWORD_RECOVERY') {
-          sessionStorage.setItem('password_recovery_mode', 'true');
+          localStorage.setItem('password_recovery_mode', 'true');
           // リカバリーモード中はセッションを設定しない
           markInitialized();
           return;
@@ -115,11 +116,11 @@ export function useAuthListener() {
 
         // ログアウト時はリカバリーモードフラグをクリア
         if (event === 'SIGNED_OUT') {
-          sessionStorage.removeItem('password_recovery_mode');
+          localStorage.removeItem('password_recovery_mode');
         }
 
         // リカバリーモード中はセッションを設定しない（ただしログアウトは除く）
-        const isInRecoveryMode = sessionStorage.getItem('password_recovery_mode') === 'true';
+        const isInRecoveryMode = localStorage.getItem('password_recovery_mode') === 'true';
         if (isInRecoveryMode && event !== 'SIGNED_OUT') {
           markInitialized();
           return;
@@ -175,7 +176,7 @@ export function useLogin() {
       }
 
       // ログイン前にリカバリーモードフラグをクリア
-      sessionStorage.removeItem('password_recovery_mode');
+      localStorage.removeItem('password_recovery_mode');
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -311,7 +312,7 @@ export function useResetPassword() {
       if (error) throw error;
 
       // リカバリーモードフラグをクリア
-      sessionStorage.removeItem('password_recovery_mode');
+      localStorage.removeItem('password_recovery_mode');
 
       // パスワード更新後、セッションをクリアして再ログインを要求
       await supabase.auth.signOut();
