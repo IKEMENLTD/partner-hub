@@ -7,7 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, LessThan, In, Not } from 'typeorm';
+import { Repository, Between, LessThan, In, Not, IsNull } from 'typeorm';
 import { Project } from '../project/entities/project.entity';
 import { Task } from '../task/entities/task.entity';
 import { Partner } from '../partner/entities/partner.entity';
@@ -92,40 +92,77 @@ export class DashboardService {
   async getOverview(userId?: string): Promise<DashboardOverview> {
     const today = new Date();
 
-    // Projects statistics
+    // Get organization filter if userId is provided
+    let orgFilter: { organizationId?: string } = {};
+    if (userId) {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (user?.organizationId) {
+        orgFilter = { organizationId: user.organizationId };
+      }
+    }
+
+    // Projects statistics (filtered by organization)
     const [totalProjects, activeProjects, completedProjects] = await Promise.all([
-      this.projectRepository.count(),
+      this.projectRepository.count({ where: orgFilter }),
       this.projectRepository.count({
-        where: { status: ProjectStatus.IN_PROGRESS },
+        where: { ...orgFilter, status: ProjectStatus.IN_PROGRESS },
       }),
       this.projectRepository.count({
-        where: { status: ProjectStatus.COMPLETED },
+        where: { ...orgFilter, status: ProjectStatus.COMPLETED },
       }),
     ]);
 
-    // Tasks statistics
+    // Tasks statistics - filter by projects in the organization
+    let taskOrgCondition = '';
+    if (orgFilter.organizationId) {
+      taskOrgCondition = 'AND project.organization_id = :orgId';
+    }
+
     const [totalTasks, taskTodo, taskInProgress, completedTasks] = await Promise.all([
-      this.taskRepository.count(),
-      this.taskRepository.count({ where: { status: TaskStatus.TODO } }),
-      this.taskRepository.count({ where: { status: TaskStatus.IN_PROGRESS } }),
-      this.taskRepository.count({ where: { status: TaskStatus.COMPLETED } }),
+      this.taskRepository
+        .createQueryBuilder('task')
+        .leftJoin('task.project', 'project')
+        .where(orgFilter.organizationId ? 'project.organizationId = :orgId' : '1=1', { orgId: orgFilter.organizationId })
+        .getCount(),
+      this.taskRepository
+        .createQueryBuilder('task')
+        .leftJoin('task.project', 'project')
+        .where('task.status = :status', { status: TaskStatus.TODO })
+        .andWhere(orgFilter.organizationId ? 'project.organizationId = :orgId' : '1=1', { orgId: orgFilter.organizationId })
+        .getCount(),
+      this.taskRepository
+        .createQueryBuilder('task')
+        .leftJoin('task.project', 'project')
+        .where('task.status = :status', { status: TaskStatus.IN_PROGRESS })
+        .andWhere(orgFilter.organizationId ? 'project.organizationId = :orgId' : '1=1', { orgId: orgFilter.organizationId })
+        .getCount(),
+      this.taskRepository
+        .createQueryBuilder('task')
+        .leftJoin('task.project', 'project')
+        .where('task.status = :status', { status: TaskStatus.COMPLETED })
+        .andWhere(orgFilter.organizationId ? 'project.organizationId = :orgId' : '1=1', { orgId: orgFilter.organizationId })
+        .getCount(),
     ]);
 
     // pendingTasks = TODO + IN_PROGRESS
     const pendingTasks = taskTodo + taskInProgress;
 
-    const overdueTasks = await this.taskRepository
+    const overdueTasksQuery = this.taskRepository
       .createQueryBuilder('task')
+      .leftJoin('task.project', 'project')
       .where('task.dueDate < :today', { today })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
-      .getCount();
+      });
+    if (orgFilter.organizationId) {
+      overdueTasksQuery.andWhere('project.organizationId = :orgId', { orgId: orgFilter.organizationId });
+    }
+    const overdueTasks = await overdueTasksQuery.getCount();
 
-    // Partners statistics
+    // Partners statistics (filtered by organization)
     const [totalPartners, activePartners] = await Promise.all([
-      this.partnerRepository.count(),
-      this.partnerRepository.count({ where: { status: PartnerStatus.ACTIVE } }),
+      this.partnerRepository.count({ where: { ...orgFilter, deletedAt: IsNull() } }),
+      this.partnerRepository.count({ where: { ...orgFilter, status: PartnerStatus.ACTIVE, deletedAt: IsNull() } }),
     ]);
 
     return {
@@ -712,10 +749,11 @@ export class DashboardService {
       userName: activity.userName,
     }));
 
-    // Get total projects and partners count
+    // Get total projects and partners count (filtered by organization)
+    const orgFilter = user.organizationId ? { organizationId: user.organizationId } : {};
     const [totalProjects, totalPartners] = await Promise.all([
-      this.projectRepository.count(),
-      this.partnerRepository.count(),
+      this.projectRepository.count({ where: orgFilter }),
+      this.partnerRepository.count({ where: { ...orgFilter, deletedAt: IsNull() } }),
     ]);
 
     return {
