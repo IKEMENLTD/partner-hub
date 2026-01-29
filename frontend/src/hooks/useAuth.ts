@@ -249,20 +249,27 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
+      // ログアウト前にリカバリーモードフラグをクリア
+      localStorage.removeItem('password_recovery_mode');
+
       if (!isSupabaseConfigured) {
         // Supabaseが設定されていなくてもローカル状態はクリア
         return;
       }
 
-      const { error } = await supabase.auth.signOut();
+      // スコープを 'global' にしてすべてのセッションをサインアウト
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) throw error;
     },
     onSuccess: () => {
       logout();
+      // ログアウト後にログイン画面へリダイレクト
+      window.location.href = '/login';
     },
     onError: () => {
       // APIエラーでも強制的にログアウト
       logout();
+      window.location.href = '/login';
     },
   });
 }

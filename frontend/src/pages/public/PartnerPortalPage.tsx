@@ -575,7 +575,6 @@ function DashboardContent({ data }: { data: DashboardData }) {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left text-sm font-medium text-gray-500 py-3 pr-4">日時</th>
-                  <th className="text-left text-sm font-medium text-gray-500 py-3 pr-4">種別</th>
                   <th className="text-left text-sm font-medium text-gray-500 py-3 pr-4">ステータス</th>
                   <th className="text-left text-sm font-medium text-gray-500 py-3">案件</th>
                 </tr>
@@ -589,14 +588,9 @@ function DashboardContent({ data }: { data: DashboardData }) {
                       })}
                     </td>
                     <td className="py-3 pr-4">
-                      <Badge variant={report.reportType === 'completion' ? 'success' : 'default'} size="sm">
-                        {report.reportType === 'progress' ? '進捗' :
-                         report.reportType === 'completion' ? '完了' :
-                         report.reportType === 'issue' ? '課題' : 'その他'}
-                      </Badge>
-                    </td>
-                    <td className="py-3 pr-4">
-                      {report.progressStatus ? (
+                      {report.reportType === 'completion' ? (
+                        <Badge variant="success" size="sm">完了</Badge>
+                      ) : report.progressStatus ? (
                         <span className={`inline-flex items-center gap-1 text-sm ${
                           report.progressStatus === 'on_track' ? 'text-green-600' :
                           report.progressStatus === 'slightly_delayed' ? 'text-yellow-600' : 'text-red-600'
