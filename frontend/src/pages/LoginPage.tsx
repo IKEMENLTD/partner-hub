@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuthStore } from '@/store';
@@ -9,10 +9,8 @@ export function LoginPage() {
   const { isAuthenticated, error, isLoading } = useAuthStore();
   const { mutate: login } = useLogin();
 
-  // ログインページに来たらリカバリーモードをクリア
-  useEffect(() => {
-    localStorage.removeItem('password_recovery_mode');
-  }, []);
+  // 注意: リカバリーモードフラグはログイン実行時(useLogin)でクリアされる
+  // ページマウント時にクリアすると、別タブでフラグがクリアされてしまう脆弱性がある
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
