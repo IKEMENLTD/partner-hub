@@ -101,9 +101,9 @@ export class DashboardService {
       }
     }
 
-    // Projects statistics (filtered by organization)
+    // Projects statistics (filtered by organization, excluding drafts)
     const [totalProjects, activeProjects, completedProjects] = await Promise.all([
-      this.projectRepository.count({ where: orgFilter }),
+      this.projectRepository.count({ where: { ...orgFilter, status: Not(ProjectStatus.DRAFT) } }),
       this.projectRepository.count({
         where: { ...orgFilter, status: ProjectStatus.IN_PROGRESS },
       }),
@@ -749,10 +749,10 @@ export class DashboardService {
       userName: activity.userName,
     }));
 
-    // Get total projects and partners count (filtered by organization)
+    // Get total projects and partners count (filtered by organization, excluding drafts)
     const orgFilter = user.organizationId ? { organizationId: user.organizationId } : {};
     const [totalProjects, totalPartners] = await Promise.all([
-      this.projectRepository.count({ where: orgFilter }),
+      this.projectRepository.count({ where: { ...orgFilter, status: Not(ProjectStatus.DRAFT) } }),
       this.partnerRepository.count({ where: { ...orgFilter, deletedAt: IsNull() } }),
     ]);
 
