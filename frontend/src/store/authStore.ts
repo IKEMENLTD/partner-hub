@@ -46,7 +46,8 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     set({
       session,
       supabaseUser: session?.user ?? null,
-      isAuthenticated: !!session,
+      // リカバリーモード中は認証状態をfalseに保つ
+      isAuthenticated: !!session && localStorage.getItem('password_recovery_mode') !== 'true',
       error: null,
     }),
 
