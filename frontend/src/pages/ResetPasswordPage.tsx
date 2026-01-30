@@ -58,7 +58,8 @@ export function ResetPasswordPage() {
             if (retrySession) {
               setIsValidSession(true);
             } else {
-              localStorage.removeItem('password_recovery_mode');
+              // セッションがない場合でもフラグはクリアしない
+              // フラグは成功時またはログインページでのみクリアされる
               setIsValidSession(false);
             }
           }, 1000);
