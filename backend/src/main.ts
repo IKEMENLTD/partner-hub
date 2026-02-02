@@ -15,7 +15,9 @@ async function runMigrations() {
     logger.log('Running pending migrations...');
     const migrations = await AppDataSource.runMigrations();
     if (migrations.length > 0) {
-      logger.log(`Executed ${migrations.length} migration(s): ${migrations.map((m) => m.name).join(', ')}`);
+      logger.log(
+        `Executed ${migrations.length} migration(s): ${migrations.map((m) => m.name).join(', ')}`,
+      );
     } else {
       logger.log('No pending migrations');
     }

@@ -28,6 +28,8 @@ import {
   PartnerPortalPage,
   PartnerReportsListPage,
   ReportsPage,
+  AdminSettingsPage,
+  PartnerContactSetupPage,
 } from '@/pages';
 
 // Create a client
@@ -106,6 +108,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/progress-report/:token" element={<ProgressReportPage />} />
           <Route path="/partner/:token" element={<PartnerPortalPage />} />
+          <Route path="/partner-setup/:token" element={<PartnerContactSetupPage />} />
           {/* Legacy routes - redirect to new combined portal */}
           <Route path="/report/:token" element={<PartnerPortalPage />} />
           <Route path="/dashboard/:token" element={<PartnerPortalPage />} />
@@ -139,6 +142,7 @@ function App() {
 
             {/* User routes */}
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/admin/settings" element={<AdminSettingsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
 

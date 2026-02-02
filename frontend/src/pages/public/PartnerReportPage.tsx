@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Send, CheckCircle, AlertCircle, Clock, List, Smile, AlertTriangle, XCircle, PartyPopper, LayoutDashboard } from 'lucide-react';
 import { Button, Card, Loading, Alert } from '@/components/common';
@@ -74,13 +74,7 @@ export function PartnerReportPage() {
   const [weeklyAccomplishments, setWeeklyAccomplishments] = useState('');
   const [nextWeekPlan, setNextWeekPlan] = useState('');
 
-  useEffect(() => {
-    if (token) {
-      fetchFormInfo();
-    }
-  }, [token]);
-
-  const fetchFormInfo = async () => {
+  const fetchFormInfo = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -108,7 +102,13 @@ export function PartnerReportPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchFormInfo();
+    }
+  }, [token, fetchFormInfo]);
 
   const fetchReportHistory = async () => {
     try {

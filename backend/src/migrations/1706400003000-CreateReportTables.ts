@@ -518,15 +518,29 @@ export class CreateReportTables1706400003000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // RLSポリシーの削除
-    await queryRunner.query(`DROP POLICY IF EXISTS "generated_reports_insert" ON public.generated_reports`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "generated_reports_select" ON public.generated_reports`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "report_configs_delete" ON public.report_configs`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "report_configs_update" ON public.report_configs`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "report_configs_insert" ON public.report_configs`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "report_configs_select" ON public.report_configs`);
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "generated_reports_insert" ON public.generated_reports`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "generated_reports_select" ON public.generated_reports`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "report_configs_delete" ON public.report_configs`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "report_configs_update" ON public.report_configs`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "report_configs_insert" ON public.report_configs`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "report_configs_select" ON public.report_configs`,
+    );
 
     // トリガーの削除
-    await queryRunner.query(`DROP TRIGGER IF EXISTS update_report_configs_updated_at ON public.report_configs`);
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS update_report_configs_updated_at ON public.report_configs`,
+    );
 
     // generated_reports テーブルの削除
     await queryRunner.dropForeignKey('generated_reports', 'fk_generated_reports_generated_by');

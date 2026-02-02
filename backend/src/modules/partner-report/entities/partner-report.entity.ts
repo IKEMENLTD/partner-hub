@@ -19,9 +19,9 @@ export enum ReportType {
 }
 
 export enum ProgressStatus {
-  ON_TRACK = 'on_track',           // 順調
+  ON_TRACK = 'on_track', // 順調
   SLIGHTLY_DELAYED = 'slightly_delayed', // やや遅れ
-  HAS_ISSUES = 'has_issues',       // 問題あり
+  HAS_ISSUES = 'has_issues', // 問題あり
 }
 
 export enum ReportSource {

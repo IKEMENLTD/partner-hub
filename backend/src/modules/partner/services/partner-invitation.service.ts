@@ -17,7 +17,10 @@ import { EmailService } from '../../notification/services/email.service';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { UserRole } from '../../auth/enums/user-role.enum';
-import { RegisterWithInvitationDto, InvitationRegisterResponseDto } from '../dto/register-with-invitation.dto';
+import {
+  RegisterWithInvitationDto,
+  InvitationRegisterResponseDto,
+} from '../dto/register-with-invitation.dto';
 
 @Injectable()
 export class PartnerInvitationService {
@@ -36,7 +39,9 @@ export class PartnerInvitationService {
     private configService: ConfigService,
     private supabaseService: SupabaseService,
   ) {
-    this.frontendUrl = this.configService.get<string>('app.frontendUrl') || 'https://partner-hub-frontend.onrender.com';
+    this.frontendUrl =
+      this.configService.get<string>('app.frontendUrl') ||
+      'https://partner-hub-frontend.onrender.com';
   }
 
   /**
@@ -49,10 +54,7 @@ export class PartnerInvitationService {
   /**
    * Create and send an invitation to a partner
    */
-  async sendInvitation(
-    partnerId: string,
-    invitedById?: string,
-  ): Promise<PartnerInvitation> {
+  async sendInvitation(partnerId: string, invitedById?: string): Promise<PartnerInvitation> {
     // Find the partner
     const partner = await this.partnerRepository.findOne({
       where: { id: partnerId },
@@ -141,10 +143,7 @@ export class PartnerInvitationService {
   /**
    * Accept an invitation and link the partner to a user
    */
-  async acceptInvitation(
-    token: string,
-    userId: string,
-  ): Promise<Partner> {
+  async acceptInvitation(token: string, userId: string): Promise<Partner> {
     const { invitation, partner } = await this.verifyToken(token);
 
     // Verify the user exists
@@ -157,9 +156,7 @@ export class PartnerInvitationService {
 
     // Check if user email matches partner email (security check)
     if (user.email.toLowerCase() !== partner.email.toLowerCase()) {
-      throw new BadRequestException(
-        'ユーザーのメールアドレスが招待先のパートナーと一致しません',
-      );
+      throw new BadRequestException('ユーザーのメールアドレスが招待先のパートナーと一致しません');
     }
 
     // Check if partner already has a linked user
@@ -302,10 +299,14 @@ export class PartnerInvitationService {
     if (authError) {
       this.logger.error(`Supabase user creation failed: ${authError.message}`);
       if (authError.message.includes('already registered')) {
-        throw new ConflictException('このメールアドレスは既に登録されています。ログインしてください。');
+        throw new ConflictException(
+          'このメールアドレスは既に登録されています。ログインしてください。',
+        );
       }
       // 内部エラーメッセージをユーザーに露出しない
-      throw new BadRequestException('ユーザー作成に失敗しました。入力内容を確認して再度お試しください。');
+      throw new BadRequestException(
+        'ユーザー作成に失敗しました。入力内容を確認して再度お試しください。',
+      );
     }
 
     const supabaseUser = authData.user;
@@ -341,10 +342,11 @@ export class PartnerInvitationService {
 
       // 9. Sign in the user to get a session
       const supabaseClient = this.supabaseService.client;
-      const { data: sessionData, error: sessionError } = await supabaseClient.auth.signInWithPassword({
-        email: partner.email,
-        password: dto.password,
-      });
+      const { data: sessionData, error: sessionError } =
+        await supabaseClient.auth.signInWithPassword({
+          email: partner.email,
+          password: dto.password,
+        });
 
       if (sessionError || !sessionData.session) {
         this.logger.warn(`Session creation failed: ${sessionError?.message}`);

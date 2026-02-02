@@ -49,10 +49,6 @@ import { NotificationModule } from '../notification/notification.module';
     ReportReminderService,
     ReportTokenGuard,
   ],
-  exports: [
-    PartnerReportService,
-    PartnerReportTokenService,
-    ReportReminderService,
-  ],
+  exports: [PartnerReportService, PartnerReportTokenService, ReportReminderService],
 })
 export class PartnerReportModule {}

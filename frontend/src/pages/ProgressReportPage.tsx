@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   CheckCircle,
@@ -47,17 +47,7 @@ export function ProgressReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  useEffect(() => {
-    if (!token) {
-      setError('無効なリンクです');
-      setIsLoading(false);
-      return;
-    }
-
-    loadFormData();
-  }, [token]);
-
-  const loadFormData = async () => {
+  const loadFormData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -76,10 +66,11 @@ export function ProgressReportPage() {
         ...prev,
         reporterName: response.data.reporterName,
       }));
-    } catch (err: any) {
-      if (err.message?.includes('expired')) {
+    } catch (err: unknown) {
+      const errorMessage = (err as { message?: string })?.message;
+      if (errorMessage?.includes('expired')) {
         setError('このリンクの有効期限が切れています。新しいリンクをリクエストしてください。');
-      } else if (err.message?.includes('already')) {
+      } else if (errorMessage?.includes('already')) {
         setError('この報告は既に送信されています。');
       } else {
         setError('フォームの読み込みに失敗しました。リンクが正しいか確認してください。');
@@ -87,7 +78,17 @@ export function ProgressReportPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) {
+      setError('無効なリンクです');
+      setIsLoading(false);
+      return;
+    }
+
+    loadFormData();
+  }, [token, loadFormData]);
 
   const handleSubmit = async () => {
     if (!token) return;
@@ -102,8 +103,9 @@ export function ProgressReportPage() {
         attachmentUrls: reportData.attachmentUrls.length > 0 ? reportData.attachmentUrls : undefined,
       });
       setIsSubmitted(true);
-    } catch (err: any) {
-      setError(err.message || '送信に失敗しました。もう一度お試しください。');
+    } catch (err: unknown) {
+      const errorMessage = (err as { message?: string })?.message;
+      setError(errorMessage || '送信に失敗しました。もう一度お試しください。');
     } finally {
       setIsSubmitting(false);
     }

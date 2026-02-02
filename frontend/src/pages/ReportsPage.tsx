@@ -22,6 +22,7 @@ import {
   Tabs,
   TabList,
   Pagination,
+  useToast,
 } from '@/components/common';
 import { ReportConfigForm, ReportViewer } from '@/components/reports';
 import {
@@ -37,7 +38,6 @@ import {
   getStatusColor,
   getDayOfWeekLabel,
 } from '@/hooks';
-import { useToast } from '@/components/common/Toast';
 import type {
   ReportConfig,
   GeneratedReport,
@@ -83,8 +83,9 @@ export function ReportsPage() {
       await createConfig.mutateAsync(data);
       addToast({ title: 'レポート設定を作成しました', type: 'success' });
       setShowConfigForm(false);
-    } catch (error: any) {
-      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
+    } catch (error: unknown) {
+      const errorMessage = (error as { message?: string })?.message;
+      addToast({ title: errorMessage || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -95,8 +96,9 @@ export function ReportsPage() {
       addToast({ title: 'レポート設定を更新しました', type: 'success' });
       setEditingConfig(null);
       setShowConfigForm(false);
-    } catch (error: any) {
-      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
+    } catch (error: unknown) {
+      const errorMessage = (error as { message?: string })?.message;
+      addToast({ title: errorMessage || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -111,8 +113,9 @@ export function ReportsPage() {
         title: newStatus === 'active' ? 'レポートを有効化しました' : 'レポートを一時停止しました',
         type: 'success',
       });
-    } catch (error: any) {
-      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
+    } catch (error: unknown) {
+      const errorMessage = (error as { message?: string })?.message;
+      addToast({ title: errorMessage || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -121,8 +124,9 @@ export function ReportsPage() {
     try {
       await deleteConfig.mutateAsync(config.id);
       addToast({ title: 'レポート設定を削除しました', type: 'success' });
-    } catch (error: any) {
-      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
+    } catch (error: unknown) {
+      const errorMessage = (error as { message?: string })?.message;
+      addToast({ title: errorMessage || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -134,8 +138,9 @@ export function ReportsPage() {
       });
       addToast({ title: 'レポートを生成しました', type: 'success' });
       setActiveTab('reports');
-    } catch (error: any) {
-      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
+    } catch (error: unknown) {
+      const errorMessage = (error as { message?: string })?.message;
+      addToast({ title: errorMessage || 'エラーが発生しました', type: 'error' });
     }
   };
 
@@ -143,8 +148,9 @@ export function ReportsPage() {
     try {
       await triggerScheduled.mutateAsync();
       addToast({ title: 'スケジュール済みレポートの処理を開始しました', type: 'success' });
-    } catch (error: any) {
-      addToast({ title: error.message || 'エラーが発生しました', type: 'error' });
+    } catch (error: unknown) {
+      const errorMessage = (error as { message?: string })?.message;
+      addToast({ title: errorMessage || 'エラーが発生しました', type: 'error' });
     }
   };
 

@@ -1,32 +1,7 @@
-import { useEffect, useState, createContext, useContext, useCallback, ReactNode } from 'react';
+import { useEffect, useState, useCallback, ReactNode } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import clsx from 'clsx';
-
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
-
-export interface ToastMessage {
-  id: string;
-  type: ToastType;
-  title: string;
-  message?: string;
-  duration?: number;
-}
-
-interface ToastContextValue {
-  toasts: ToastMessage[];
-  addToast: (toast: Omit<ToastMessage, 'id'>) => void;
-  removeToast: (id: string) => void;
-}
-
-const ToastContext = createContext<ToastContextValue | undefined>(undefined);
-
-export function useToast() {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-}
+import { ToastContext, ToastMessage } from './ToastContext';
 
 interface ToastProviderProps {
   children: ReactNode;
@@ -125,20 +100,3 @@ function Toast({ toast, onClose }: ToastProps) {
     </div>
   );
 }
-
-// Simple toast functions for convenience
-export const toast = {
-  success: (title: string, message?: string) => {
-    // This will be used with the hook
-    return { type: 'success' as const, title, message };
-  },
-  error: (title: string, message?: string) => {
-    return { type: 'error' as const, title, message };
-  },
-  warning: (title: string, message?: string) => {
-    return { type: 'warning' as const, title, message };
-  },
-  info: (title: string, message?: string) => {
-    return { type: 'info' as const, title, message };
-  },
-};

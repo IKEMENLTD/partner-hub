@@ -128,7 +128,10 @@ export class ReportReminderService {
     });
 
     if (!token) {
-      token = await this.tokenService.generateToken(schedule.partnerId, schedule.projectId ?? undefined);
+      token = await this.tokenService.generateToken(
+        schedule.partnerId,
+        schedule.projectId ?? undefined,
+      );
     }
 
     // Send email notification
@@ -242,7 +245,9 @@ export class ReportReminderService {
         // Next month on specified day
         const targetDayOfMonth = schedule.dayOfMonth ?? 1;
         next.setMonth(now.getMonth() + 1);
-        next.setDate(Math.min(targetDayOfMonth, this.getDaysInMonth(next.getFullYear(), next.getMonth())));
+        next.setDate(
+          Math.min(targetDayOfMonth, this.getDaysInMonth(next.getFullYear(), next.getMonth())),
+        );
         break;
     }
 
@@ -434,7 +439,9 @@ Partner Hub`,
       overdueRequest.reportId = reportId;
       await this.requestRepository.save(overdueRequest);
 
-      this.logger.log(`Marked overdue request ${overdueRequest.id} as submitted with report ${reportId}`);
+      this.logger.log(
+        `Marked overdue request ${overdueRequest.id} as submitted with report ${reportId}`,
+      );
     }
   }
 }

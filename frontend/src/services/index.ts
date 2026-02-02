@@ -13,6 +13,10 @@ export { customFieldTemplateService } from './customFieldTemplateService';
 export { searchService } from './searchService';
 export type { SearchType, SearchResultItem, SearchResults, SearchParams } from './searchService';
 export { reportService } from './reportService';
+export { systemSettingsService } from './systemSettingsService';
+export type { SystemSettings, UpdateSystemSettingsInput } from './systemSettingsService';
+export { partnerContactSetupService } from './partnerContactSetupService';
+export type { PreferredChannel, PartnerContactSetupInput, TokenVerifyResult, ContactSetupResult } from './partnerContactSetupService';
 export type {
   ReportPeriod,
   ReportConfigStatus,

@@ -8,5 +8,4 @@ export {
   HealthScoreIndicator,
   HealthScoreCardDisplay,
   HealthScoreBreakdown,
-  getHealthStatus,
 } from './HealthScoreIndicator';

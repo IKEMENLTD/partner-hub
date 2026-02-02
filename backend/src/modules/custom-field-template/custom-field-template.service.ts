@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
-import { CustomFieldTemplate, CustomFieldDefinition } from './entities/custom-field-template.entity';
+import {
+  CustomFieldTemplate,
+  CustomFieldDefinition,
+} from './entities/custom-field-template.entity';
 import { CreateCustomFieldTemplateDto, QueryCustomFieldTemplateDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -77,9 +80,12 @@ export class CustomFieldTemplateService {
     }
 
     // ソート
-    const sortColumn = sortBy === 'usageCount' ? 'template.usageCount' :
-                       sortBy === 'name' ? 'template.name' :
-                       'template.createdAt';
+    const sortColumn =
+      sortBy === 'usageCount'
+        ? 'template.usageCount'
+        : sortBy === 'name'
+          ? 'template.name'
+          : 'template.createdAt';
     queryBuilder.orderBy(sortColumn, sortOrder);
 
     // ページネーション
@@ -114,7 +120,9 @@ export class CustomFieldTemplateService {
     const template = await this.findOne(id);
     template.usageCount += 1;
     await this.templateRepository.save(template);
-    this.logger.log(`Custom field template usage incremented: ${template.name} -> ${template.usageCount}`);
+    this.logger.log(
+      `Custom field template usage incremented: ${template.name} -> ${template.usageCount}`,
+    );
     return template;
   }
 

@@ -35,9 +35,13 @@ export function generateStakeholderAddedEmailHtml(data: StakeholderAddedEmailDat
     <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
       <h2 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">${project.name}</h2>
 
-      ${project.description ? `
+      ${
+        project.description
+          ? `
       <p style="color: #555; margin: 0 0 15px 0;">${project.description}</p>
-      ` : ''}
+      `
+          : ''
+      }
 
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
@@ -46,12 +50,16 @@ export function generateStakeholderAddedEmailHtml(data: StakeholderAddedEmailDat
             <span style="background-color: #667eea; color: white; padding: 4px 12px; border-radius: 4px; font-size: 14px;">${stakeholderRole}</span>
           </td>
         </tr>
-        ${addedBy ? `
+        ${
+          addedBy
+            ? `
         <tr>
           <td style="padding: 8px 0; color: #6c757d;">追加者:</td>
           <td style="padding: 8px 0;">${addedBy}</td>
         </tr>
-        ` : ''}
+        `
+            : ''
+        }
       </table>
     </div>
 

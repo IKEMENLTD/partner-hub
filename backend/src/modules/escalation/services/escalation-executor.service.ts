@@ -1,0 +1,296 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
+import { EscalationRule } from '../entities/escalation-rule.entity';
+import { EscalationLog } from '../entities/escalation-log.entity';
+import { Task } from '../../task/entities/task.entity';
+import { Project } from '../../project/entities/project.entity';
+import { ProjectStakeholder } from '../../project/entities/project-stakeholder.entity';
+import { ReminderService } from '../../reminder/reminder.service';
+import {
+  EscalationAction,
+  EscalationTriggerType,
+  EscalationLogStatus,
+} from '../enums/escalation.enum';
+import { TaskStatus } from '../../task/enums/task-status.enum';
+import { ReminderType, ReminderChannel } from '../../reminder/enums/reminder-type.enum';
+import { EscalationRuleService } from './escalation-rule.service';
+
+@Injectable()
+export class EscalationExecutorService {
+  private readonly logger = new Logger(EscalationExecutorService.name);
+
+  constructor(
+    @InjectRepository(EscalationLog)
+    private escalationLogRepository: Repository<EscalationLog>,
+    @InjectRepository(Project)
+    private projectRepository: Repository<Project>,
+    @InjectRepository(ProjectStakeholder)
+    private stakeholderRepository: Repository<ProjectStakeholder>,
+    private reminderService: ReminderService,
+    private ruleService: EscalationRuleService,
+  ) {}
+
+  async checkAndTriggerEscalation(task: Task): Promise<EscalationLog[]> {
+    const logs: EscalationLog[] = [];
+
+    if (!task.dueDate) {
+      return logs;
+    }
+
+    // Skip completed or cancelled tasks
+    if (task.status === TaskStatus.COMPLETED || task.status === TaskStatus.CANCELLED) {
+      return logs;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dueDate = new Date(task.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+
+    const daysDiff = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Get applicable rules
+    const rules = await this.ruleService.getActiveRulesForTask(task.projectId);
+
+    for (const rule of rules) {
+      const shouldTrigger = this.evaluateRule(rule, daysDiff, task);
+
+      if (shouldTrigger) {
+        // Check if this rule was already triggered for this task today
+        const existingLog = await this.escalationLogRepository.findOne({
+          where: {
+            ruleId: rule.id,
+            taskId: task.id,
+            createdAt: MoreThanOrEqual(today),
+          },
+        });
+
+        if (!existingLog) {
+          const log = await this.executeEscalation(rule, task);
+          logs.push(log);
+        }
+      }
+    }
+
+    return logs;
+  }
+
+  private evaluateRule(rule: EscalationRule, daysDiff: number, task: Task): boolean {
+    switch (rule.triggerType) {
+      case EscalationTriggerType.DAYS_BEFORE_DUE:
+        return daysDiff >= 0 && daysDiff <= rule.triggerValue;
+
+      case EscalationTriggerType.DAYS_AFTER_DUE:
+        return daysDiff < 0 && Math.abs(daysDiff) >= rule.triggerValue;
+
+      case EscalationTriggerType.PROGRESS_BELOW:
+        return task.progress < rule.triggerValue && daysDiff <= 3;
+
+      default:
+        return false;
+    }
+  }
+
+  async executeEscalation(rule: EscalationRule, task: Task): Promise<EscalationLog> {
+    const log = this.escalationLogRepository.create({
+      ruleId: rule.id,
+      taskId: task.id,
+      projectId: task.projectId,
+      action: rule.action,
+      status: EscalationLogStatus.PENDING,
+    });
+
+    try {
+      switch (rule.action) {
+        case EscalationAction.NOTIFY_OWNER:
+          await this.notifyOwner(task, rule, log);
+          break;
+
+        case EscalationAction.NOTIFY_STAKEHOLDERS:
+          await this.notifyStakeholders(task, rule, log);
+          break;
+
+        case EscalationAction.ESCALATE_TO_MANAGER:
+          await this.escalateToManager(task, rule, log);
+          break;
+      }
+
+      log.status = EscalationLogStatus.EXECUTED;
+      log.executedAt = new Date();
+      this.logger.log(`Escalation executed: Rule ${rule.name} on Task ${task.id}`);
+    } catch (error) {
+      log.status = EscalationLogStatus.FAILED;
+      log.errorMessage = error.message;
+      this.logger.error(`Escalation failed: Rule ${rule.name} on Task ${task.id}`, error.stack);
+    }
+
+    const savedLog = await this.escalationLogRepository.save(log);
+    return this.escalationLogRepository.findOne({
+      where: { id: savedLog.id },
+      relations: ['rule', 'task', 'project', 'escalatedToUser'],
+    }) as Promise<EscalationLog>;
+  }
+
+  private async notifyOwner(task: Task, rule: EscalationRule, log: EscalationLog): Promise<void> {
+    if (!task.assigneeId) {
+      throw new Error('Task has no assignee to notify');
+    }
+
+    await this.reminderService.create(
+      {
+        title: `Escalation: ${rule.name}`,
+        message: this.buildNotificationMessage(rule, task),
+        type: ReminderType.TASK_OVERDUE,
+        channel: ReminderChannel.IN_APP,
+        userId: task.assigneeId,
+        taskId: task.id,
+        projectId: task.projectId,
+        scheduledAt: new Date().toISOString(),
+      },
+      'system',
+    );
+
+    log.notifiedUsers = [task.assigneeId];
+    log.actionDetail = `Notified task owner (${task.assigneeId})`;
+  }
+
+  private async notifyStakeholders(
+    task: Task,
+    rule: EscalationRule,
+    log: EscalationLog,
+  ): Promise<void> {
+    if (!task.projectId) {
+      throw new Error('Task has no project, cannot notify stakeholders');
+    }
+
+    const stakeholders = await this.stakeholderRepository.find({
+      where: { projectId: task.projectId },
+      relations: ['partner'],
+    });
+
+    const project = await this.projectRepository.findOne({
+      where: { id: task.projectId },
+      relations: ['owner', 'manager'],
+    });
+
+    const notifiedUsers: string[] = [];
+
+    if (project?.ownerId) {
+      await this.reminderService.create(
+        {
+          title: `Escalation: ${rule.name}`,
+          message: this.buildNotificationMessage(rule, task),
+          type: ReminderType.TASK_OVERDUE,
+          channel: ReminderChannel.IN_APP,
+          userId: project.ownerId,
+          taskId: task.id,
+          projectId: task.projectId,
+          scheduledAt: new Date().toISOString(),
+        },
+        'system',
+      );
+      notifiedUsers.push(project.ownerId);
+    }
+
+    if (project?.managerId && project.managerId !== project.ownerId) {
+      await this.reminderService.create(
+        {
+          title: `Escalation: ${rule.name}`,
+          message: this.buildNotificationMessage(rule, task),
+          type: ReminderType.TASK_OVERDUE,
+          channel: ReminderChannel.IN_APP,
+          userId: project.managerId,
+          taskId: task.id,
+          projectId: task.projectId,
+          scheduledAt: new Date().toISOString(),
+        },
+        'system',
+      );
+      notifiedUsers.push(project.managerId);
+    }
+
+    log.notifiedUsers = notifiedUsers;
+    log.actionDetail = `Notified ${notifiedUsers.length} stakeholder(s)`;
+  }
+
+  private async escalateToManager(
+    task: Task,
+    rule: EscalationRule,
+    log: EscalationLog,
+  ): Promise<void> {
+    let managerId: string | undefined = rule.escalateToUserId;
+
+    if (!managerId && task.projectId) {
+      const project = await this.projectRepository.findOne({
+        where: { id: task.projectId },
+      });
+      managerId = project?.managerId ?? project?.ownerId;
+    }
+
+    if (!managerId) {
+      throw new Error('No manager found to escalate to');
+    }
+
+    await this.reminderService.create(
+      {
+        title: `ESCALATION: ${rule.name}`,
+        message: this.buildNotificationMessage(rule, task, true),
+        type: ReminderType.TASK_OVERDUE,
+        channel: ReminderChannel.BOTH,
+        userId: managerId,
+        taskId: task.id,
+        projectId: task.projectId,
+        scheduledAt: new Date().toISOString(),
+        metadata: {
+          escalation: true,
+          ruleId: rule.id,
+          priority: 'high',
+        },
+      },
+      'system',
+    );
+
+    log.escalatedToUserId = managerId;
+    log.notifiedUsers = [managerId];
+    log.actionDetail = `Escalated to manager (${managerId})`;
+  }
+
+  private buildNotificationMessage(
+    rule: EscalationRule,
+    task: Task,
+    isEscalation: boolean = false,
+  ): string {
+    const prefix = isEscalation ? '[ESCALATION] ' : '';
+    const dueInfo = task.dueDate
+      ? `Due: ${new Date(task.dueDate).toLocaleDateString()}`
+      : 'No due date';
+
+    return (
+      `${prefix}Task "${task.title}" requires attention.\n\n` +
+      `Rule: ${rule.name}\n` +
+      `${dueInfo}\n` +
+      `Progress: ${task.progress}%\n` +
+      `Status: ${task.status}`
+    );
+  }
+
+  async logEscalation(
+    rule: EscalationRule,
+    task: Task,
+    action: EscalationAction,
+  ): Promise<EscalationLog | null> {
+    const log = await this.escalationLogRepository.findOne({
+      where: {
+        ruleId: rule.id,
+        taskId: task.id,
+        action,
+      },
+      order: { createdAt: 'DESC' },
+      relations: ['rule', 'task', 'project', 'escalatedToUser'],
+    });
+
+    return log;
+  }
+}

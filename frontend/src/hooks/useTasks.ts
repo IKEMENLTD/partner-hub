@@ -1,6 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryKey } from '@tanstack/react-query';
 import { taskService } from '@/services';
-import type { TaskInput, TaskFilter } from '@/types';
+import type { Task, TaskInput, TaskFilter } from '@/types';
+
+interface TodayStats {
+  tasksForToday: Task[];
+  upcomingDeadlines: Task[];
+}
+
+interface ProjectTasksData {
+  data: Task[];
+}
 
 interface UseTasksParams extends TaskFilter {
   page?: number;
@@ -92,13 +101,13 @@ export function useUpdateTaskStatus() {
       const projectTasksQueries = queryClient.getQueriesData({ queryKey: ['project-tasks'] });
 
       // Helper to update tasks in an array
-      const updateTasks = (tasks: any[]) =>
-        tasks?.map((task: any) =>
+      const updateTasks = (tasks: Task[]) =>
+        tasks?.map((task: Task) =>
           task.id === id ? { ...task, status } : task
         ) || [];
 
       // Optimistically update today-stats
-      queryClient.setQueryData(['today-stats'], (old: any) => {
+      queryClient.setQueryData(['today-stats'], (old: TodayStats | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -108,11 +117,12 @@ export function useUpdateTaskStatus() {
       });
 
       // Optimistically update all project-tasks queries
-      projectTasksQueries.forEach(([queryKey, data]: [any, any]) => {
-        if (data?.data) {
-          queryClient.setQueryData(queryKey, {
-            ...data,
-            data: updateTasks(data.data),
+      projectTasksQueries.forEach(([queryKey, data]) => {
+        const typedData = data as ProjectTasksData | undefined;
+        if (typedData?.data) {
+          queryClient.setQueryData(queryKey as QueryKey, {
+            ...typedData,
+            data: updateTasks(typedData.data),
           });
         }
       });
@@ -125,8 +135,8 @@ export function useUpdateTaskStatus() {
         queryClient.setQueryData(['today-stats'], context.previousTodayStats);
       }
       if (context?.projectTasksQueries) {
-        context.projectTasksQueries.forEach(([queryKey, data]: [any, any]) => {
-          queryClient.setQueryData(queryKey, data);
+        context.projectTasksQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey as QueryKey, data);
         });
       }
     },

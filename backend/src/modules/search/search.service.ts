@@ -59,38 +59,20 @@ export class SearchService {
 
     // Search projects
     if (type === SearchType.ALL || type === SearchType.PROJECTS) {
-      results.projects = await this.searchProjects(
-        searchTerm,
-        q,
-        limit || 10,
-        userId,
-        userRole,
-      );
+      results.projects = await this.searchProjects(searchTerm, q, limit || 10, userId, userRole);
     }
 
     // Search partners
     if (type === SearchType.ALL || type === SearchType.PARTNERS) {
-      results.partners = await this.searchPartners(
-        searchTerm,
-        q,
-        limit || 10,
-        organizationId,
-      );
+      results.partners = await this.searchPartners(searchTerm, q, limit || 10, organizationId);
     }
 
     // Search tasks
     if (type === SearchType.ALL || type === SearchType.TASKS) {
-      results.tasks = await this.searchTasks(
-        searchTerm,
-        q,
-        limit || 10,
-        userId,
-        userRole,
-      );
+      results.tasks = await this.searchTasks(searchTerm, q, limit || 10, userId, userRole);
     }
 
-    results.total =
-      results.projects.length + results.partners.length + results.tasks.length;
+    results.total = results.projects.length + results.partners.length + results.tasks.length;
 
     this.logger.debug(
       `Search results: projects=${results.projects.length}, partners=${results.partners.length}, tasks=${results.tasks.length}, total=${results.total}`,
@@ -111,16 +93,13 @@ export class SearchService {
       .leftJoinAndSelect('project.owner', 'owner')
       .leftJoinAndSelect('project.manager', 'manager')
       .where('project.deletedAt IS NULL')
-      .andWhere(
-        '(project.name ILIKE :searchTerm OR project.description ILIKE :searchTerm)',
-        { searchTerm },
-      );
+      .andWhere('(project.name ILIKE :searchTerm OR project.description ILIKE :searchTerm)', {
+        searchTerm,
+      });
 
     // Role-based filtering
     if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
-      this.logger.debug(
-        `Applying role filter for non-admin/manager user: userId="${userId}"`,
-      );
+      this.logger.debug(`Applying role filter for non-admin/manager user: userId="${userId}"`);
       queryBuilder.andWhere(
         '(project.ownerId = :userId OR project.managerId = :userId OR project.createdById = :userId)',
         { userId },
@@ -130,9 +109,7 @@ export class SearchService {
     }
 
     // Order by updated date (most recent first) and take limit
-    queryBuilder
-      .orderBy('project.updatedAt', 'DESC')
-      .take(limit);
+    queryBuilder.orderBy('project.updatedAt', 'DESC').take(limit);
 
     const projects = await queryBuilder.getMany();
 
@@ -142,11 +119,7 @@ export class SearchService {
       name: project.name,
       description: project.description?.substring(0, 200),
       status: project.status,
-      relevance: this.calculateRelevance(
-        originalQuery,
-        project.name,
-        project.description,
-      ),
+      relevance: this.calculateRelevance(originalQuery, project.name, project.description),
       metadata: {
         ownerId: project.ownerId,
         ownerName: project.owner?.fullName,
@@ -180,9 +153,7 @@ export class SearchService {
     }
 
     // Order by updated date (most recent first) and take limit
-    queryBuilder
-      .orderBy('partner.updatedAt', 'DESC')
-      .take(limit);
+    queryBuilder.orderBy('partner.updatedAt', 'DESC').take(limit);
 
     const partners = await queryBuilder.getMany();
 
@@ -220,17 +191,15 @@ export class SearchService {
       .leftJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('task.deletedAt IS NULL')
-      .andWhere(
-        '(task.title ILIKE :searchTerm OR task.description ILIKE :searchTerm)',
-        { searchTerm },
-      );
+      .andWhere('(task.title ILIKE :searchTerm OR task.description ILIKE :searchTerm)', {
+        searchTerm,
+      });
 
     // Role-based filtering
     if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
-      queryBuilder.andWhere(
-        '(task.assigneeId = :userId OR task.createdById = :userId)',
-        { userId },
-      );
+      queryBuilder.andWhere('(task.assigneeId = :userId OR task.createdById = :userId)', {
+        userId,
+      });
     }
 
     // Order by due date (soonest first) and updated date, then take limit
@@ -247,11 +216,7 @@ export class SearchService {
       name: task.title,
       description: task.description?.substring(0, 200),
       status: task.status,
-      relevance: this.calculateRelevance(
-        originalQuery,
-        task.title,
-        task.description,
-      ),
+      relevance: this.calculateRelevance(originalQuery, task.title, task.description),
       metadata: {
         projectId: task.projectId,
         projectName: task.project?.name,
@@ -267,10 +232,7 @@ export class SearchService {
    * Calculate relevance score based on how well the query matches the content
    * Higher score = more relevant
    */
-  private calculateRelevance(
-    query: string,
-    ...fields: (string | undefined | null)[]
-  ): number {
+  private calculateRelevance(query: string, ...fields: (string | undefined | null)[]): number {
     const lowerQuery = query.toLowerCase();
     let score = 0;
 

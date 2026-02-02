@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { ProjectService } from './project.service';
 import { Project } from './entities/project.entity';
 import { Partner } from '../partner/entities/partner.entity';
+import { UserProfile } from '../auth/entities/user-profile.entity';
+import { EmailService } from '../notification/services/email.service';
+import { ProjectStatisticsService } from './services/project-statistics.service';
 import { ProjectStatus, ProjectPriority } from './enums/project-status.enum';
 import { NotFoundException } from '@nestjs/common';
 
@@ -40,6 +43,7 @@ describe('ProjectService', () => {
     findOne: jest.fn(),
     find: jest.fn(),
     remove: jest.fn(),
+    softRemove: jest.fn(),
     count: jest.fn(),
     findBy: jest.fn(),
     createQueryBuilder: jest.fn(() => ({
@@ -58,12 +62,36 @@ describe('ProjectService', () => {
       getRawOne: jest
         .fn()
         .mockResolvedValue({ avgProgress: '50', totalBudget: '100000', totalActualCost: '50000' }),
+      getSql: jest.fn().mockReturnValue('SELECT * FROM project'),
     })),
   };
 
   const mockPartnerRepository = {
     findOne: jest.fn(),
     findBy: jest.fn(),
+  };
+
+  const mockUserProfileRepository = {
+    findOne: jest.fn(),
+  };
+
+  const mockEmailService = {
+    sendProjectInvitationEmail: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockStatisticsService = {
+    getProjectStatistics: jest.fn().mockResolvedValue({
+      total: 10,
+      byStatus: {},
+      byPriority: {},
+      averageProgress: 50,
+      totalBudget: 100000,
+      totalActualCost: 50000,
+    }),
+    getOverdueProjects: jest.fn().mockResolvedValue([mockProject]),
+    getUpcomingDeadlines: jest.fn().mockResolvedValue([mockProject]),
+    updateHealthScore: jest.fn().mockResolvedValue(mockProject),
+    getProjectTimeline: jest.fn().mockResolvedValue([]),
   };
 
   beforeEach(async () => {
@@ -77,6 +105,18 @@ describe('ProjectService', () => {
         {
           provide: getRepositoryToken(Partner),
           useValue: mockPartnerRepository,
+        },
+        {
+          provide: getRepositoryToken(UserProfile),
+          useValue: mockUserProfileRepository,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
+        },
+        {
+          provide: ProjectStatisticsService,
+          useValue: mockStatisticsService,
         },
       ],
     }).compile();
@@ -197,7 +237,7 @@ describe('ProjectService', () => {
 
       await service.remove('test-project-uuid');
 
-      expect(mockProjectRepository.remove).toHaveBeenCalledWith(mockProject);
+      expect(mockProjectRepository.softRemove).toHaveBeenCalledWith(mockProject);
     });
   });
 

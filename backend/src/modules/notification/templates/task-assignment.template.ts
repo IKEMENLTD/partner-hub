@@ -18,19 +18,21 @@ export function generateTaskAssignmentEmailHtml(data: TaskAssignmentEmailData): 
       })
     : '未設定';
 
-  const priorityLabel = {
-    low: '低',
-    medium: '中',
-    high: '高',
-    urgent: '緊急',
-  }[task.priority] || task.priority;
+  const priorityLabel =
+    {
+      low: '低',
+      medium: '中',
+      high: '高',
+      urgent: '緊急',
+    }[task.priority] || task.priority;
 
-  const priorityColor = {
-    low: '#28a745',
-    medium: '#ffc107',
-    high: '#fd7e14',
-    urgent: '#dc3545',
-  }[task.priority] || '#6c757d';
+  const priorityColor =
+    {
+      low: '#28a745',
+      medium: '#ffc107',
+      high: '#fd7e14',
+      urgent: '#dc3545',
+    }[task.priority] || '#6c757d';
 
   return `
 <!DOCTYPE html>
@@ -55,9 +57,13 @@ export function generateTaskAssignmentEmailHtml(data: TaskAssignmentEmailData): 
     <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
       <h2 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">${task.title}</h2>
 
-      ${task.description ? `
+      ${
+        task.description
+          ? `
       <p style="color: #555; margin: 0 0 15px 0;">${task.description}</p>
-      ` : ''}
+      `
+          : ''
+      }
 
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
@@ -70,18 +76,26 @@ export function generateTaskAssignmentEmailHtml(data: TaskAssignmentEmailData): 
             <span style="background-color: ${priorityColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${priorityLabel}</span>
           </td>
         </tr>
-        ${task.project ? `
+        ${
+          task.project
+            ? `
         <tr>
           <td style="padding: 8px 0; color: #6c757d;">案件:</td>
           <td style="padding: 8px 0;">${task.project.name}</td>
         </tr>
-        ` : ''}
-        ${assignedBy ? `
+        `
+            : ''
+        }
+        ${
+          assignedBy
+            ? `
         <tr>
           <td style="padding: 8px 0; color: #6c757d;">割当者:</td>
           <td style="padding: 8px 0;">${assignedBy}</td>
         </tr>
-        ` : ''}
+        `
+            : ''
+        }
       </table>
     </div>
 
@@ -109,16 +123,15 @@ export function generateTaskAssignmentEmailHtml(data: TaskAssignmentEmailData): 
 export function generateTaskAssignmentEmailText(data: TaskAssignmentEmailData): string {
   const { task, partner, assignedBy } = data;
   const platformUrl = 'https://partner-hub-frontend.onrender.com';
-  const dueDateStr = task.dueDate
-    ? new Date(task.dueDate).toLocaleDateString('ja-JP')
-    : '未設定';
+  const dueDateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('ja-JP') : '未設定';
 
-  const priorityLabel = {
-    low: '低',
-    medium: '中',
-    high: '高',
-    urgent: '緊急',
-  }[task.priority] || task.priority;
+  const priorityLabel =
+    {
+      low: '低',
+      medium: '中',
+      high: '高',
+      urgent: '緊急',
+    }[task.priority] || task.priority;
 
   return `
 ${partner.name} 様

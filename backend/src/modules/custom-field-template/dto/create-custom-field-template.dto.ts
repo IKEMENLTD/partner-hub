@@ -51,7 +51,10 @@ export class CreateCustomFieldTemplateDto {
   @MaxLength(200)
   name: string;
 
-  @ApiPropertyOptional({ description: '説明', example: '補助金申請案件用のカスタムフィールドセット' })
+  @ApiPropertyOptional({
+    description: '説明',
+    example: '補助金申請案件用のカスタムフィールドセット',
+  })
   @IsOptional()
   @IsString()
   description?: string;

@@ -1,4 +1,12 @@
-import { IsEmail, IsString, MinLength, MaxLength, Validate, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
@@ -11,9 +19,9 @@ export class PasswordStrengthValidator implements ValidatorConstraintInterface {
     if (!password) return false;
 
     const conditions = [
-      /[a-z]/.test(password),  // 小文字
-      /[A-Z]/.test(password),  // 大文字
-      /\d/.test(password),     // 数字
+      /[a-z]/.test(password), // 小文字
+      /[A-Z]/.test(password), // 大文字
+      /\d/.test(password), // 数字
       /[@$!%*?&#^()_+\-=\[\]{}|;:'",.<>?/\\`~]/.test(password), // 特殊文字
     ];
 

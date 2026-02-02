@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EscalationController } from './escalation.controller';
 import { EscalationService } from './escalation.service';
+import { EscalationRuleService } from './services/escalation-rule.service';
+import { EscalationExecutorService } from './services/escalation-executor.service';
 import { EscalationRule } from './entities/escalation-rule.entity';
 import { EscalationLog } from './entities/escalation-log.entity';
 import { Task } from '../task/entities/task.entity';
@@ -15,7 +17,7 @@ import { ReminderModule } from '../reminder/reminder.module';
     ReminderModule,
   ],
   controllers: [EscalationController],
-  providers: [EscalationService],
-  exports: [EscalationService],
+  providers: [EscalationService, EscalationRuleService, EscalationExecutorService],
+  exports: [EscalationService, EscalationRuleService, EscalationExecutorService],
 })
 export class EscalationModule {}

@@ -51,17 +51,25 @@ export function generateProjectInvitationEmailHtml(data: ProjectInvitationEmailD
     <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
       <h2 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">${project.name}</h2>
 
-      ${project.description ? `
+      ${
+        project.description
+          ? `
       <p style="color: #555; margin: 0 0 15px 0;">${project.description}</p>
-      ` : ''}
+      `
+          : ''
+      }
 
       <table style="width: 100%; border-collapse: collapse;">
-        ${role ? `
+        ${
+          role
+            ? `
         <tr>
           <td style="padding: 8px 0; color: #6c757d; width: 100px;">役割:</td>
           <td style="padding: 8px 0; font-weight: bold;">${role}</td>
         </tr>
-        ` : ''}
+        `
+            : ''
+        }
         <tr>
           <td style="padding: 8px 0; color: #6c757d;">開始日:</td>
           <td style="padding: 8px 0;">${startDateStr}</td>
@@ -70,12 +78,16 @@ export function generateProjectInvitationEmailHtml(data: ProjectInvitationEmailD
           <td style="padding: 8px 0; color: #6c757d;">終了予定:</td>
           <td style="padding: 8px 0;">${endDateStr}</td>
         </tr>
-        ${invitedBy ? `
+        ${
+          invitedBy
+            ? `
         <tr>
           <td style="padding: 8px 0; color: #6c757d;">招待者:</td>
           <td style="padding: 8px 0;">${invitedBy}</td>
         </tr>
-        ` : ''}
+        `
+            : ''
+        }
       </table>
     </div>
 

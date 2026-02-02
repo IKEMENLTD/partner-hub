@@ -40,11 +40,17 @@ interface UnreadCountResponse {
   unreadCount: number;
 }
 
+// API wrapper response type
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
 // Helper to unwrap API response
-function unwrapResponse<T>(response: any): T {
+function unwrapResponse<T>(response: T | ApiResponse<T>): T {
   // Handle { success: true, data: {...} } wrapper
   if (response && typeof response === 'object' && 'data' in response && 'success' in response) {
-    return response.data as T;
+    return (response as ApiResponse<T>).data;
   }
   return response as T;
 }
@@ -54,7 +60,7 @@ export function useUnreadReportCount() {
   return useQuery({
     queryKey: ['partnerReports', 'unreadCount'],
     queryFn: async () => {
-      const response = await api.get<any>('/partner-reports/unread-count');
+      const response = await api.get<UnreadCountResponse | ApiResponse<UnreadCountResponse>>('/partner-reports/unread-count');
       const data = unwrapResponse<UnreadCountResponse>(response);
       return data.unreadCount;
     },
@@ -68,7 +74,7 @@ export function useUnreadReports(limit: number = 10) {
   return useQuery({
     queryKey: ['partnerReports', 'unread', limit],
     queryFn: async () => {
-      const response = await api.get<any>(
+      const response = await api.get<PaginatedReportsResponse | ApiResponse<PaginatedReportsResponse>>(
         `/partner-reports?unreadOnly=true&limit=${limit}`
       );
       const data = unwrapResponse<PaginatedReportsResponse>(response);
@@ -84,7 +90,7 @@ export function usePartnerReports(partnerId: string | undefined, limit: number =
   return useQuery({
     queryKey: ['partnerReports', 'byPartner', partnerId, limit],
     queryFn: async () => {
-      const response = await api.get<any>(
+      const response = await api.get<PaginatedReportsResponse | ApiResponse<PaginatedReportsResponse>>(
         `/partner-reports?partnerId=${partnerId}&limit=${limit}`
       );
       const data = unwrapResponse<PaginatedReportsResponse>(response);

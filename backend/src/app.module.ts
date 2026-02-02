@@ -35,6 +35,7 @@ import { CustomFieldTemplateModule } from './modules/custom-field-template/custo
 import { PartnerReportModule } from './modules/partner-report/partner-report.module';
 import { SearchModule } from './modules/search/search.module';
 import { ReportModule } from './modules/report/report.module';
+import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
 
 @Module({
   imports: [
@@ -127,6 +128,7 @@ import { ReportModule } from './modules/report/report.module';
     PartnerReportModule,
     SearchModule,
     ReportModule,
+    SystemSettingsModule,
   ],
   providers: [
     // Global Exception Filter

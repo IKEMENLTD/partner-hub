@@ -41,12 +41,16 @@ export function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
           <td style="padding: 8px 0; color: #6c757d;">メール:</td>
           <td style="padding: 8px 0;">${partner.email}</td>
         </tr>
-        ${partner.companyName ? `
+        ${
+          partner.companyName
+            ? `
         <tr>
           <td style="padding: 8px 0; color: #6c757d;">会社名:</td>
           <td style="padding: 8px 0;">${partner.companyName}</td>
         </tr>
-        ` : ''}
+        `
+            : ''
+        }
       </table>
     </div>
 

@@ -17,10 +17,10 @@ describe('AuthService', () => {
     lastName: 'User',
     role: UserRole.MEMBER,
     isActive: true,
-    avatarUrl: null,
+    avatarUrl: undefined,
     createdAt: new Date(),
     updatedAt: new Date(),
-    lastLoginAt: null,
+    lastLoginAt: undefined,
   };
 
   const mockProfileRepository = {

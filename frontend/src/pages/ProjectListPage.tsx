@@ -199,7 +199,7 @@ export function ProjectListPage() {
                 onChange={(e) =>
                   setFilters({
                     ...filters,
-                    status: e.target.value ? [e.target.value as any] : undefined,
+                    status: e.target.value ? [e.target.value as Project['status']] : undefined,
                   })
                 }
               />
@@ -212,7 +212,7 @@ export function ProjectListPage() {
                 onChange={(e) =>
                   setFilters({
                     ...filters,
-                    priority: e.target.value ? [e.target.value as any] : undefined,
+                    priority: e.target.value ? [e.target.value as Project['priority']] : undefined,
                   })
                 }
               />

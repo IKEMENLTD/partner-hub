@@ -93,9 +93,11 @@ export class StakeholderService {
       const partner = await this.partnerRepository.findOne({ where: { id: partnerId } });
       if (partner) {
         const roleDescription = stakeholderData.roleDescription || 'プロジェクト関係者';
-        this.emailService.sendStakeholderAddedEmail(project, partner, roleDescription).catch((error) => {
-          this.logger.error(`Failed to send stakeholder added email to ${partner.email}`, error);
-        });
+        this.emailService
+          .sendStakeholderAddedEmail(project, partner, roleDescription)
+          .catch((error) => {
+            this.logger.error(`Failed to send stakeholder added email to ${partner.email}`, error);
+          });
       }
     }
 

@@ -25,7 +25,10 @@ export class AddOrganizationToCustomFieldTemplates1706400001000 implements Migra
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropIndex('custom_field_templates', 'idx_custom_field_templates_organization_id');
+    await queryRunner.dropIndex(
+      'custom_field_templates',
+      'idx_custom_field_templates_organization_id',
+    );
     await queryRunner.dropColumn('custom_field_templates', 'organization_id');
   }
 }

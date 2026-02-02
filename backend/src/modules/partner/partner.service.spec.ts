@@ -1,8 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { PartnerService } from './partner.service';
 import { Partner } from './entities/partner.entity';
+import { Project } from '../project/entities/project.entity';
+import { UserProfile } from '../auth/entities/user-profile.entity';
+import { EmailService } from '../notification/services/email.service';
+import { PartnerInvitationService } from './services/partner-invitation.service';
+import { PartnerReportTokenService } from '../partner-report/services/partner-report-token.service';
 import { PartnerStatus, PartnerType } from './enums/partner-status.enum';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
@@ -33,6 +39,7 @@ describe('PartnerService', () => {
     findOne: jest.fn(),
     find: jest.fn(),
     remove: jest.fn(),
+    softRemove: jest.fn(),
     count: jest.fn(),
     createQueryBuilder: jest.fn(() => ({
       andWhere: jest.fn().mockReturnThis(),
@@ -47,6 +54,36 @@ describe('PartnerService', () => {
     })),
   };
 
+  const mockProjectRepository = {
+    find: jest.fn().mockResolvedValue([]),
+    findOne: jest.fn(),
+  };
+
+  const mockUserProfileRepository = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockEmailService = {
+    sendPartnerWelcomeEmail: jest.fn().mockResolvedValue(undefined),
+    sendPartnerInvitationEmail: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockInvitationService = {
+    createInvitation: jest.fn().mockResolvedValue({ token: 'test-token' }),
+    validateInvitation: jest.fn().mockResolvedValue(true),
+  };
+
+  const mockReportTokenService = {
+    generateToken: jest.fn().mockResolvedValue('test-report-token'),
+    validateToken: jest.fn().mockResolvedValue(true),
+  };
+
+  const mockConfigService = {
+    get: jest.fn().mockReturnValue('http://localhost:3000'),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -54,6 +91,30 @@ describe('PartnerService', () => {
         {
           provide: getRepositoryToken(Partner),
           useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Project),
+          useValue: mockProjectRepository,
+        },
+        {
+          provide: getRepositoryToken(UserProfile),
+          useValue: mockUserProfileRepository,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
+        },
+        {
+          provide: PartnerInvitationService,
+          useValue: mockInvitationService,
+        },
+        {
+          provide: PartnerReportTokenService,
+          useValue: mockReportTokenService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();
@@ -155,7 +216,7 @@ describe('PartnerService', () => {
 
       await service.remove('test-partner-uuid');
 
-      expect(mockRepository.remove).toHaveBeenCalledWith(mockPartner);
+      expect(mockRepository.softRemove).toHaveBeenCalledWith(mockPartner);
     });
   });
 

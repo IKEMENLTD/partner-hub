@@ -81,7 +81,8 @@ export class CreateTaskDto {
     // Handle empty strings, null, undefined -> empty array
     if (!value || value === '') return [];
     // If already an array, filter out empty strings
-    if (Array.isArray(value)) return value.filter((v: unknown) => typeof v === 'string' && v.trim() !== '');
+    if (Array.isArray(value))
+      return value.filter((v: unknown) => typeof v === 'string' && v.trim() !== '');
     // If a non-empty string, wrap in array
     if (typeof value === 'string' && value.trim() !== '') return [value.trim()];
     return [];

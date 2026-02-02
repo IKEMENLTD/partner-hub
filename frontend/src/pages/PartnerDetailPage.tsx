@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -70,7 +70,7 @@ export function PartnerDetailPage() {
   const [tokenError, setTokenError] = useState<string | null>(null);
 
   // Fetch report token
-  const fetchReportToken = async () => {
+  const fetchReportToken = useCallback(async () => {
     if (!id) return;
     try {
       const response = await api.get<{ success: boolean; data: ReportTokenInfo }>(`/partners/${id}/report-token`);
@@ -79,14 +79,15 @@ export function PartnerDetailPage() {
       const tokenData = response.data || response;
       setReportToken(tokenData as ReportTokenInfo);
       setTokenError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch report token:', err);
       // Don't show error for 404 (no token yet)
-      if (err?.status !== 404) {
+      const errorStatus = (err as { status?: number })?.status;
+      if (errorStatus !== 404) {
         setTokenError('トークンの取得に失敗しました');
       }
     }
-  };
+  }, [id]);
 
   // Generate report token
   const handleGenerateToken = async (regenerate: boolean = false) => {
@@ -102,9 +103,10 @@ export function PartnerDetailPage() {
       // Handle wrapped response { success: true, data: {...} }
       const tokenData = response.data || response;
       setReportToken(tokenData as ReportTokenInfo);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to generate token:', err);
-      setTokenError(err?.message || 'トークンの生成に失敗しました');
+      const errorMessage = (err as { message?: string })?.message;
+      setTokenError(errorMessage || 'トークンの生成に失敗しました');
     } finally {
       setIsGeneratingToken(false);
     }
@@ -124,7 +126,7 @@ export function PartnerDetailPage() {
     if (id) {
       fetchReportToken();
     }
-  }, [id]);
+  }, [id, fetchReportToken]);
 
   if (isLoading) {
     return <PageLoading />;

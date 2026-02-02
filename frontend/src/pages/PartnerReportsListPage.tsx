@@ -60,9 +60,14 @@ interface PaginatedReportsResponse {
   };
 }
 
-function unwrapResponse<T>(response: any): T {
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
+function unwrapResponse<T>(response: T | ApiResponse<T>): T {
   if (response && typeof response === 'object' && 'data' in response && 'success' in response) {
-    return response.data as T;
+    return (response as ApiResponse<T>).data;
   }
   return response as T;
 }
@@ -83,7 +88,7 @@ export function PartnerReportsListPage() {
       if (filter === 'unread') {
         params.append('unreadOnly', 'true');
       }
-      const response = await api.get<any>(`/partner-reports?${params.toString()}`);
+      const response = await api.get<PaginatedReportsResponse | ApiResponse<PaginatedReportsResponse>>(`/partner-reports?${params.toString()}`);
       console.log('Reports list response:', response);
       return unwrapResponse<PaginatedReportsResponse>(response);
     },

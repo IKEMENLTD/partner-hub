@@ -119,7 +119,7 @@ export function ResetPasswordPage() {
         /[a-z]/.test(formData.newPassword), // 小文字
         /[A-Z]/.test(formData.newPassword), // 大文字
         /\d/.test(formData.newPassword),    // 数字
-        /[@$!%*?&#^()_+\-=\[\]{}|;:'",.<>?/\\`~]/.test(formData.newPassword) // 特殊文字
+        /[@$!%*?&#^()_+\-=[\]{}|;:'",.<>?/\\`~]/.test(formData.newPassword) // 特殊文字
       ];
       const conditionsMet = conditions.filter(Boolean).length;
       if (conditionsMet < 2) {

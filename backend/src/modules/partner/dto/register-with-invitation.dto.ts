@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MinLength, MaxLength, Validate, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  MaxLength,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
+} from 'class-validator';
 
 /**
  * カスタムパスワードバリデータ
@@ -11,9 +20,9 @@ export class PasswordStrengthValidator implements ValidatorConstraintInterface {
     if (!password) return false;
 
     const conditions = [
-      /[a-z]/.test(password),  // 小文字
-      /[A-Z]/.test(password),  // 大文字
-      /\d/.test(password),     // 数字
+      /[a-z]/.test(password), // 小文字
+      /[A-Z]/.test(password), // 大文字
+      /\d/.test(password), // 数字
       /[@$!%*?&#^()_+\-=\[\]{}|;:'",.<>?/\\`~]/.test(password), // 特殊文字
     ];
 
@@ -84,7 +93,10 @@ export class InvitationRegisterResponseDto {
     email: string;
   };
 
-  @ApiProperty({ description: '認証セッション（セッション作成に失敗した場合は未定義）', required: false })
+  @ApiProperty({
+    description: '認証セッション（セッション作成に失敗した場合は未定義）',
+    required: false,
+  })
   session?: {
     accessToken: string;
     refreshToken: string;

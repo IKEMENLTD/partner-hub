@@ -38,10 +38,7 @@ export class ReportController {
   }
 
   @Post('configs')
-  async createConfig(
-    @Body() dto: CreateReportConfigDto,
-    @CurrentUser() user: UserProfile,
-  ) {
+  async createConfig(@Body() dto: CreateReportConfigDto, @CurrentUser() user: UserProfile) {
     return this.reportService.createConfig(dto, user.id);
   }
 
@@ -51,10 +48,7 @@ export class ReportController {
   }
 
   @Put('configs/:id')
-  async updateConfig(
-    @Param('id') id: string,
-    @Body() dto: UpdateReportConfigDto,
-  ) {
+  async updateConfig(@Param('id') id: string, @Body() dto: UpdateReportConfigDto) {
     return this.reportService.updateConfig(id, dto);
   }
 
@@ -77,10 +71,7 @@ export class ReportController {
   }
 
   @Post('generate')
-  async generateReport(
-    @Body() dto: GenerateReportDto,
-    @CurrentUser() user: UserProfile,
-  ) {
+  async generateReport(@Body() dto: GenerateReportDto, @CurrentUser() user: UserProfile) {
     // If a config ID is provided, use that config to generate
     if (dto.reportConfigId) {
       const config = await this.reportService.findConfigById(dto.reportConfigId);

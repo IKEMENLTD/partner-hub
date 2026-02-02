@@ -10,13 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { CustomFieldTemplateService } from './custom-field-template.service';
 import { CreateCustomFieldTemplateDto, QueryCustomFieldTemplateDto } from './dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -32,20 +26,14 @@ export class CustomFieldTemplateController {
   @ApiOperation({ summary: 'カスタムフィールドテンプレートを作成' })
   @ApiResponse({ status: 201, description: 'テンプレートが作成されました' })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
-  async create(
-    @Body() createDto: CreateCustomFieldTemplateDto,
-    @CurrentUser() user: UserProfile,
-  ) {
+  async create(@Body() createDto: CreateCustomFieldTemplateDto, @CurrentUser() user: UserProfile) {
     return this.templateService.create(createDto, user.id, user.organizationId);
   }
 
   @Get()
   @ApiOperation({ summary: 'カスタムフィールドテンプレート一覧を取得' })
   @ApiResponse({ status: 200, description: 'テンプレート一覧' })
-  async findAll(
-    @Query() queryDto: QueryCustomFieldTemplateDto,
-    @CurrentUser() user: UserProfile,
-  ) {
+  async findAll(@Query() queryDto: QueryCustomFieldTemplateDto, @CurrentUser() user: UserProfile) {
     return this.templateService.findAll(queryDto, user.organizationId);
   }
 

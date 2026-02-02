@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { InAppNotificationService } from '../services/in-app-notification.service';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
@@ -16,9 +7,7 @@ import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 @Controller('notifications')
 @ApiBearerAuth()
 export class InAppNotificationController {
-  constructor(
-    private readonly notificationService: InAppNotificationService,
-  ) {}
+  constructor(private readonly notificationService: InAppNotificationService) {}
 
   @Get()
   async getNotifications(
@@ -42,10 +31,7 @@ export class InAppNotificationController {
 
   @Post(':id/read')
   @HttpCode(HttpStatus.OK)
-  async markAsRead(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async markAsRead(@Param('id') id: string, @CurrentUser('id') userId: string) {
     const success = await this.notificationService.markAsRead(id, userId);
     return { success };
   }
@@ -58,10 +44,7 @@ export class InAppNotificationController {
   }
 
   @Delete(':id')
-  async deleteNotification(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async deleteNotification(@Param('id') id: string, @CurrentUser('id') userId: string) {
     const success = await this.notificationService.delete(id, userId);
     return { success };
   }

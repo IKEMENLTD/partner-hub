@@ -520,19 +520,37 @@ export class CreateOrganizations1706400002000 implements MigrationInterface {
     await queryRunner.query(`DROP POLICY IF EXISTS "profiles_select_same_org" ON public.profiles`);
 
     // organization_members のRLSポリシー削除
-    await queryRunner.query(`DROP POLICY IF EXISTS "organization_members_delete" ON public.organization_members`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "organization_members_update" ON public.organization_members`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "organization_members_insert" ON public.organization_members`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "organization_members_select" ON public.organization_members`);
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "organization_members_delete" ON public.organization_members`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "organization_members_update" ON public.organization_members`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "organization_members_insert" ON public.organization_members`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "organization_members_select" ON public.organization_members`,
+    );
 
     // organizations のRLSポリシー削除
-    await queryRunner.query(`DROP POLICY IF EXISTS "organizations_insert_authenticated" ON public.organizations`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "organizations_update_admin" ON public.organizations`);
-    await queryRunner.query(`DROP POLICY IF EXISTS "organizations_select_member" ON public.organizations`);
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "organizations_insert_authenticated" ON public.organizations`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "organizations_update_admin" ON public.organizations`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS "organizations_select_member" ON public.organizations`,
+    );
 
     // トリガーの削除
-    await queryRunner.query(`DROP TRIGGER IF EXISTS update_organization_members_updated_at ON public.organization_members`);
-    await queryRunner.query(`DROP TRIGGER IF EXISTS update_organizations_updated_at ON public.organizations`);
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS update_organization_members_updated_at ON public.organization_members`,
+    );
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS update_organizations_updated_at ON public.organizations`,
+    );
 
     // ヘルパー関数の削除
     await queryRunner.query(`DROP FUNCTION IF EXISTS public.is_org_admin(UUID)`);
@@ -551,7 +569,10 @@ export class CreateOrganizations1706400002000 implements MigrationInterface {
 
     // organization_members テーブルの削除
     await queryRunner.dropForeignKey('organization_members', 'fk_organization_members_user');
-    await queryRunner.dropForeignKey('organization_members', 'fk_organization_members_organization');
+    await queryRunner.dropForeignKey(
+      'organization_members',
+      'fk_organization_members_organization',
+    );
     await queryRunner.dropTable('organization_members');
 
     // organizations テーブルの削除

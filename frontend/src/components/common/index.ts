@@ -20,5 +20,6 @@ export {
 } from './Table';
 export { Pagination, PaginationInfo } from './Pagination';
 export { HealthScoreBadge, HealthScoreDetail } from './HealthScoreBadge';
-export { ToastProvider, useToast, toast } from './Toast';
-export type { ToastMessage, ToastType } from './Toast';
+export { ToastProvider } from './Toast';
+export { useToast } from './ToastContext';
+export type { ToastMessage, ToastType } from './ToastContext';

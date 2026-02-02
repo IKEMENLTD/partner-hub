@@ -136,7 +136,7 @@ export function RegisterPage() {
         /[a-z]/.test(formData.password), // 小文字
         /[A-Z]/.test(formData.password), // 大文字
         /\d/.test(formData.password),    // 数字
-        /[@$!%*?&#^()_+\-=\[\]{}|;:'",.<>?/\\`~]/.test(formData.password) // 特殊文字
+        /[@$!%*?&#^()_+\-=[\]{}|;:'",.<>?/\\`~]/.test(formData.password) // 特殊文字
       ];
       const conditionsMet = conditions.filter(Boolean).length;
       if (conditionsMet < 2) {

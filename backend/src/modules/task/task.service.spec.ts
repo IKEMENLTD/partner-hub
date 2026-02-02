@@ -3,6 +3,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskService } from './task.service';
 import { Task } from './entities/task.entity';
+import { Partner } from '../partner/entities/partner.entity';
+import { HealthScoreService } from '../project/services/health-score.service';
+import { EmailService } from '../notification/services/email.service';
 import { TaskStatus, TaskPriority, TaskType } from './enums/task-status.enum';
 import { NotFoundException } from '@nestjs/common';
 
@@ -32,6 +35,7 @@ describe('TaskService', () => {
     findOne: jest.fn(),
     find: jest.fn(),
     remove: jest.fn(),
+    softRemove: jest.fn(),
     count: jest.fn(),
     createQueryBuilder: jest.fn(() => ({
       leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -50,6 +54,21 @@ describe('TaskService', () => {
     })),
   };
 
+  const mockPartnerRepository = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+  };
+
+  const mockHealthScoreService = {
+    calculateHealthScore: jest.fn().mockReturnValue(80),
+    updateProjectHealthScore: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockEmailService = {
+    sendTaskAssignmentEmail: jest.fn().mockResolvedValue(undefined),
+    sendTaskDueSoonEmail: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,6 +76,18 @@ describe('TaskService', () => {
         {
           provide: getRepositoryToken(Task),
           useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Partner),
+          useValue: mockPartnerRepository,
+        },
+        {
+          provide: HealthScoreService,
+          useValue: mockHealthScoreService,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();
@@ -186,7 +217,7 @@ describe('TaskService', () => {
 
       await service.remove('test-task-uuid');
 
-      expect(mockRepository.remove).toHaveBeenCalledWith(mockTask);
+      expect(mockRepository.softRemove).toHaveBeenCalledWith(mockTask);
     });
   });
 

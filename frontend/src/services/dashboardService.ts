@@ -27,14 +27,14 @@ export const dashboardService = {
     return extractData(response);
   },
 
-  getMyToday: async (): Promise<any> => {
-    const response = await api.get<{ success: boolean; data: any }>('/dashboard/my-today');
+  getMyToday: async (): Promise<Record<string, unknown>> => {
+    const response = await api.get<{ success: boolean; data: Record<string, unknown> }>('/dashboard/my-today');
     return extractData(response);
   },
 
-  getManagerDashboard: async (period?: string): Promise<any> => {
+  getManagerDashboard: async (period?: string): Promise<Record<string, unknown>> => {
     const query = period ? `?period=${period}` : '';
-    const response = await api.get<{ success: boolean; data: any }>(`/dashboard/manager${query}`);
+    const response = await api.get<{ success: boolean; data: Record<string, unknown> }>(`/dashboard/manager${query}`);
     return extractData(response);
   },
 

@@ -10,6 +10,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { PartnerStatus, PartnerType } from '../enums/partner-status.enum';
+import { PreferredChannel } from '../enums/preferred-channel.enum';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
 
 @Entity('partners')
@@ -25,6 +26,30 @@ export class Partner {
 
   @Column({ nullable: true })
   phone: string;
+
+  // 連絡先設定（初回セットアップで設定）
+  @Column({
+    name: 'preferred_channel',
+    type: 'enum',
+    enum: PreferredChannel,
+    default: PreferredChannel.EMAIL,
+  })
+  preferredChannel: PreferredChannel;
+
+  @Column({ name: 'line_user_id', nullable: true })
+  lineUserId: string;
+
+  @Column({ name: 'sms_phone_number', nullable: true })
+  smsPhoneNumber: string;
+
+  @Column({ name: 'contact_setup_completed', default: false })
+  contactSetupCompleted: boolean;
+
+  @Column({ name: 'contact_setup_token', nullable: true })
+  contactSetupToken: string | null;
+
+  @Column({ name: 'contact_setup_token_expires_at', type: 'timestamptz', nullable: true })
+  contactSetupTokenExpiresAt: Date | null;
 
   @Column({ name: 'company_name', nullable: true })
   companyName: string;

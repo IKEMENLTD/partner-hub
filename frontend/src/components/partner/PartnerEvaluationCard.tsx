@@ -462,7 +462,7 @@ export function PartnerEvaluationCard({
     if (summary.overallScore >= 4) return 'text-green-500';
     if (summary.overallScore >= 3) return 'text-yellow-500';
     return 'text-red-500';
-  }, [summary?.overallScore]);
+  }, [summary]);
 
   if (isLoading) {
     return (

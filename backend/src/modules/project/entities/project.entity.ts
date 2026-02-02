@@ -108,6 +108,10 @@ export class Project {
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 
+  // 案件専用のSlack通知先（設定されていない場合はシステムデフォルトを使用）
+  @Column({ name: 'custom_slack_webhook_url', nullable: true })
+  customSlackWebhookUrl: string;
+
   @Column({ name: 'created_by', nullable: true })
   createdById: string;
 

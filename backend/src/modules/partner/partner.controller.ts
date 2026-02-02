@@ -12,7 +12,14 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { PartnerService } from './partner.service';
 import { PartnerInvitationService } from './services/partner-invitation.service';
 import {
@@ -156,10 +163,7 @@ export class PartnerController {
   @ApiResponse({ status: 201, description: 'Invitation sent successfully' })
   @ApiResponse({ status: 404, description: 'Partner not found' })
   @ApiResponse({ status: 409, description: 'Partner already has a linked account' })
-  async sendInvitation(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async sendInvitation(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
     const invitation = await this.partnerInvitationService.sendInvitation(id, userId);
     return {
       message: 'Invitation sent successfully',
@@ -214,7 +218,8 @@ export class PartnerController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Register new user via invitation (skips email verification)',
-    description: 'Creates a new user account with email verification skipped, links to partner, and returns a login session.',
+    description:
+      'Creates a new user account with email verification skipped, links to partner, and returns a login session.',
   })
   @ApiResponse({
     status: 201,

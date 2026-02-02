@@ -6,7 +6,9 @@ import { Task } from '../task/entities/task.entity';
 import { Partner } from '../partner/entities/partner.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { Reminder } from '../reminder/entities/reminder.entity';
-import { HealthScoreService } from '../project/services/health-score.service';
+import { DashboardOverviewService } from './services/dashboard-overview.service';
+import { DashboardActivityService } from './services/dashboard-activity.service';
+import { DashboardReportService } from './services/dashboard-report.service';
 
 describe('DashboardService', () => {
   let service: DashboardService;
@@ -38,15 +40,46 @@ describe('DashboardService', () => {
     update: jest.fn().mockResolvedValue({ affected: 1 }),
   });
 
-  const mockHealthScoreService = {
+  const mockOverviewService = {
+    getOverview: jest.fn().mockResolvedValue({
+      totalProjects: 10,
+      activeProjects: 5,
+      completedProjects: 3,
+      totalTasks: 50,
+      completedTasks: 30,
+      pendingTasks: 15,
+      overdueTasks: 5,
+      totalPartners: 8,
+      activePartners: 6,
+    }),
+    getProjectSummaries: jest.fn().mockResolvedValue([]),
+    getPartnerPerformance: jest.fn().mockResolvedValue([]),
+    getUpcomingDeadlines: jest.fn().mockResolvedValue({ projects: [], tasks: [] }),
+    getOverdueItems: jest.fn().mockResolvedValue({ projects: [], tasks: [] }),
+    getTaskDistribution: jest.fn().mockResolvedValue({
+      byStatus: {},
+      byPriority: {},
+      byType: {},
+    }),
+    getProjectProgress: jest.fn().mockResolvedValue({
+      byStatus: { in_progress: 5, completed: 3, on_hold: 2 },
+      averageProgress: 65,
+      onTrack: 5,
+      atRisk: 2,
+      delayed: 1,
+      healthScoreStats: {
+        averageScore: 75,
+        scoreDistribution: { excellent: 2, good: 3, fair: 1, poor: 0 },
+        projectsAtRisk: 1,
+        totalProjects: 6,
+        averageOnTimeRate: 80,
+        averageCompletionRate: 70,
+        averageBudgetHealth: 85,
+      },
+    }),
     getHealthScoreStatistics: jest.fn().mockResolvedValue({
       averageScore: 75,
-      scoreDistribution: {
-        excellent: 2,
-        good: 3,
-        fair: 1,
-        poor: 0,
-      },
+      scoreDistribution: { excellent: 2, good: 3, fair: 1, poor: 0 },
       projectsAtRisk: 1,
       totalProjects: 6,
       averageOnTimeRate: 80,
@@ -54,6 +87,16 @@ describe('DashboardService', () => {
       averageBudgetHealth: 85,
     }),
     getAllProjectsHealthScores: jest.fn().mockResolvedValue([]),
+  };
+
+  const mockActivityService = {
+    getRecentActivity: jest.fn().mockResolvedValue([]),
+    getActivityTimeline: jest.fn().mockResolvedValue([]),
+  };
+
+  const mockReportService = {
+    generateReport: jest.fn().mockResolvedValue({ success: true }),
+    getReportHistory: jest.fn().mockResolvedValue([]),
   };
 
   beforeEach(async () => {
@@ -81,8 +124,16 @@ describe('DashboardService', () => {
           useValue: createMockRepository(),
         },
         {
-          provide: HealthScoreService,
-          useValue: mockHealthScoreService,
+          provide: DashboardOverviewService,
+          useValue: mockOverviewService,
+        },
+        {
+          provide: DashboardActivityService,
+          useValue: mockActivityService,
+        },
+        {
+          provide: DashboardReportService,
+          useValue: mockReportService,
         },
       ],
     }).compile();

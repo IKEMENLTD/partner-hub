@@ -96,7 +96,7 @@ export function ProjectCreatePage() {
         budget: projectData.budget,
         ownerId: projectData.ownerId,
         managerId: projectData.managerId,
-        partnerIds: projectData.partners?.map((p: any) => p.id) || [],
+        partnerIds: projectData.partners?.map((p: { id: string }) => p.id) || [],
         tags: Array.isArray(projectData.tags) ? projectData.tags : [],
       });
 

@@ -6,3 +6,4 @@ export * from './create-partner-evaluation.dto';
 export * from './query-partner-evaluation.dto';
 export * from './accept-invitation.dto';
 export * from './register-with-invitation.dto';
+export * from './partner-contact-setup.dto';

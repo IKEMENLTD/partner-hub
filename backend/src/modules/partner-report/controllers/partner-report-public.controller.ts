@@ -162,7 +162,8 @@ export class PartnerReportPublicController {
             ? displayContent.substring(0, 100) + (displayContent.length > 100 ? '...' : '')
             : null,
           weeklyAccomplishments: weeklyAccomplishments
-            ? weeklyAccomplishments.substring(0, 100) + (weeklyAccomplishments.length > 100 ? '...' : '')
+            ? weeklyAccomplishments.substring(0, 100) +
+              (weeklyAccomplishments.length > 100 ? '...' : '')
             : null,
           projectName: r.project?.name || null,
           createdAt: r.createdAt,
@@ -258,15 +259,10 @@ export class PartnerReportPublicController {
       });
     }
 
-    const tasks = await tasksQuery
-      .orderBy('task.dueDate', 'ASC', 'NULLS LAST')
-      .getMany();
+    const tasks = await tasksQuery.orderBy('task.dueDate', 'ASC', 'NULLS LAST').getMany();
 
     // 直近の報告を取得
-    const recentReports = await this.reportService.getPartnerReportHistory(
-      partner.id,
-      5,
-    );
+    const recentReports = await this.reportService.getPartnerReportHistory(partner.id, 5);
 
     // 統計情報を計算
     const now = new Date();
@@ -276,10 +272,7 @@ export class PartnerReportPublicController {
       inProgress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
       todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
       overdue: tasks.filter(
-        (t) =>
-          t.dueDate &&
-          new Date(t.dueDate) < now &&
-          t.status !== TaskStatus.COMPLETED,
+        (t) => t.dueDate && new Date(t.dueDate) < now && t.status !== TaskStatus.COMPLETED,
       ).length,
     };
 

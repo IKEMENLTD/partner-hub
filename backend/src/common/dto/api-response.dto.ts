@@ -13,7 +13,7 @@ export class ApiResponseDto<T> {
   @ApiPropertyOptional({ description: 'Error details' })
   error?: {
     code: string;
-    details?: any;
+    details?: Record<string, unknown> | string | string[];
   };
 
   @ApiProperty({ description: 'Response timestamp' })
@@ -32,7 +32,11 @@ export class ApiResponseDto<T> {
     });
   }
 
-  static error<T>(message: string, code: string, details?: any): ApiResponseDto<T> {
+  static error<T>(
+    message: string,
+    code: string,
+    details?: Record<string, unknown> | string | string[],
+  ): ApiResponseDto<T> {
     return new ApiResponseDto({
       success: false,
       message,

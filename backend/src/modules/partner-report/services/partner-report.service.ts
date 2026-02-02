@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { PartnerReport, ReportSource } from '../entities/partner-report.entity';
@@ -71,10 +67,7 @@ export class PartnerReportService {
   /**
    * Mark pending/overdue report requests as submitted
    */
-  private async markPendingRequestsAsSubmitted(
-    partnerId: string,
-    reportId: string,
-  ): Promise<void> {
+  private async markPendingRequestsAsSubmitted(partnerId: string, reportId: string): Promise<void> {
     // Find pending request
     const pendingRequest = await this.requestRepository.findOne({
       where: {
@@ -115,15 +108,7 @@ export class PartnerReportService {
     queryDto: QueryReportDto,
     userId?: string,
   ): Promise<PaginatedResponseDto<PartnerReport>> {
-    const {
-      page = 1,
-      limit = 20,
-      partnerId,
-      projectId,
-      reportType,
-      source,
-      unreadOnly,
-    } = queryDto;
+    const { page = 1, limit = 20, partnerId, projectId, reportType, source, unreadOnly } = queryDto;
 
     // Build where conditions
     const where: any = {};
@@ -258,10 +243,7 @@ export class PartnerReportService {
   /**
    * パートナーの報告履歴を取得
    */
-  async getPartnerReportHistory(
-    partnerId: string,
-    limit: number = 10,
-  ): Promise<PartnerReport[]> {
+  async getPartnerReportHistory(partnerId: string, limit: number = 10): Promise<PartnerReport[]> {
     return this.reportRepository.find({
       where: { partnerId },
       relations: ['project', 'task'],

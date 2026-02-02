@@ -9,13 +9,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
@@ -39,10 +33,7 @@ export class PartnerReportController {
   @Get()
   @ApiOperation({ summary: '報告一覧を取得' })
   @ApiResponse({ status: 200, description: '報告一覧' })
-  async findAll(
-    @Query() queryDto: QueryReportDto,
-    @CurrentUser('id') userId: string,
-  ) {
+  async findAll(@Query() queryDto: QueryReportDto, @CurrentUser('id') userId: string) {
     return this.reportService.findAll(queryDto, userId);
   }
 
@@ -59,10 +50,7 @@ export class PartnerReportController {
   @ApiParam({ name: 'id', description: '報告ID' })
   @ApiResponse({ status: 200, description: '報告詳細' })
   @ApiResponse({ status: 404, description: '報告が見つかりません' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
     return this.reportService.findOne(id, userId);
   }
 
@@ -70,10 +58,7 @@ export class PartnerReportController {
   @ApiOperation({ summary: '報告を既読にする' })
   @ApiParam({ name: 'id', description: '報告ID' })
   @ApiResponse({ status: 200, description: '既読にしました' })
-  async markAsRead(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async markAsRead(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
     const report = await this.reportService.markAsRead(id, userId);
     return { message: '既読にしました', report };
   }
@@ -81,10 +66,7 @@ export class PartnerReportController {
   @Post('mark-read')
   @ApiOperation({ summary: '複数の報告を既読にする' })
   @ApiResponse({ status: 200, description: '既読にしました' })
-  async markMultipleAsRead(
-    @Body() body: { ids: string[] },
-    @CurrentUser('id') userId: string,
-  ) {
+  async markMultipleAsRead(@Body() body: { ids: string[] }, @CurrentUser('id') userId: string) {
     await this.reportService.markMultipleAsRead(body.ids, userId);
     return { message: `${body.ids.length}件を既読にしました` };
   }

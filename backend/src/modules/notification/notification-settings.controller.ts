@@ -84,9 +84,12 @@ export class NotificationSettingsController {
   @ApiOperation({ summary: 'メール設定状態を確認（デバッグ用）' })
   async getEmailConfig() {
     const isConnected = await this.emailService.verifyConnection();
-    return ApiResponseDto.success({
-      connectionVerified: isConnected,
-      timestamp: new Date().toISOString(),
-    }, 'メール設定状態');
+    return ApiResponseDto.success(
+      {
+        connectionVerified: isConnected,
+        timestamp: new Date().toISOString(),
+      },
+      'メール設定状態',
+    );
   }
 }

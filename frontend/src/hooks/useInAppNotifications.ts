@@ -7,6 +7,12 @@ import type { InAppNotification } from '@/types';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
+interface NotificationsData {
+  notifications: InAppNotification[];
+  total: number;
+  unreadCount: number;
+}
+
 export function useInAppNotifications() {
   const { user, isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
@@ -45,7 +51,7 @@ export function useInAppNotifications() {
 
       const previousData = queryClient.getQueryData(['in-app-notifications']);
 
-      queryClient.setQueryData(['in-app-notifications'], (old: any) => {
+      queryClient.setQueryData(['in-app-notifications'], (old: NotificationsData | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -77,7 +83,7 @@ export function useInAppNotifications() {
 
       const previousData = queryClient.getQueryData(['in-app-notifications']);
 
-      queryClient.setQueryData(['in-app-notifications'], (old: any) => {
+      queryClient.setQueryData(['in-app-notifications'], (old: NotificationsData | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -127,7 +133,7 @@ export function useInAppNotifications() {
 
     socket.on('notification', (notification: InAppNotification) => {
       // Add new notification to the list
-      queryClient.setQueryData(['in-app-notifications'], (old: any) => {
+      queryClient.setQueryData(['in-app-notifications'], (old: NotificationsData | undefined) => {
         if (!old) return old;
         return {
           ...old,

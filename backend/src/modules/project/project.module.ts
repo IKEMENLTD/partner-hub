@@ -5,6 +5,7 @@ import { ProjectService } from './project.service';
 import { StakeholderController } from './stakeholder.controller';
 import { StakeholderService } from './stakeholder.service';
 import { HealthScoreService } from './services/health-score.service';
+import { ProjectStatisticsService } from './services/project-statistics.service';
 import { ProjectAccessGuard } from './guards/project-access.guard';
 import { Project } from './entities/project.entity';
 import { ProjectStakeholder } from './entities/project-stakeholder.entity';
@@ -21,7 +22,19 @@ import { NotificationModule } from '../notification/notification.module';
     NotificationModule,
   ],
   controllers: [ProjectController, StakeholderController],
-  providers: [ProjectService, StakeholderService, HealthScoreService, ProjectAccessGuard],
-  exports: [ProjectService, StakeholderService, HealthScoreService, ProjectAccessGuard],
+  providers: [
+    ProjectService,
+    StakeholderService,
+    HealthScoreService,
+    ProjectStatisticsService,
+    ProjectAccessGuard,
+  ],
+  exports: [
+    ProjectService,
+    StakeholderService,
+    HealthScoreService,
+    ProjectStatisticsService,
+    ProjectAccessGuard,
+  ],
 })
 export class ProjectModule {}

@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ConflictException, Logger, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, In } from 'typeorm';
 import { Partner } from './entities/partner.entity';
@@ -117,7 +124,10 @@ export class PartnerService {
     }
   }
 
-  async findAll(queryDto: QueryPartnerDto, userId?: string): Promise<PaginatedResponseDto<Partner>> {
+  async findAll(
+    queryDto: QueryPartnerDto,
+    userId?: string,
+  ): Promise<PaginatedResponseDto<Partner>> {
     const {
       page = 1,
       limit = 10,
@@ -146,7 +156,9 @@ export class PartnerService {
         // 組織に所属していない一般ユーザーは、自分に紐付いたパートナーのみ表示
         const linkedPartner = await this.partnerRepository.findOne({ where: { userId } });
         if (linkedPartner) {
-          queryBuilder.andWhere('partner.id = :linkedPartnerId', { linkedPartnerId: linkedPartner.id });
+          queryBuilder.andWhere('partner.id = :linkedPartnerId', {
+            linkedPartnerId: linkedPartner.id,
+          });
         } else {
           // 紐付けもない場合は結果なし
           queryBuilder.andWhere('1 = 0');

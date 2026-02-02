@@ -45,10 +45,7 @@ export class InAppNotificationService {
       queryBuilder.andWhere('notification.isRead = false');
     }
 
-    const [notifications, total] = await queryBuilder
-      .skip(offset)
-      .take(limit)
-      .getManyAndCount();
+    const [notifications, total] = await queryBuilder.skip(offset).take(limit).getManyAndCount();
 
     const unreadCount = await this.notificationRepository.count({
       where: { userId, isRead: false },
@@ -64,10 +61,7 @@ export class InAppNotificationService {
   }
 
   async markAsRead(id: string, userId: string): Promise<boolean> {
-    const result = await this.notificationRepository.update(
-      { id, userId },
-      { isRead: true },
-    );
+    const result = await this.notificationRepository.update({ id, userId }, { isRead: true });
     return (result.affected ?? 0) > 0;
   }
 

@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { EmailService } from './services/email.service';
 import { SlackService } from './services/slack.service';
+import { LineService } from './services/line.service';
+import { SmsService } from './services/sms.service';
 import { NotificationService } from './services/notification.service';
 import { DigestService } from './services/digest.service';
 import { NotificationSettingsService } from './services/notification-settings.service';
@@ -35,6 +37,8 @@ import { Reminder } from '../reminder/entities/reminder.entity';
   providers: [
     EmailService,
     SlackService,
+    LineService,
+    SmsService,
     NotificationService,
     DigestService,
     NotificationSettingsService,
@@ -44,6 +48,8 @@ import { Reminder } from '../reminder/entities/reminder.entity';
   exports: [
     EmailService,
     SlackService,
+    LineService,
+    SmsService,
     NotificationService,
     DigestService,
     NotificationSettingsService,

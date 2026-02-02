@@ -23,6 +23,7 @@ export default registerAs(
     fromName: process.env.SMTP_FROM_NAME || 'Partner Collaboration Platform',
     // Enable email sending when SMTP is configured (any environment)
     // Set SMTP_ENABLED=false to force disable
-    enabled: process.env.SMTP_ENABLED !== 'false' && !!process.env.SMTP_HOST && !!process.env.SMTP_PASS,
+    enabled:
+      process.env.SMTP_ENABLED !== 'false' && !!process.env.SMTP_HOST && !!process.env.SMTP_PASS,
   }),
 );

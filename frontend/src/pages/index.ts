@@ -19,5 +19,7 @@ export { ProgressReportPage } from './ProgressReportPage';
 export { PartnerReportPage } from './public/PartnerReportPage';
 export { PartnerDashboardPage } from './public/PartnerDashboardPage';
 export { PartnerPortalPage } from './public/PartnerPortalPage';
+export { PartnerContactSetupPage } from './public/PartnerContactSetupPage';
 export { PartnerReportsListPage } from './PartnerReportsListPage';
 export { ReportsPage } from './ReportsPage';
+export { AdminSettingsPage } from './AdminSettingsPage';

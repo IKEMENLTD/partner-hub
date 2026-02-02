@@ -4,15 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReportService } from './report.service';
 import { EmailService } from '../notification/services/email.service';
-import {
-  ReportConfig,
-  ReportPeriod,
-  ReportStatus,
-} from './entities/report-config.entity';
-import {
-  GeneratedReport,
-  GeneratedReportStatus,
-} from './entities/generated-report.entity';
+import { ReportConfig, ReportPeriod, ReportStatus } from './entities/report-config.entity';
+import { GeneratedReport, GeneratedReportStatus } from './entities/generated-report.entity';
 
 @Injectable()
 export class ReportSchedulerService implements OnModuleInit {
@@ -52,9 +45,7 @@ export class ReportSchedulerService implements OnModuleInit {
         try {
           await this.generateAndSendReport(config);
         } catch (error) {
-          this.logger.error(
-            `Failed to generate report for config ${config.id}: ${error.message}`,
-          );
+          this.logger.error(`Failed to generate report for config ${config.id}: ${error.message}`);
         }
       }
     } catch (error) {
@@ -101,9 +92,7 @@ export class ReportSchedulerService implements OnModuleInit {
         generatedReport.status = GeneratedReportStatus.SENT;
         generatedReport.sentTo = config.recipients;
         generatedReport.sentAt = new Date();
-        this.logger.log(
-          `Report email sent to ${config.recipients.length} recipient(s)`,
-        );
+        this.logger.log(`Report email sent to ${config.recipients.length} recipient(s)`);
       } catch (error) {
         generatedReport.status = GeneratedReportStatus.FAILED;
         generatedReport.errorMessage = error.message;
@@ -124,10 +113,7 @@ export class ReportSchedulerService implements OnModuleInit {
   /**
    * Send report via email
    */
-  private async sendReportEmail(
-    config: ReportConfig,
-    report: GeneratedReport,
-  ): Promise<void> {
+  private async sendReportEmail(config: ReportConfig, report: GeneratedReport): Promise<void> {
     const { reportData } = report;
     const html = this.generateReportEmailHtml(config, report);
     const text = this.generateReportEmailText(config, report);
@@ -143,13 +129,9 @@ export class ReportSchedulerService implements OnModuleInit {
   /**
    * Generate HTML email content
    */
-  private generateReportEmailHtml(
-    config: ReportConfig,
-    report: GeneratedReport,
-  ): string {
+  private generateReportEmailHtml(config: ReportConfig, report: GeneratedReport): string {
     const { reportData } = report;
-    const periodLabel =
-      report.period === ReportPeriod.MONTHLY ? '月次' : '週次';
+    const periodLabel = report.period === ReportPeriod.MONTHLY ? '月次' : '週次';
 
     return `
 <!DOCTYPE html>
@@ -331,13 +313,9 @@ export class ReportSchedulerService implements OnModuleInit {
   /**
    * Generate plain text email content
    */
-  private generateReportEmailText(
-    config: ReportConfig,
-    report: GeneratedReport,
-  ): string {
+  private generateReportEmailText(config: ReportConfig, report: GeneratedReport): string {
     const { reportData } = report;
-    const periodLabel =
-      report.period === ReportPeriod.MONTHLY ? '月次' : '週次';
+    const periodLabel = report.period === ReportPeriod.MONTHLY ? '月次' : '週次';
 
     let text = `
 ${periodLabel}サマリーレポート

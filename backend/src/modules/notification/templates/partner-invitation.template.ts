@@ -38,11 +38,15 @@ export function generatePartnerInvitationEmailHtml(data: PartnerInvitationEmailD
       下のボタンをクリックして新規アカウントを作成してください。
     </p>
 
-    ${invitedBy ? `
+    ${
+      invitedBy
+        ? `
     <p style="font-size: 14px; color: #6c757d;">
       招待者: ${invitedBy}
     </p>
-    ` : ''}
+    `
+        : ''
+    }
 
     <div style="margin: 30px 0; text-align: center;">
       <a href="${invitationUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">
@@ -67,12 +71,16 @@ export function generatePartnerInvitationEmailHtml(data: PartnerInvitationEmailD
           <td style="padding: 8px 0; color: #6c757d;">メール:</td>
           <td style="padding: 8px 0;">${partner.email}</td>
         </tr>
-        ${partner.companyName ? `
+        ${
+          partner.companyName
+            ? `
         <tr>
           <td style="padding: 8px 0; color: #6c757d;">会社名:</td>
           <td style="padding: 8px 0;">${partner.companyName}</td>
         </tr>
-        ` : ''}
+        `
+            : ''
+        }
       </table>
     </div>
 

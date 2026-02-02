@@ -14,10 +14,7 @@ import {
   generateEscalationEmailHtml,
   generateEscalationEmailText,
 } from '../templates/escalation.template';
-import {
-  generateWelcomeEmailHtml,
-  generateWelcomeEmailText,
-} from '../templates/welcome.template';
+import { generateWelcomeEmailHtml, generateWelcomeEmailText } from '../templates/welcome.template';
 import {
   generateTaskAssignmentEmailHtml,
   generateTaskAssignmentEmailText,
@@ -38,6 +35,10 @@ import {
   generateReportUrlEmailHtml,
   generateReportUrlEmailText,
 } from '../templates/report-url.template';
+import {
+  generateContactSetupEmailHtml,
+  generateContactSetupEmailText,
+} from '../templates/contact-setup.template';
 import { Partner } from '../../partner/entities/partner.entity';
 
 export interface SendEmailOptions {
@@ -262,7 +263,9 @@ export class EmailService {
         html,
         text,
       });
-      this.logger.log(`Task assignment email sent to partner: ${partner.email} for task: ${task.id}`);
+      this.logger.log(
+        `Task assignment email sent to partner: ${partner.email} for task: ${task.id}`,
+      );
       return result;
     } catch (error) {
       this.logger.error(`Failed to send task assignment email to ${partner.email}`, error);
@@ -289,7 +292,9 @@ export class EmailService {
         html,
         text,
       });
-      this.logger.log(`Project invitation email sent to partner: ${partner.email} for project: ${project.id}`);
+      this.logger.log(
+        `Project invitation email sent to partner: ${partner.email} for project: ${project.id}`,
+      );
       return result;
     } catch (error) {
       this.logger.error(`Failed to send project invitation email to ${partner.email}`, error);
@@ -316,7 +321,9 @@ export class EmailService {
         html,
         text,
       });
-      this.logger.log(`Stakeholder added email sent to partner: ${partner.email} for project: ${project.id}`);
+      this.logger.log(
+        `Stakeholder added email sent to partner: ${partner.email} for project: ${project.id}`,
+      );
       return result;
     } catch (error) {
       this.logger.error(`Failed to send stakeholder added email to ${partner.email}`, error);
@@ -333,8 +340,18 @@ export class EmailService {
     expiresAt: Date,
     invitedBy?: string,
   ): Promise<boolean> {
-    const html = generatePartnerInvitationEmailHtml({ partner, invitationUrl, expiresAt, invitedBy });
-    const text = generatePartnerInvitationEmailText({ partner, invitationUrl, expiresAt, invitedBy });
+    const html = generatePartnerInvitationEmailHtml({
+      partner,
+      invitationUrl,
+      expiresAt,
+      invitedBy,
+    });
+    const text = generatePartnerInvitationEmailText({
+      partner,
+      invitationUrl,
+      expiresAt,
+      invitedBy,
+    });
 
     try {
       const result = await this.sendEmail({
@@ -369,6 +386,32 @@ export class EmailService {
       return result;
     } catch (error) {
       this.logger.error(`Failed to send report URL email to ${partner.email}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send contact setup email to partner (initial setup for notification preferences)
+   */
+  async sendContactSetupEmail(
+    partner: Partner,
+    setupUrl: string,
+    expiresAt: Date,
+  ): Promise<boolean> {
+    const html = generateContactSetupEmailHtml({ partner, setupUrl, expiresAt });
+    const text = generateContactSetupEmailText({ partner, setupUrl, expiresAt });
+
+    try {
+      const result = await this.sendEmail({
+        to: partner.email,
+        subject: '【Partner Hub】連絡先の登録をお願いします',
+        html,
+        text,
+      });
+      this.logger.log(`Contact setup email sent to partner: ${partner.email}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to send contact setup email to ${partner.email}`, error);
       return false;
     }
   }
