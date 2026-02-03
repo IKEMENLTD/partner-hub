@@ -31,22 +31,52 @@ export class PaginationDto {
   sortOrder?: 'ASC' | 'DESC' = 'DESC';
 }
 
+/**
+ * API仕様書準拠のページネーションレスポンス
+ *
+ * @example
+ * {
+ *   "data": [...],
+ *   "pagination": {
+ *     "total": 150,
+ *     "limit": 20,
+ *     "offset": 0,
+ *     "hasMore": true
+ *   }
+ * }
+ */
 export class PaginatedResponseDto<T> {
   data: T[];
-  meta: {
+  pagination: {
     total: number;
-    page: number;
     limit: number;
-    totalPages: number;
+    offset: number;
+    hasMore: boolean;
   };
 
   constructor(data: T[], total: number, page: number, limit: number) {
+    const offset = (page - 1) * limit;
     this.data = data;
-    this.meta = {
+    this.pagination = {
       total,
-      page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      offset,
+      hasMore: offset + data.length < total,
     };
+  }
+
+  /**
+   * offset/limit ベースで直接構築する場合
+   */
+  static fromOffset<T>(data: T[], total: number, offset: number, limit: number): PaginatedResponseDto<T> {
+    const response = new PaginatedResponseDto<T>([], total, 1, limit);
+    response.data = data;
+    response.pagination = {
+      total,
+      limit,
+      offset,
+      hasMore: offset + data.length < total,
+    };
+    return response;
   }
 }

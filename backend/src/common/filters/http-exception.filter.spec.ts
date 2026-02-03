@@ -59,7 +59,7 @@ describe('HttpExceptionFilter', () => {
       );
     });
 
-    it('should handle HttpException with object response', () => {
+    it('should handle HttpException with object response (validation errors)', () => {
       const exception = new BadRequestException({
         message: ['field1 is required', 'field2 must be a string'],
         error: 'Bad Request',
@@ -72,10 +72,11 @@ describe('HttpExceptionFilter', () => {
         expect.objectContaining({
           success: false,
           error: expect.objectContaining({
-            code: 'VALIDATION_001',
-            details: expect.objectContaining({
-              validationErrors: ['field1 is required', 'field2 must be a string'],
-            }),
+            code: 'VALIDATION_ERROR',
+            details: [
+              { field: 'field1', message: 'field1 is required' },
+              { field: 'field2', message: 'field2 must be a string' },
+            ],
           }),
         }),
       );
@@ -135,9 +136,9 @@ describe('HttpExceptionFilter', () => {
         expect.objectContaining({
           error: expect.objectContaining({
             code: 'VALIDATION_001',
-            details: expect.objectContaining({
-              fieldErrors,
-            }),
+            details: [
+              { field: 'email', message: 'email must be valid' },
+            ],
           }),
         }),
       );

@@ -10,13 +10,18 @@ vi.mock('./api', () => ({
     patch: vi.fn(),
     delete: vi.fn(),
   },
-  transformPaginatedResponse: vi.fn((response) => ({
-    data: response.data.data,
-    total: response.data.meta.total,
-    page: response.data.meta.page,
-    pageSize: response.data.meta.limit,
-    totalPages: response.data.meta.totalPages,
-  })),
+  transformPaginatedResponse: vi.fn((response) => {
+    const { pagination } = response.data;
+    const page = Math.floor(pagination.offset / pagination.limit) + 1;
+    const totalPages = Math.ceil(pagination.total / pagination.limit);
+    return {
+      data: response.data.data,
+      total: pagination.total,
+      page,
+      pageSize: pagination.limit,
+      totalPages,
+    };
+  }),
   extractData: vi.fn((response) => response.data),
 }));
 
@@ -38,7 +43,7 @@ describe('partnerService', () => {
             { id: '1', name: 'Partner 1', email: 'p1@example.com', status: 'active' },
             { id: '2', name: 'Partner 2', email: 'p2@example.com', status: 'pending' },
           ],
-          meta: { total: 2, page: 1, limit: 10, totalPages: 1 },
+          pagination: { total: 2, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -55,7 +60,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [{ id: '1', name: 'Partner 1' }],
-          meta: { total: 50, page: 2, limit: 10, totalPages: 5 },
+          pagination: { total: 50, limit: 10, offset: 10, hasMore: true },
         },
       };
 
@@ -73,7 +78,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -89,7 +94,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -105,7 +110,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -121,7 +126,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -137,7 +142,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -153,7 +158,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -169,7 +174,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -185,7 +190,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -205,7 +210,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -571,7 +576,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -600,7 +605,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 
@@ -661,7 +666,7 @@ describe('partnerService', () => {
         success: true,
         data: {
           data: [],
-          meta: { total: 0, page: 0, limit: 10, totalPages: 0 },
+          pagination: { total: 0, limit: 10, offset: 0, hasMore: false },
         },
       };
 

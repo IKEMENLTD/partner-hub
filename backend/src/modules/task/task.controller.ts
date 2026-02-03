@@ -45,6 +45,7 @@ export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
   @Post()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Create a new task' })
   @ApiResponse({ status: 201, description: 'Task created successfully' })
   async create(@Body() createTaskDto: CreateTaskDto, @CurrentUser('id') userId: string) {

@@ -178,7 +178,7 @@ describe('PartnerService', () => {
       const result = await service.findAll({ page: 1, limit: 10 });
 
       expect(result.data).toHaveLength(1);
-      expect(result.meta.total).toBe(1);
+      expect(result.pagination.total).toBe(1);
     });
   });
 

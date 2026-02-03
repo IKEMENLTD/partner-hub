@@ -50,7 +50,7 @@ export class ProjectController {
   ) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Create a new project' })
   @ApiResponse({ status: 201, description: 'Project created successfully' })
   async create(@Body() createProjectDto: CreateProjectDto, @CurrentUser('id') userId: string) {
@@ -244,7 +244,7 @@ export class ProjectController {
 
   @Delete(':id')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete project' })
   @ApiParam({ name: 'id', description: 'Project ID' })

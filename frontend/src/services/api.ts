@@ -181,14 +181,14 @@ interface BackendApiResponse<T> {
   message?: string;
 }
 
-// バックエンドのページネーション付きレスポンス形式
+// バックエンドのページネーション付きレスポンス形式 (API仕様書準拠)
 interface BackendPaginatedData<T> {
   data: T[];
-  meta: {
+  pagination: {
     total: number;
-    page: number;
     limit: number;
-    totalPages: number;
+    offset: number;
+    hasMore: boolean;
   };
 }
 
@@ -196,12 +196,15 @@ interface BackendPaginatedData<T> {
 export function transformPaginatedResponse<T>(
   response: BackendApiResponse<BackendPaginatedData<T>>
 ): PaginatedResponse<T> {
+  const { pagination } = response.data;
+  const page = Math.floor(pagination.offset / pagination.limit) + 1;
+  const totalPages = Math.ceil(pagination.total / pagination.limit);
   return {
     data: response.data.data,
-    total: response.data.meta.total,
-    page: response.data.meta.page,
-    pageSize: response.data.meta.limit,
-    totalPages: response.data.meta.totalPages,
+    total: pagination.total,
+    page,
+    pageSize: pagination.limit,
+    totalPages,
   };
 }
 

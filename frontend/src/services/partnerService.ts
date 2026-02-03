@@ -69,7 +69,7 @@ export const partnerService = {
       success: boolean;
       data: {
         data: Partner[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        pagination: { total: number; limit: number; offset: number; hasMore: boolean };
       };
     }>(`/partners${query ? `?${query}` : ''}`);
     return transformPaginatedResponse(response);

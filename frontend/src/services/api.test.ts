@@ -344,11 +344,11 @@ describe('api.ts', () => {
         success: true,
         data: {
           data: [{ id: '1' }, { id: '2' }],
-          meta: {
+          pagination: {
             total: 100,
-            page: 1,
             limit: 10,
-            totalPages: 10,
+            offset: 0,
+            hasMore: true,
           },
         },
       };
@@ -369,11 +369,11 @@ describe('api.ts', () => {
         success: true,
         data: {
           data: [],
-          meta: {
+          pagination: {
             total: 0,
-            page: 1,
             limit: 10,
-            totalPages: 0,
+            offset: 0,
+            hasMore: false,
           },
         },
       };
@@ -394,11 +394,11 @@ describe('api.ts', () => {
         success: true,
         data: {
           data: [{ id: '999' }],
-          meta: {
+          pagination: {
             total: 10000,
-            page: 100,
             limit: 100,
-            totalPages: 100,
+            offset: 9900,
+            hasMore: false,
           },
         },
       };

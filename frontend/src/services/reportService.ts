@@ -170,11 +170,11 @@ interface BackendApiResponse<T> {
 
 interface BackendPaginatedData<T> {
   data: T[];
-  meta: {
+  pagination: {
     total: number;
-    page: number;
     limit: number;
-    totalPages: number;
+    offset: number;
+    hasMore: boolean;
   };
 }
 

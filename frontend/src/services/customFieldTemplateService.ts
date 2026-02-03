@@ -16,7 +16,7 @@ export const customFieldTemplateService = {
       success: boolean;
       data: {
         data: CustomFieldTemplate[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        pagination: { total: number; limit: number; offset: number; hasMore: boolean };
       };
     }>(`/custom-field-templates${query ? `?${query}` : ''}`);
     return transformPaginatedResponse(response);

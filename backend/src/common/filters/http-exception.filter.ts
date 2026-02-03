@@ -14,6 +14,14 @@ import {
 import { ValidationException } from '../exceptions/validation.exception';
 
 /**
+ * API仕様書準拠のバリデーションエラー詳細形式
+ */
+interface ValidationErrorDetail {
+  field: string;
+  message: string;
+}
+
+/**
  * 統一エラーレスポンス形式
  */
 interface ErrorResponse {
@@ -21,7 +29,7 @@ interface ErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: Record<string, unknown>;
+    details?: ValidationErrorDetail[] | Record<string, unknown>;
   };
   timestamp: string;
   path: string;
@@ -65,7 +73,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let code = 'SYSTEM_001';
     let message = 'システムエラーが発生しました';
-    let details: Record<string, unknown> | undefined = undefined;
+    let details: ValidationErrorDetail[] | Record<string, unknown> | undefined = undefined;
 
     // カスタム例外（BaseException継承）の処理
     if (exception instanceof BaseException) {
@@ -75,12 +83,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exceptionResponse.userMessage;
       details = exceptionResponse.details;
 
-      // ValidationExceptionの特別処理
+      // ValidationExceptionの特別処理 (API仕様書準拠の配列形式)
+      // fieldErrors: [{ field: string, constraints: string[] }] → [{ field, message }]
       if (exception instanceof ValidationException && exception.fieldErrors) {
-        details = {
-          ...details,
-          fieldErrors: exception.fieldErrors,
-        };
+        const validationDetails: ValidationErrorDetail[] = exception.fieldErrors.map(
+          (fieldError) => ({
+            field: fieldError.field,
+            message: fieldError.constraints.join(', '),
+          }),
+        );
+        details = validationDetails;
       }
     }
     // 標準HttpExceptionの処理
@@ -105,12 +117,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
         code = this.getCodeFromStatus(status);
 
         // class-validatorのバリデーションエラーの場合
+        // API仕様書準拠の形式: details: [{ field: "...", message: "..." }]
         if (
           status === HttpStatus.BAD_REQUEST &&
           Array.isArray(responseObj.message)
         ) {
-          code = 'VALIDATION_001';
-          details = { validationErrors: responseObj.message };
+          code = 'VALIDATION_ERROR';
+          details = this.parseValidationErrors(responseObj.message);
         }
       }
     }
@@ -142,6 +155,24 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     return { status, errorResponse };
+  }
+
+  /**
+   * class-validatorのエラーメッセージをAPI仕様書準拠の形式に変換
+   * 入力: ["email must be an email", "name should not be empty"]
+   * 出力: [{ field: "email", message: "email must be an email" }, ...]
+   */
+  private parseValidationErrors(messages: string[]): ValidationErrorDetail[] {
+    return messages.map((msg) => {
+      // class-validatorのメッセージは通常 "fieldName constraint" の形式
+      // 例: "email must be an email", "name should not be empty"
+      const words = msg.split(' ');
+      const field = words[0] || 'unknown';
+      return {
+        field,
+        message: msg,
+      };
+    });
   }
 
   /**

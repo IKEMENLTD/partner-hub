@@ -172,10 +172,10 @@ export class EscalationService {
     recentEscalations: number;
   }> {
     const [totalRules, activeRules, totalLogs] = await Promise.all([
-      this.ruleService.findAllRules({ page: 1, limit: 1 }).then((r) => r.meta.total),
+      this.ruleService.findAllRules({ page: 1, limit: 1 }).then((r) => r.pagination.total),
       this.ruleService
         .findAllRules({ page: 1, limit: 1, status: EscalationRuleStatus.ACTIVE })
-        .then((r) => r.meta.total),
+        .then((r) => r.pagination.total),
       this.escalationLogRepository.count(),
     ]);
 

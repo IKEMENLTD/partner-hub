@@ -39,7 +39,7 @@ export const projectService = {
       success: boolean;
       data: {
         data: Project[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        pagination: { total: number; limit: number; offset: number; hasMore: boolean };
       };
     }>(`/projects${query ? `?${query}` : ''}`);
     return transformPaginatedResponse(response);

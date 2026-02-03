@@ -42,7 +42,7 @@ export const partnerEvaluationService = {
       success: boolean;
       data: {
         data: PartnerEvaluation[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        pagination: { total: number; limit: number; offset: number; hasMore: boolean };
       };
     }>(`/partners/${partnerId}/evaluation/history${query ? `?${query}` : ''}`);
     return transformPaginatedResponse(response);

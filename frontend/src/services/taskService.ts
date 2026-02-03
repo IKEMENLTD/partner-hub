@@ -27,7 +27,7 @@ export const taskService = {
       success: boolean;
       data: {
         data: Task[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        pagination: { total: number; limit: number; offset: number; hasMore: boolean };
       };
     }>(`/tasks${query ? `?${query}` : ''}`);
     return transformPaginatedResponse(response);
@@ -51,7 +51,7 @@ export const taskService = {
       success: boolean;
       data: {
         data: Task[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        pagination: { total: number; limit: number; offset: number; hasMore: boolean };
       };
     }>(`/projects/${projectId}/tasks${query ? `?${query}` : ''}`);
     return transformPaginatedResponse(response);
