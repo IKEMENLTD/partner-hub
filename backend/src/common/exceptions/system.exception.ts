@@ -20,7 +20,7 @@ import { ErrorCodeKey } from './error-codes';
  * });
  */
 export class SystemException extends BaseException {
-  public readonly cause?: Error;
+  public readonly originalError?: Error;
 
   constructor(
     errorCodeKey: ErrorCodeKey = 'SYSTEM_001',
@@ -34,7 +34,7 @@ export class SystemException extends BaseException {
       /** HTTPステータスコードのオーバーライド */
       httpStatus?: HttpStatus;
       /** 元となったエラー */
-      cause?: Error;
+      originalError?: Error;
     },
   ) {
     super(errorCodeKey, {
@@ -45,18 +45,18 @@ export class SystemException extends BaseException {
       httpStatus: options?.httpStatus ?? HttpStatus.INTERNAL_SERVER_ERROR,
     });
 
-    this.cause = options?.cause;
+    this.originalError = options?.originalError;
   }
 
   /**
    * データベースエラー例外を生成
    */
   static database(
-    options?: { message?: string; cause?: Error },
+    options?: { message?: string; originalError?: Error },
   ): SystemException {
     return new SystemException('SYSTEM_002', {
       message: options?.message ?? 'Database operation failed',
-      cause: options?.cause,
+      originalError: options?.originalError,
     });
   }
 
@@ -65,12 +65,12 @@ export class SystemException extends BaseException {
    */
   static externalService(
     serviceName: string,
-    options?: { message?: string; cause?: Error },
+    options?: { message?: string; originalError?: Error },
   ): SystemException {
     return new SystemException('SYSTEM_003', {
       message: options?.message ?? `External service '${serviceName}' failed`,
       details: { serviceName },
-      cause: options?.cause,
+      originalError: options?.originalError,
       httpStatus: HttpStatus.BAD_GATEWAY,
     });
   }

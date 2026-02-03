@@ -1,5 +1,5 @@
 import { Injectable, ForbiddenException, Logger } from '@nestjs/common';
-import { SelectQueryBuilder } from 'typeorm';
+import { SelectQueryBuilder, ObjectLiteral } from 'typeorm';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
 
 export interface TenantContext {
@@ -27,7 +27,7 @@ export class MultiTenantService {
    * @param organizationId - フィルターする組織ID
    * @param fieldName - 組織フィールド名（デフォルト: 'organizationId'）
    */
-  protected applyOrganizationFilter<T>(
+  protected applyOrganizationFilter<T extends ObjectLiteral>(
     queryBuilder: SelectQueryBuilder<T>,
     alias: string,
     organizationId: string | undefined,
