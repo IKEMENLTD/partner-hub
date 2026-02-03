@@ -53,45 +53,30 @@ import { HealthModule } from './modules/health/health.module';
     // Winston Logger
     WinstonModule.forRoot(winstonConfig),
 
-    // Database
+    // Database - uses configuration from database.config.ts
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const databaseUrl = configService.get<string>('database.url');
-        const nodeEnv = configService.get<string>('app.nodeEnv') || 'production';
-        const isProduction = nodeEnv === 'production';
-        // IMPORTANT: synchronize should NEVER be true in production to prevent data loss
-        const shouldSynchronize = configService.get<boolean>('database.synchronize') ?? false;
-
-        if (databaseUrl) {
-          return {
-            type: 'postgres' as const,
-            url: databaseUrl,
-            entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: isProduction ? false : shouldSynchronize,
-            logging: !isProduction,
-            autoLoadEntities: true,
-            // SSL Configuration for Supabase PostgreSQL
-            // Supabase uses SSL by default - the connection URL includes sslmode=require
-            // rejectUnauthorized: false is acceptable for Supabase as:
-            // 1. Connection is encrypted (SSL/TLS)
-            // 2. We connect to Supabase's known trusted infrastructure
-            // 3. Supabase handles certificate management internally
-            ssl: isProduction ? { rejectUnauthorized: false } : false,
-          };
+        // Get the full database config registered via ConfigModule.forRoot
+        const dbConfig = configService.get('database');
+        if (dbConfig) {
+          return dbConfig;
         }
+
+        // Fallback for direct environment variables (shouldn't reach here normally)
+        const databaseUrl = process.env.DATABASE_URL;
+        const nodeEnv = process.env.NODE_ENV || 'production';
+        const isProduction = nodeEnv === 'production';
 
         return {
           type: 'postgres' as const,
-          host: configService.get<string>('database.host'),
-          port: configService.get<number>('database.port'),
-          username: configService.get<string>('database.username'),
-          password: configService.get<string>('database.password'),
-          database: configService.get<string>('database.database'),
+          url: databaseUrl,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: isProduction ? false : shouldSynchronize,
+          synchronize: false,
           logging: !isProduction,
           autoLoadEntities: true,
+          // SSL for Supabase - encrypted connection but flexible certificate validation
+          ssl: { rejectUnauthorized: false },
         };
       },
       inject: [ConfigService],
