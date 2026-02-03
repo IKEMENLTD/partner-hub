@@ -263,11 +263,11 @@ export class StakeholderService {
     });
 
     if (children.length > 0) {
-      // Unlink children before deletion
-      for (const child of children) {
-        child.parentStakeholderId = undefined as unknown as string;
-        await this.stakeholderRepository.save(child);
-      }
+      // Batch update: Unlink all children before deletion in one query
+      await this.stakeholderRepository.update(
+        { parentStakeholderId: id },
+        { parentStakeholderId: null as unknown as string },
+      );
       this.logger.log(`Unlinked ${children.length} child stakeholders before deletion`);
     }
 

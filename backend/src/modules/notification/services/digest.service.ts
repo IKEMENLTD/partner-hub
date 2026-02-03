@@ -53,6 +53,7 @@ export class DigestService {
 
   /**
    * Send daily digest emails at 7:00 AM JST
+   * Optimized to batch process users with similar data requirements
    */
   @Cron('0 7 * * *', { timeZone: 'Asia/Tokyo' })
   async sendDailyDigest(): Promise<void> {
@@ -62,34 +63,48 @@ export class DigestService {
       where: { isActive: true },
     });
 
+    // Filter users with digest enabled
+    const usersWithDigestEnabled = users.filter(
+      (user) => user.metadata?.digestEnabled !== false,
+    );
+
+    if (usersWithDigestEnabled.length === 0) {
+      this.logger.log('No users with digest enabled');
+      return;
+    }
+
     let sentCount = 0;
-    let skippedCount = 0;
+    let skippedCount = users.length - usersWithDigestEnabled.length;
 
-    for (const user of users) {
-      try {
-        // Check if digest is enabled for this user
-        const digestEnabled = user.metadata?.digestEnabled !== false;
-        if (!digestEnabled) {
-          skippedCount++;
-          continue;
-        }
+    // Process users in batches to avoid overwhelming the system
+    const batchSize = 50;
+    for (let i = 0; i < usersWithDigestEnabled.length; i += batchSize) {
+      const userBatch = usersWithDigestEnabled.slice(i, i + batchSize);
 
-        const digest = await this.generateUserDigest(user.id);
+      await Promise.all(
+        userBatch.map(async (user) => {
+          try {
+            const digest = await this.generateUserDigest(user.id);
 
-        // Only send if there are tasks or notifications
-        if (
-          digest.todayTasks.length > 0 ||
-          digest.overdueTasks.length > 0 ||
-          digest.unreadNotifications.length > 0
-        ) {
-          await this.sendDigestEmail(user, digest);
-          sentCount++;
-        } else {
-          skippedCount++;
-        }
-      } catch (error) {
-        this.logger.error(`Failed to send digest to ${user.email}: ${error.message}`, error.stack);
-      }
+            // Only send if there are tasks or notifications
+            if (
+              digest.todayTasks.length > 0 ||
+              digest.overdueTasks.length > 0 ||
+              digest.unreadNotifications.length > 0
+            ) {
+              await this.sendDigestEmail(user, digest);
+              sentCount++;
+            } else {
+              skippedCount++;
+            }
+          } catch (error) {
+            this.logger.error(
+              `Failed to send digest to ${user.email}: ${error.message}`,
+              error.stack,
+            );
+          }
+        }),
+      );
     }
 
     this.logger.log(`Daily digest complete: ${sentCount} sent, ${skippedCount} skipped`);

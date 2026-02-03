@@ -238,33 +238,49 @@ export class ReminderService {
       })
       .getMany();
 
-    for (const task of tasksDueTomorrow) {
-      if (task.assigneeId) {
-        // Check if reminder already exists
-        const existingReminder = await this.reminderRepository.findOne({
-          where: {
-            taskId: task.id,
-            type: ReminderType.TASK_DUE,
-            status: ReminderStatus.PENDING,
-          },
-        });
-
-        if (!existingReminder) {
-          await this.reminderRepository.save({
-            title: `Task Due Tomorrow: ${task.title}`,
-            message: `Your task "${task.title}" is due tomorrow.`,
-            type: ReminderType.TASK_DUE,
-            channel: ReminderChannel.IN_APP,
-            userId: task.assigneeId,
-            taskId: task.id,
-            projectId: task.projectId,
-            scheduledAt: new Date(),
-          });
-
-          this.logger.log(`Task due reminder created for: ${task.title}`);
-        }
-      }
+    // Filter tasks with assignees
+    const tasksWithAssignees = tasksDueTomorrow.filter((task) => task.assigneeId);
+    if (tasksWithAssignees.length === 0) {
+      return;
     }
+
+    const taskIds = tasksWithAssignees.map((t) => t.id);
+
+    // Batch query: Get all existing pending reminders for these tasks in one query
+    const existingReminders = await this.reminderRepository.find({
+      where: {
+        taskId: In(taskIds),
+        type: ReminderType.TASK_DUE,
+        status: ReminderStatus.PENDING,
+      },
+      select: ['taskId'],
+    });
+
+    const existingTaskIds = new Set(existingReminders.map((r) => r.taskId));
+
+    // Filter tasks that don't have existing reminders
+    const tasksNeedingReminders = tasksWithAssignees.filter(
+      (task) => !existingTaskIds.has(task.id),
+    );
+
+    if (tasksNeedingReminders.length === 0) {
+      return;
+    }
+
+    // Batch insert: Create all reminders at once
+    const remindersToCreate = tasksNeedingReminders.map((task) => ({
+      title: `Task Due Tomorrow: ${task.title}`,
+      message: `Your task "${task.title}" is due tomorrow.`,
+      type: ReminderType.TASK_DUE,
+      channel: ReminderChannel.IN_APP,
+      userId: task.assigneeId,
+      taskId: task.id,
+      projectId: task.projectId,
+      scheduledAt: new Date(),
+    }));
+
+    await this.reminderRepository.save(remindersToCreate);
+    this.logger.log(`Task due reminders created for ${remindersToCreate.length} tasks`);
   }
 
   // Scheduled task to create overdue task reminders
@@ -282,36 +298,51 @@ export class ReminderService {
       })
       .getMany();
 
-    for (const task of overdueTasks) {
-      if (task.assigneeId) {
-        // Check if reminder was sent today
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-
-        const existingReminder = await this.reminderRepository.findOne({
-          where: {
-            taskId: task.id,
-            type: ReminderType.TASK_OVERDUE,
-            createdAt: LessThanOrEqual(todayStart),
-          },
-        });
-
-        if (!existingReminder) {
-          await this.reminderRepository.save({
-            title: `Task Overdue: ${task.title}`,
-            message: `Your task "${task.title}" is overdue. Please update its status.`,
-            type: ReminderType.TASK_OVERDUE,
-            channel: ReminderChannel.IN_APP,
-            userId: task.assigneeId,
-            taskId: task.id,
-            projectId: task.projectId,
-            scheduledAt: new Date(),
-          });
-
-          this.logger.log(`Overdue task reminder created for: ${task.title}`);
-        }
-      }
+    // Filter tasks with assignees
+    const tasksWithAssignees = overdueTasks.filter((task) => task.assigneeId);
+    if (tasksWithAssignees.length === 0) {
+      return;
     }
+
+    const taskIds = tasksWithAssignees.map((t) => t.id);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    // Batch query: Get all existing overdue reminders created before today for these tasks
+    const existingReminders = await this.reminderRepository.find({
+      where: {
+        taskId: In(taskIds),
+        type: ReminderType.TASK_OVERDUE,
+        createdAt: LessThanOrEqual(todayStart),
+      },
+      select: ['taskId'],
+    });
+
+    const existingTaskIds = new Set(existingReminders.map((r) => r.taskId));
+
+    // Filter tasks that don't have existing reminders
+    const tasksNeedingReminders = tasksWithAssignees.filter(
+      (task) => !existingTaskIds.has(task.id),
+    );
+
+    if (tasksNeedingReminders.length === 0) {
+      return;
+    }
+
+    // Batch insert: Create all reminders at once
+    const remindersToCreate = tasksNeedingReminders.map((task) => ({
+      title: `Task Overdue: ${task.title}`,
+      message: `Your task "${task.title}" is overdue. Please update its status.`,
+      type: ReminderType.TASK_OVERDUE,
+      channel: ReminderChannel.IN_APP,
+      userId: task.assigneeId,
+      taskId: task.id,
+      projectId: task.projectId,
+      scheduledAt: new Date(),
+    }));
+
+    await this.reminderRepository.save(remindersToCreate);
+    this.logger.log(`Overdue task reminders created for ${remindersToCreate.length} tasks`);
   }
 
   // Scheduled task to create project deadline reminders
@@ -332,35 +363,54 @@ export class ReminderService {
       })
       .getMany();
 
-    for (const project of projectsDeadlineApproaching) {
-      if (project.managerId) {
-        const existingReminder = await this.reminderRepository.findOne({
-          where: {
-            projectId: project.id,
-            type: ReminderType.PROJECT_DEADLINE,
-            status: ReminderStatus.PENDING,
-          },
-        });
-
-        if (!existingReminder) {
-          const daysUntilDeadline = Math.ceil(
-            (new Date(project.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-          );
-
-          await this.reminderRepository.save({
-            title: `Project Deadline Approaching: ${project.name}`,
-            message: `Project "${project.name}" deadline is in ${daysUntilDeadline} days.`,
-            type: ReminderType.PROJECT_DEADLINE,
-            channel: ReminderChannel.IN_APP,
-            userId: project.managerId,
-            projectId: project.id,
-            scheduledAt: new Date(),
-          });
-
-          this.logger.log(`Project deadline reminder created for: ${project.name}`);
-        }
-      }
+    // Filter projects with managers
+    const projectsWithManagers = projectsDeadlineApproaching.filter((p) => p.managerId);
+    if (projectsWithManagers.length === 0) {
+      return;
     }
+
+    const projectIds = projectsWithManagers.map((p) => p.id);
+
+    // Batch query: Get all existing pending reminders for these projects
+    const existingReminders = await this.reminderRepository.find({
+      where: {
+        projectId: In(projectIds),
+        type: ReminderType.PROJECT_DEADLINE,
+        status: ReminderStatus.PENDING,
+      },
+      select: ['projectId'],
+    });
+
+    const existingProjectIds = new Set(existingReminders.map((r) => r.projectId));
+
+    // Filter projects that don't have existing reminders
+    const projectsNeedingReminders = projectsWithManagers.filter(
+      (project) => !existingProjectIds.has(project.id),
+    );
+
+    if (projectsNeedingReminders.length === 0) {
+      return;
+    }
+
+    // Batch insert: Create all reminders at once
+    const remindersToCreate = projectsNeedingReminders.map((project) => {
+      const daysUntilDeadline = Math.ceil(
+        (new Date(project.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      return {
+        title: `Project Deadline Approaching: ${project.name}`,
+        message: `Project "${project.name}" deadline is in ${daysUntilDeadline} days.`,
+        type: ReminderType.PROJECT_DEADLINE,
+        channel: ReminderChannel.IN_APP,
+        userId: project.managerId,
+        projectId: project.id,
+        scheduledAt: new Date(),
+      };
+    });
+
+    await this.reminderRepository.save(remindersToCreate);
+    this.logger.log(`Project deadline reminders created for ${remindersToCreate.length} projects`);
   }
 
   private async sendReminder(reminder: Reminder): Promise<void> {
@@ -418,42 +468,60 @@ export class ReminderService {
 
     this.logger.log(`Found ${stagnantProjects.length} stagnant projects`);
 
-    for (const project of stagnantProjects) {
-      const recipientId = project.managerId || project.ownerId;
-      if (!recipientId) continue;
+    // Filter projects with recipients (manager or owner)
+    const projectsWithRecipients = stagnantProjects.filter(
+      (p) => p.managerId || p.ownerId,
+    );
 
-      // Check if a stagnant reminder was sent this week
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-
-      const existingReminder = await this.reminderRepository.findOne({
-        where: {
-          projectId: project.id,
-          type: ReminderType.PROJECT_STAGNANT,
-          createdAt: LessThanOrEqual(weekAgo),
-        },
-      });
-
-      if (!existingReminder) {
-        const daysSinceUpdate = Math.floor(
-          (Date.now() - new Date(project.updatedAt).getTime()) / (1000 * 60 * 60 * 24),
-        );
-
-        await this.reminderRepository.save({
-          title: `案件が停滞しています: ${project.name}`,
-          message: `案件「${project.name}」は${daysSinceUpdate}日間更新がありません。状況を確認してください。`,
-          type: ReminderType.PROJECT_STAGNANT,
-          channel: ReminderChannel.IN_APP,
-          userId: recipientId,
-          projectId: project.id,
-          scheduledAt: new Date(),
-        });
-
-        this.logger.log(
-          `Stagnant project reminder created for: ${project.name} (${daysSinceUpdate} days)`,
-        );
-      }
+    if (projectsWithRecipients.length === 0) {
+      return;
     }
+
+    const projectIds = projectsWithRecipients.map((p) => p.id);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    // Batch query: Get all existing stagnant reminders sent before this week
+    const existingReminders = await this.reminderRepository.find({
+      where: {
+        projectId: In(projectIds),
+        type: ReminderType.PROJECT_STAGNANT,
+        createdAt: LessThanOrEqual(weekAgo),
+      },
+      select: ['projectId'],
+    });
+
+    const existingProjectIds = new Set(existingReminders.map((r) => r.projectId));
+
+    // Filter projects that don't have existing reminders
+    const projectsNeedingReminders = projectsWithRecipients.filter(
+      (project) => !existingProjectIds.has(project.id),
+    );
+
+    if (projectsNeedingReminders.length === 0) {
+      return;
+    }
+
+    // Batch insert: Create all reminders at once
+    const remindersToCreate = projectsNeedingReminders.map((project) => {
+      const recipientId = project.managerId || project.ownerId;
+      const daysSinceUpdate = Math.floor(
+        (Date.now() - new Date(project.updatedAt).getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      return {
+        title: `案件が停滞しています: ${project.name}`,
+        message: `案件「${project.name}」は${daysSinceUpdate}日間更新がありません。状況を確認してください。`,
+        type: ReminderType.PROJECT_STAGNANT,
+        channel: ReminderChannel.IN_APP,
+        userId: recipientId,
+        projectId: project.id,
+        scheduledAt: new Date(),
+      };
+    });
+
+    await this.reminderRepository.save(remindersToCreate);
+    this.logger.log(`Stagnant project reminders created for ${remindersToCreate.length} projects`);
   }
 
   async getReminderStatistics(): Promise<{

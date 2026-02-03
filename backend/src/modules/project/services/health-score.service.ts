@@ -337,22 +337,78 @@ export class HealthScoreService {
       };
     }
 
-    // Calculate average scores from individual project breakdowns
+    const projectIds = projects.map((p) => p.id);
+
+    // Batch query: Get task statistics for all projects in one query
+    const taskStats = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.projectId', 'projectId')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect(
+        `SUM(CASE WHEN task.status = '${TaskStatus.COMPLETED}' THEN 1 ELSE 0 END)`,
+        'completed',
+      )
+      .where('task.projectId IN (:...projectIds)', { projectIds })
+      .groupBy('task.projectId')
+      .getRawMany();
+
+    const taskStatsMap = new Map<string, { total: number; completed: number }>();
+    taskStats.forEach((item) => {
+      taskStatsMap.set(item.projectId, {
+        total: parseInt(item.total, 10) || 0,
+        completed: parseInt(item.completed, 10) || 0,
+      });
+    });
+
+    // Batch query: Get all completed tasks for on-time calculation
+    const completedTasks = await this.taskRepository.find({
+      where: {
+        projectId: In(projectIds),
+        status: TaskStatus.COMPLETED,
+      },
+      select: ['id', 'projectId', 'dueDate', 'completedAt'],
+    });
+
+    // Group completed tasks by project and calculate on-time counts
+    const onTimeCountMap = new Map<string, { total: number; onTime: number }>();
+    completedTasks.forEach((task) => {
+      if (!onTimeCountMap.has(task.projectId)) {
+        onTimeCountMap.set(task.projectId, { total: 0, onTime: 0 });
+      }
+      const counts = onTimeCountMap.get(task.projectId)!;
+      counts.total++;
+
+      if (!task.dueDate) {
+        counts.onTime++; // No due date = always on time
+      } else {
+        const dueDate = new Date(task.dueDate);
+        dueDate.setHours(23, 59, 59, 999);
+        const completedAt = task.completedAt ? new Date(task.completedAt) : new Date();
+        if (completedAt <= dueDate) {
+          counts.onTime++;
+        }
+      }
+    });
+
+    // Calculate aggregated rates
     let totalOnTimeRate = 0;
     let totalCompletionRate = 0;
     let totalBudgetHealth = 0;
 
     for (const project of projects) {
-      try {
-        const breakdown = await this.calculateHealthScore(project.id);
-        totalOnTimeRate += breakdown.onTimeRate;
-        totalCompletionRate += breakdown.completionRate;
-        totalBudgetHealth += breakdown.budgetHealth;
-      } catch (error) {
-        this.logger.warn(
-          `Failed to calculate breakdown for project ${project.id}: ${error.message}`,
-        );
-      }
+      const stats = taskStatsMap.get(project.id) || { total: 0, completed: 0 };
+      const onTimeCounts = onTimeCountMap.get(project.id) || { total: 0, onTime: 0 };
+
+      const onTimeRate = this.calculateOnTimeRate(onTimeCounts.onTime, onTimeCounts.total);
+      const completionRate = this.calculateCompletionRate(stats.completed, stats.total);
+      const budgetHealth = this.calculateBudgetHealth(
+        Number(project.budget) || 0,
+        Number(project.actualCost) || 0,
+      );
+
+      totalOnTimeRate += onTimeRate;
+      totalCompletionRate += completionRate;
+      totalBudgetHealth += budgetHealth;
     }
 
     const scores = projects.map((p) => p.healthScore);
@@ -394,26 +450,98 @@ export class HealthScoreService {
       where: {
         status: Not(In([ProjectStatus.COMPLETED, ProjectStatus.CANCELLED])),
       },
-      select: ['id', 'name', 'healthScore'],
+      select: ['id', 'name', 'healthScore', 'budget', 'actualCost'],
       order: { healthScore: 'ASC' },
     });
 
-    const results = [];
-
-    for (const project of projects) {
-      try {
-        const breakdown = await this.calculateHealthScore(project.id);
-        results.push({
-          projectId: project.id,
-          projectName: project.name,
-          healthScore: breakdown.totalScore,
-          breakdown,
-        });
-      } catch (error) {
-        this.logger.warn(`Failed to get breakdown for project ${project.id}: ${error.message}`);
-      }
+    if (projects.length === 0) {
+      return [];
     }
 
-    return results;
+    const projectIds = projects.map((p) => p.id);
+
+    // Batch query: Get task statistics for all projects in one query
+    const taskStats = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.projectId', 'projectId')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect(
+        `SUM(CASE WHEN task.status = '${TaskStatus.COMPLETED}' THEN 1 ELSE 0 END)`,
+        'completed',
+      )
+      .where('task.projectId IN (:...projectIds)', { projectIds })
+      .groupBy('task.projectId')
+      .getRawMany();
+
+    const taskStatsMap = new Map<string, { total: number; completed: number }>();
+    taskStats.forEach((item) => {
+      taskStatsMap.set(item.projectId, {
+        total: parseInt(item.total, 10) || 0,
+        completed: parseInt(item.completed, 10) || 0,
+      });
+    });
+
+    // Batch query: Get all completed tasks for on-time calculation
+    const completedTasks = await this.taskRepository.find({
+      where: {
+        projectId: In(projectIds),
+        status: TaskStatus.COMPLETED,
+      },
+      select: ['id', 'projectId', 'dueDate', 'completedAt'],
+    });
+
+    // Group completed tasks by project and calculate on-time counts
+    const onTimeCountMap = new Map<string, { total: number; onTime: number }>();
+    completedTasks.forEach((task) => {
+      if (!onTimeCountMap.has(task.projectId)) {
+        onTimeCountMap.set(task.projectId, { total: 0, onTime: 0 });
+      }
+      const counts = onTimeCountMap.get(task.projectId)!;
+      counts.total++;
+
+      if (!task.dueDate) {
+        counts.onTime++; // No due date = always on time
+      } else {
+        const dueDate = new Date(task.dueDate);
+        dueDate.setHours(23, 59, 59, 999);
+        const completedAt = task.completedAt ? new Date(task.completedAt) : new Date();
+        if (completedAt <= dueDate) {
+          counts.onTime++;
+        }
+      }
+    });
+
+    // Build results using pre-fetched data
+    return projects.map((project) => {
+      const stats = taskStatsMap.get(project.id) || { total: 0, completed: 0 };
+      const onTimeCounts = onTimeCountMap.get(project.id) || { total: 0, onTime: 0 };
+
+      const onTimeRate = this.calculateOnTimeRate(onTimeCounts.onTime, onTimeCounts.total);
+      const completionRate = this.calculateCompletionRate(stats.completed, stats.total);
+      const budgetHealth = this.calculateBudgetHealth(
+        Number(project.budget) || 0,
+        Number(project.actualCost) || 0,
+      );
+      const totalScore = this.calculateWeightedHealthScore(onTimeRate, completionRate, budgetHealth);
+
+      return {
+        projectId: project.id,
+        projectName: project.name,
+        healthScore: totalScore,
+        breakdown: {
+          onTimeRate: Math.round(onTimeRate * 100) / 100,
+          completionRate: Math.round(completionRate * 100) / 100,
+          budgetHealth: Math.round(budgetHealth * 100) / 100,
+          totalScore,
+          details: {
+            totalTasks: stats.total,
+            completedTasks: stats.completed,
+            onTimeCompletedTasks: onTimeCounts.onTime,
+            budget: Number(project.budget) || 0,
+            actualCost: Number(project.actualCost) || 0,
+          },
+        },
+      };
+    });
   }
 }

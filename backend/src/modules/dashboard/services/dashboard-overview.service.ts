@@ -166,35 +166,55 @@ export class DashboardOverviewService {
       take: limit,
     });
 
-    const summaries: ProjectSummary[] = [];
+    if (projects.length === 0) {
+      return [];
+    }
 
-    for (const project of projects) {
-      const [tasksCount, completedTasksCount, overdueTasksCount] = await Promise.all([
-        this.taskRepository.count({ where: { projectId: project.id } }),
-        this.taskRepository.count({
-          where: { projectId: project.id, status: TaskStatus.COMPLETED },
-        }),
-        this.taskRepository
-          .createQueryBuilder('task')
-          .where('task.projectId = :projectId', { projectId: project.id })
-          .andWhere('task.dueDate < :today', { today: new Date() })
-          .andWhere('task.status NOT IN (:...completedStatuses)', {
-            completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-          })
-          .getCount(),
-      ]);
+    const projectIds = projects.map((p) => p.id);
+    const today = new Date();
 
-      summaries.push({
+    // Batch query: Get all task stats for all projects in one query
+    const taskStats = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.projectId', 'projectId')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect(
+        `SUM(CASE WHEN task.status = '${TaskStatus.COMPLETED}' THEN 1 ELSE 0 END)`,
+        'completed',
+      )
+      .addSelect(
+        `SUM(CASE WHEN task.dueDate < :today AND task.status NOT IN (:...completedStatuses) THEN 1 ELSE 0 END)`,
+        'overdue',
+      )
+      .where('task.projectId IN (:...projectIds)', { projectIds })
+      .setParameter('today', today)
+      .setParameter('completedStatuses', [TaskStatus.COMPLETED, TaskStatus.CANCELLED])
+      .groupBy('task.projectId')
+      .getRawMany();
+
+    const taskStatsMap = new Map<string, { total: number; completed: number; overdue: number }>();
+    taskStats.forEach((item) => {
+      taskStatsMap.set(item.projectId, {
+        total: parseInt(item.total, 10) || 0,
+        completed: parseInt(item.completed, 10) || 0,
+        overdue: parseInt(item.overdue, 10) || 0,
+      });
+    });
+
+    // Build results using pre-fetched data
+    const summaries: ProjectSummary[] = projects.map((project) => {
+      const stats = taskStatsMap.get(project.id) || { total: 0, completed: 0, overdue: 0 };
+      return {
         id: project.id,
         name: project.name,
         status: project.status,
         progress: project.progress,
         endDate: project.endDate,
-        tasksCount,
-        completedTasksCount,
-        overdueTasksCount,
-      });
-    }
+        tasksCount: stats.total,
+        completedTasksCount: stats.completed,
+        overdueTasksCount: stats.overdue,
+      };
+    });
 
     return summaries;
   }
@@ -206,32 +226,50 @@ export class DashboardOverviewService {
       take: limit,
     });
 
-    const performances: PartnerPerformance[] = [];
+    if (partners.length === 0) {
+      return [];
+    }
 
-    for (const partner of partners) {
-      const [activeTasks, completedTasks] = await Promise.all([
-        this.taskRepository.count({
-          where: {
-            partnerId: partner.id,
-            status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
-          },
-        }),
-        this.taskRepository.count({
-          where: { partnerId: partner.id, status: TaskStatus.COMPLETED },
-        }),
-      ]);
+    const partnerIds = partners.map((p) => p.id);
 
-      performances.push({
+    // Batch query: Get task stats for all partners in one query
+    const taskStats = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.partnerId', 'partnerId')
+      .addSelect(
+        `SUM(CASE WHEN task.status NOT IN ('${TaskStatus.COMPLETED}', '${TaskStatus.CANCELLED}') THEN 1 ELSE 0 END)`,
+        'active',
+      )
+      .addSelect(
+        `SUM(CASE WHEN task.status = '${TaskStatus.COMPLETED}' THEN 1 ELSE 0 END)`,
+        'completed',
+      )
+      .where('task.partnerId IN (:...partnerIds)', { partnerIds })
+      .groupBy('task.partnerId')
+      .getRawMany();
+
+    const taskStatsMap = new Map<string, { active: number; completed: number }>();
+    taskStats.forEach((item) => {
+      taskStatsMap.set(item.partnerId, {
+        active: parseInt(item.active, 10) || 0,
+        completed: parseInt(item.completed, 10) || 0,
+      });
+    });
+
+    // Build results using pre-fetched data
+    const performances: PartnerPerformance[] = partners.map((partner) => {
+      const stats = taskStatsMap.get(partner.id) || { active: 0, completed: 0 };
+      return {
         id: partner.id,
         name: partner.name,
         email: partner.email,
         rating: partner.rating,
         totalProjects: partner.totalProjects,
         completedProjects: partner.completedProjects,
-        activeTasks,
-        completedTasks,
-      });
-    }
+        activeTasks: stats.active,
+        completedTasks: stats.completed,
+      };
+    });
 
     return performances;
   }

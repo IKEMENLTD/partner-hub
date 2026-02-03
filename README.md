@@ -4,7 +4,7 @@
 
 ## 機能概要
 
-- **認証・認可**: JWT ベースの認証、ロールベースアクセス制御 (RBAC)
+- **認証・認可**: Supabase Auth、ロールベースアクセス制御 (RBAC)
 - **プロジェクト管理**: プロジェクトの作成・進捗管理・パートナー割り当て
 - **タスク管理**: タスクの作成・割り当て・ステータス管理・サブタスク
 - **パートナー管理**: パートナー登録・評価・スキル管理
@@ -16,11 +16,11 @@
 ### Backend
 - **Runtime**: Node.js 18+
 - **Framework**: NestJS
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (Supabase)
 - **ORM**: TypeORM
-- **Authentication**: Passport.js + JWT
+- **Authentication**: Supabase Auth
 - **API Documentation**: Swagger/OpenAPI
-- **Security**: Helmet, Rate Limiting, bcrypt
+- **Security**: Helmet, Rate Limiting
 
 ### Frontend
 - **Framework**: React 18 + TypeScript
@@ -88,25 +88,44 @@ npm run dev
 
 ```bash
 # Application
-NODE_ENV=development          # 環境 (development/production)
+NODE_ENV=development          # 環境 (development/production/test)
 PORT=3000                     # APIサーバーのポート
 API_PREFIX=api/v1             # APIプレフィックス
 
-# Database
-DB_HOST=localhost             # PostgreSQLホスト
-DB_PORT=5432                  # PostgreSQLポート
-DB_USERNAME=postgres          # データベースユーザー
-DB_PASSWORD=your_password     # データベースパスワード
-DB_DATABASE=partner_platform  # データベース名
+# ===========================================
+# Supabase Configuration (必須)
+# Supabase Dashboard > Project Settings > API から取得
+# ===========================================
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_JWT_SECRET=your-jwt-secret-from-supabase-dashboard
 
-# JWT (本番環境では必ず強力な秘密鍵を設定)
-JWT_SECRET=your_jwt_secret_key_32_chars_minimum
-JWT_EXPIRES_IN=15m            # アクセストークン有効期限
-JWT_REFRESH_SECRET=your_refresh_secret_key_32_chars_minimum
-JWT_REFRESH_EXPIRES_IN=7d     # リフレッシュトークン有効期限
+# Database URL (Supabase PostgreSQL 接続文字列)
+# Supabase Dashboard > Project Settings > Database > Connection string > URI
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.your-project.supabase.co:5432/postgres
 
+# ===========================================
+# SSL Configuration
+# ===========================================
+# 開発環境でのSSL証明書検証スキップ（自己署名証明書用）
+# 本番環境では無視される（常にtrue）
+DB_SSL_REJECT_UNAUTHORIZED=true
+
+# カスタムCA証明書（PEM文字列またはファイルパス）
+# DB_SSL_CA_CERT=/path/to/ca-certificate.crt
+
+# テスト環境でのみSSL無効化を許可
+# ALLOW_INSECURE_TEST_DB=false
+
+# ===========================================
+# Optional Settings
+# ===========================================
 # Logging
 LOG_LEVEL=debug               # ログレベル (debug/info/warn/error)
+
+# Reminder Settings
+REMINDER_CHECK_INTERVAL=60000 # リマインダーチェック間隔（ミリ秒）
 
 # CORS (本番環境用、カンマ区切りで複数指定可)
 CORS_ORIGIN=https://app.yourdomain.com
@@ -174,24 +193,51 @@ http://localhost:3000/docs
 
 ## セキュリティ
 
+### 認証アーキテクチャ
+
+本システムは **Supabase Auth** を認証基盤として採用しています。
+
+```
+[フロントエンド]                    [バックエンド]
+     │                                   │
+     │ 1. Supabase SDK でログイン        │
+     │─────────────────────────────────→ │ Supabase Auth
+     │                                   │
+     │ 2. JWT トークン取得               │
+     │←───────────────────────────────── │
+     │                                   │
+     │ 3. API リクエスト (Bearer token)  │
+     │─────────────────────────────────→ │
+     │                                   │ JwtAuthGuard で検証
+     │ 4. レスポンス                     │
+     │←───────────────────────────────── │
+```
+
+**主な特徴:**
+- Supabase Auth がトークン発行・検証を担当
+- バックエンドは Supabase JWT Secret でトークン検証
+- セッション管理は Supabase + フロントエンド Zustand ストア
+- パスワードリセットフローはリカバリーモードで状態管理
+
 ### 実装済みセキュリティ対策
 
-- **認証**: JWT + リフレッシュトークン (bcrypt ハッシュ化)
+- **認証**: Supabase Auth (JWTトークンベース)
 - **認可**: ロールベースアクセス制御 (ADMIN, MANAGER, MEMBER, PARTNER)
-- **Rate Limiting**: ログイン・登録・パスワード変更に適用
+- **Rate Limiting**: 全エンドポイントに適用 (Throttler)
 - **Security Headers**: Helmet によるセキュリティヘッダー設定
 - **Input Validation**: class-validator による厳密なバリデーション
 - **SQL Injection 防止**: TypeORM パラメータバインディング + ソートカラムのホワイトリスト
-- **XSS 対策**: sessionStorage 使用、CSP ヘッダー
+- **SSL/TLS**: 本番環境では証明書検証を強制（MITM攻撃防止）
 
 ### 本番環境チェックリスト
 
 - [ ] `NODE_ENV=production` を設定
-- [ ] JWT_SECRET, JWT_REFRESH_SECRET に32文字以上の強力な秘密鍵を設定
+- [ ] Supabase環境変数をすべて設定
 - [ ] CORS_ORIGIN に本番ドメインを設定
-- [ ] データベース接続にSSLを使用
+- [ ] データベース接続にSSLを使用（本番では自動的に証明書検証が有効）
 - [ ] HTTPS を有効化
 - [ ] ログレベルを `info` 以上に設定
+- [ ] `DB_SSL_REJECT_UNAUTHORIZED` は設定しない（本番では無視される）
 
 ## テスト
 
@@ -253,10 +299,10 @@ main          # 本番環境
 A: PostgreSQLが起動しているか確認し、.env の接続情報を確認してください。
 ```
 
-**Q: JWTエラー (Invalid token)**
+**Q: 認証エラー (Invalid token)**
 ```
-A: JWT_SECRET が正しく設定されているか確認してください。
-本番環境では32文字以上の秘密鍵が必要です。
+A: Supabase環境変数が正しく設定されているか確認してください。
+SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET
 ```
 
 **Q: CORS エラー**

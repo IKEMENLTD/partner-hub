@@ -6,9 +6,9 @@ NestJSで構築されたRESTful APIバックエンドです。
 
 - **Framework**: NestJS 10
 - **Language**: TypeScript
-- **Database**: PostgreSQL 14+
+- **Database**: PostgreSQL 14+ (Supabase)
 - **ORM**: TypeORM
-- **Authentication**: Passport.js + JWT
+- **Authentication**: Supabase Auth
 - **Validation**: class-validator
 - **Documentation**: Swagger/OpenAPI
 - **Security**: Helmet, Rate Limiting (Throttler)
@@ -52,7 +52,7 @@ src/
 ├── config/              # 設定ファイル
 │   ├── app.config.ts
 │   ├── database.config.ts
-│   └── jwt.config.ts
+│   └── supabase.config.ts
 └── modules/             # 機能モジュール
     ├── auth/            # 認証
     ├── dashboard/       # ダッシュボード
@@ -65,11 +65,14 @@ src/
 ## API エンドポイント
 
 ### 認証 (`/api/v1/auth`)
-- `POST /register` - ユーザー登録
-- `POST /login` - ログイン
-- `POST /logout` - ログアウト
-- `POST /refresh` - トークンリフレッシュ
-- `GET /me` - 現在のユーザー情報
+認証はSupabase Authで管理されます。バックエンドはプロファイル管理のみ担当。
+- `GET /me` - 現在のユーザープロファイル取得
+- `PATCH /me` - プロファイル更新
+- `GET /users` - 全ユーザー一覧 (Admin)
+- `GET /users/:id` - ユーザー詳細 (Admin)
+- `PATCH /users/:id` - ユーザー更新 (Admin)
+- `POST /users/:id/deactivate` - ユーザー無効化 (Admin)
+- `POST /users/:id/activate` - ユーザー有効化 (Admin)
 
 ### プロジェクト (`/api/v1/projects`)
 - `GET /` - 一覧取得 (ページネーション)
@@ -106,22 +109,17 @@ src/
 |--------|------|----------|
 | `NODE_ENV` | 環境 | development |
 | `PORT` | ポート | 3000 |
-| `DB_HOST` | DBホスト | localhost |
-| `DB_PORT` | DBポート | 5432 |
-| `DB_USERNAME` | DBユーザー | postgres |
-| `DB_PASSWORD` | DBパスワード | - |
-| `DB_DATABASE` | DB名 | partner_platform |
-| `JWT_SECRET` | JWT秘密鍵 (本番32文字以上必須) | - |
-| `JWT_EXPIRES_IN` | アクセストークン有効期限 | 15m |
-| `JWT_REFRESH_SECRET` | リフレッシュトークン秘密鍵 | - |
-| `JWT_REFRESH_EXPIRES_IN` | リフレッシュトークン有効期限 | 7d |
+| `SUPABASE_URL` | Supabase プロジェクトURL | - |
+| `SUPABASE_ANON_KEY` | Supabase Anon Key | - |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role Key | - |
+| `SUPABASE_JWT_SECRET` | Supabase JWT Secret | - |
+| `DATABASE_URL` | Supabase PostgreSQL 接続URL | - |
 | `CORS_ORIGIN` | CORS許可オリジン | - |
 
 ## セキュリティ機能
 
-- **JWT認証**: アクセストークン (15分) + リフレッシュトークン (7日)
-- **パスワードポリシー**: 8文字以上、大小文字・数字・特殊文字必須
-- **Rate Limiting**: 認証エンドポイントに厳格な制限
+- **認証**: Supabase Auth (JWTトークンベース)
+- **Rate Limiting**: 全エンドポイントに制限 (Throttler)
 - **Security Headers**: Helmet によるヘッダー保護
 - **Input Validation**: class-validator による厳密な検証
 - **SQL Injection対策**: TypeORM パラメータバインディング + ホワイトリスト
@@ -144,7 +142,6 @@ npm test -- auth.service.spec.ts
 - `project.service.spec.ts` - プロジェクトサービス
 - `task.service.spec.ts` - タスクサービス
 - `partner.service.spec.ts` - パートナーサービス
-- `jwt-auth.guard.spec.ts` - JWT認証ガード
 - `roles.guard.spec.ts` - ロールガード
 
 ## API ドキュメント
@@ -163,8 +160,7 @@ npm test -- auth.service.spec.ts
 ## 本番デプロイチェックリスト
 
 - [ ] `NODE_ENV=production`
-- [ ] `JWT_SECRET` 32文字以上の強力な秘密鍵
-- [ ] `JWT_REFRESH_SECRET` 32文字以上の強力な秘密鍵
+- [ ] Supabase環境変数をすべて設定
 - [ ] `CORS_ORIGIN` に本番ドメインを設定
 - [ ] データベース接続にSSLを使用
 - [ ] `LOG_LEVEL=info` 以上に設定

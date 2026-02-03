@@ -4,9 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { WinstonModule } from 'nest-winston';
 
 // Config
 import { databaseConfig, appConfig, supabaseConfig, emailConfig, slackConfig } from './config';
+import { winstonConfig } from './common/logger/winston.config';
 
 // Entities
 import { UserProfile } from './modules/auth/entities/user-profile.entity';
@@ -16,6 +18,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
 import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard';
 
 // Modules
@@ -36,6 +39,7 @@ import { PartnerReportModule } from './modules/partner-report/partner-report.mod
 import { SearchModule } from './modules/search/search.module';
 import { ReportModule } from './modules/report/report.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -45,6 +49,9 @@ import { SystemSettingsModule } from './modules/system-settings/system-settings.
       envFilePath: ['.env', '.env.local'],
       load: [databaseConfig, appConfig, supabaseConfig, emailConfig, slackConfig],
     }),
+
+    // Winston Logger
+    WinstonModule.forRoot(winstonConfig),
 
     // Database
     TypeOrmModule.forRootAsync({
@@ -129,6 +136,7 @@ import { SystemSettingsModule } from './modules/system-settings/system-settings.
     SearchModule,
     ReportModule,
     SystemSettingsModule,
+    HealthModule,
   ],
   providers: [
     // Global Exception Filter
@@ -160,6 +168,11 @@ import { SystemSettingsModule } from './modules/system-settings/system-settings.
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    // Global Metrics Interceptor for request counting and response time
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
     },
   ],
 })

@@ -1,4 +1,6 @@
+// Atoms
 export { Button } from './Button';
+export { ToggleSwitch } from './atoms/ToggleSwitch';
 export { Input } from './Input';
 export { Select } from './Select';
 export { TextArea } from './TextArea';
@@ -9,6 +11,9 @@ export { Loading, PageLoading, InlineLoading } from './Loading';
 export { EmptyState } from './EmptyState';
 export { ErrorMessage, Alert } from './ErrorMessage';
 export { Modal, ModalFooter } from './Modal';
+
+// Molecules
+export { NotificationItem } from './molecules/NotificationItem';
 export { Tabs, TabList, TabPanel } from './Tabs';
 export {
   Table,

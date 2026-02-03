@@ -145,35 +145,69 @@ export class ReportDataService {
       take: 10,
     });
 
-    const performances: ReportData['partnerPerformance'] = [];
+    if (partners.length === 0) {
+      return [];
+    }
 
-    for (const partner of partners) {
-      // Get active projects for this partner
-      const activeProjects = await this.projectRepository
-        .createQueryBuilder('project')
-        .leftJoin('project.partners', 'partner')
-        .where('partner.id = :partnerId', { partnerId: partner.id })
-        .andWhere('project.status = :status', {
-          status: ProjectStatus.IN_PROGRESS,
-        })
-        .getCount();
+    const partnerIds = partners.map((p) => p.id);
 
-      // Get task stats
-      const [tasksTotal, tasksCompleted] = await Promise.all([
-        this.taskRepository.count({ where: { partnerId: partner.id } }),
-        this.taskRepository.count({
-          where: { partnerId: partner.id, status: TaskStatus.COMPLETED },
-        }),
-      ]);
+    // Batch query: Get active project counts for all partners in one query
+    const activeProjectCounts = await this.projectRepository
+      .createQueryBuilder('project')
+      .leftJoin('project.partners', 'partner')
+      .select('partner.id', 'partnerId')
+      .addSelect('COUNT(project.id)', 'count')
+      .where('partner.id IN (:...partnerIds)', { partnerIds })
+      .andWhere('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
+      .groupBy('partner.id')
+      .getRawMany();
 
-      // Calculate on-time delivery rate
-      const completedTasks = await this.taskRepository.find({
-        where: { partnerId: partner.id, status: TaskStatus.COMPLETED },
-        select: ['id', 'dueDate', 'completedAt'],
+    const activeProjectMap = new Map<string, number>();
+    activeProjectCounts.forEach((item) => {
+      activeProjectMap.set(item.partnerId, parseInt(item.count, 10));
+    });
+
+    // Batch query: Get task stats for all partners in one query
+    const taskStats = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.partnerId', 'partnerId')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect(
+        `SUM(CASE WHEN task.status = '${TaskStatus.COMPLETED}' THEN 1 ELSE 0 END)`,
+        'completed',
+      )
+      .where('task.partnerId IN (:...partnerIds)', { partnerIds })
+      .groupBy('task.partnerId')
+      .getRawMany();
+
+    const taskStatsMap = new Map<string, { total: number; completed: number }>();
+    taskStats.forEach((item) => {
+      taskStatsMap.set(item.partnerId, {
+        total: parseInt(item.total, 10),
+        completed: parseInt(item.completed, 10),
       });
+    });
 
+    // Batch query: Get all completed tasks for all partners to calculate on-time rate
+    const completedTasks = await this.taskRepository.find({
+      where: { partnerId: In(partnerIds), status: TaskStatus.COMPLETED },
+      select: ['id', 'partnerId', 'dueDate', 'completedAt'],
+    });
+
+    // Group completed tasks by partner and calculate on-time rate
+    const onTimeRateMap = new Map<string, number>();
+    const tasksByPartner = new Map<string, typeof completedTasks>();
+
+    completedTasks.forEach((task) => {
+      if (!tasksByPartner.has(task.partnerId)) {
+        tasksByPartner.set(task.partnerId, []);
+      }
+      tasksByPartner.get(task.partnerId)!.push(task);
+    });
+
+    tasksByPartner.forEach((tasks, partnerId) => {
       let onTimeCount = 0;
-      for (const task of completedTasks) {
+      for (const task of tasks) {
         if (task.dueDate && task.completedAt) {
           const dueDate = new Date(task.dueDate);
           dueDate.setHours(23, 59, 59, 999);
@@ -182,19 +216,25 @@ export class ReportDataService {
           }
         }
       }
-      const onTimeDeliveryRate =
-        completedTasks.length > 0 ? Math.round((onTimeCount / completedTasks.length) * 100) : 100;
+      onTimeRateMap.set(
+        partnerId,
+        tasks.length > 0 ? Math.round((onTimeCount / tasks.length) * 100) : 100,
+      );
+    });
 
-      performances.push({
+    // Build results using pre-fetched data
+    const performances: ReportData['partnerPerformance'] = partners.map((partner) => {
+      const stats = taskStatsMap.get(partner.id) || { total: 0, completed: 0 };
+      return {
         partnerId: partner.id,
         partnerName: partner.name,
-        activeProjects,
-        tasksCompleted,
-        tasksTotal,
-        onTimeDeliveryRate,
+        activeProjects: activeProjectMap.get(partner.id) || 0,
+        tasksCompleted: stats.completed,
+        tasksTotal: stats.total,
+        onTimeDeliveryRate: onTimeRateMap.get(partner.id) || 100,
         rating: Number(partner.rating),
-      });
-    }
+      };
+    });
 
     return performances;
   }

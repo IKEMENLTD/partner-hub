@@ -410,22 +410,48 @@ export class DashboardService {
   }
 
   private async calculatePartnerPerformance(partners: PartnerPerformance[]): Promise<any[]> {
-    const result = [];
-    for (const p of partners) {
-      const activeProjects = await this.projectRepository
-        .createQueryBuilder('project')
-        .leftJoin('project.partners', 'partner')
-        .where('partner.id = :partnerId', { partnerId: p.id })
-        .andWhere('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
-        .getCount();
+    if (partners.length === 0) {
+      return [];
+    }
 
-      const completedTasks = await this.taskRepository.find({
-        where: { partnerId: p.id, status: TaskStatus.COMPLETED },
-        select: ['id', 'dueDate', 'completedAt'],
-      });
+    const partnerIds = partners.map((p) => p.id);
 
+    // Batch query: Get active project counts for all partners in one query
+    const activeProjectCounts = await this.projectRepository
+      .createQueryBuilder('project')
+      .leftJoin('project.partners', 'partner')
+      .select('partner.id', 'partnerId')
+      .addSelect('COUNT(project.id)', 'count')
+      .where('partner.id IN (:...partnerIds)', { partnerIds })
+      .andWhere('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
+      .groupBy('partner.id')
+      .getRawMany();
+
+    const activeProjectMap = new Map<string, number>();
+    activeProjectCounts.forEach((item) => {
+      activeProjectMap.set(item.partnerId, parseInt(item.count, 10));
+    });
+
+    // Batch query: Get all completed tasks for all partners to calculate on-time rate
+    const completedTasks = await this.taskRepository.find({
+      where: { partnerId: In(partnerIds), status: TaskStatus.COMPLETED },
+      select: ['id', 'partnerId', 'dueDate', 'completedAt'],
+    });
+
+    // Group completed tasks by partner and calculate on-time rate
+    const onTimeRateMap = new Map<string, number>();
+    const tasksByPartner = new Map<string, typeof completedTasks>();
+
+    completedTasks.forEach((task) => {
+      if (!tasksByPartner.has(task.partnerId)) {
+        tasksByPartner.set(task.partnerId, []);
+      }
+      tasksByPartner.get(task.partnerId)!.push(task);
+    });
+
+    tasksByPartner.forEach((tasks, partnerId) => {
       let onTimeCount = 0;
-      for (const task of completedTasks) {
+      for (const task of tasks) {
         if (task.dueDate && task.completedAt) {
           const dueDate = new Date(task.dueDate);
           dueDate.setHours(23, 59, 59, 999);
@@ -434,20 +460,22 @@ export class DashboardService {
           }
         }
       }
-      const onTimeDeliveryRate =
-        completedTasks.length > 0 ? Math.round((onTimeCount / completedTasks.length) * 100) : 100;
+      onTimeRateMap.set(
+        partnerId,
+        tasks.length > 0 ? Math.round((onTimeCount / tasks.length) * 100) : 100,
+      );
+    });
 
-      result.push({
-        partnerId: p.id,
-        partnerName: p.name,
-        activeProjects,
-        tasksCompleted: p.completedTasks,
-        tasksTotal: p.activeTasks + p.completedTasks,
-        onTimeDeliveryRate,
-        rating: p.rating,
-      });
-    }
-    return result;
+    // Build results using pre-fetched data
+    return partners.map((p) => ({
+      partnerId: p.id,
+      partnerName: p.name,
+      activeProjects: activeProjectMap.get(p.id) || 0,
+      tasksCompleted: p.completedTasks,
+      tasksTotal: p.activeTasks + p.completedTasks,
+      onTimeDeliveryRate: onTimeRateMap.get(p.id) || 100,
+      rating: p.rating,
+    }));
   }
 
   private async calculateBudgetOverview(): Promise<{
@@ -491,19 +519,34 @@ export class DashboardService {
   }
 
   private async enrichProjectsAtRisk(projects: Project[]): Promise<any[]> {
+    if (projects.length === 0) {
+      return [];
+    }
+
     const today = new Date();
-    const result = [];
+    const projectIds = projects.map((p) => p.id);
 
-    for (const p of projects) {
-      const overdueTaskCount = await this.taskRepository
-        .createQueryBuilder('task')
-        .where('task.projectId = :projectId', { projectId: p.id })
-        .andWhere('task.dueDate < :today', { today })
-        .andWhere('task.status NOT IN (:...completedStatuses)', {
-          completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-        })
-        .getCount();
+    // Batch query: Get overdue task counts for all projects in one query
+    const overdueTaskCounts = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.projectId', 'projectId')
+      .addSelect('COUNT(*)', 'count')
+      .where('task.projectId IN (:...projectIds)', { projectIds })
+      .andWhere('task.dueDate < :today', { today })
+      .andWhere('task.status NOT IN (:...completedStatuses)', {
+        completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
+      })
+      .groupBy('task.projectId')
+      .getRawMany();
 
+    const overdueTaskMap = new Map<string, number>();
+    overdueTaskCounts.forEach((item) => {
+      overdueTaskMap.set(item.projectId, parseInt(item.count, 10));
+    });
+
+    // Build results using pre-fetched data
+    return projects.map((p) => {
+      const overdueTaskCount = overdueTaskMap.get(p.id) || 0;
       const daysRemaining = Math.floor(
         (new Date(p.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
       );
@@ -530,7 +573,7 @@ export class DashboardService {
         riskReasons.push('期限まで1週間以内');
       }
 
-      result.push({
+      return {
         id: p.id,
         name: p.name,
         status: p.status,
@@ -539,10 +582,8 @@ export class DashboardService {
         overdueTaskCount,
         riskLevel,
         riskReasons: riskReasons.length > 0 ? riskReasons : ['進捗の確認が必要です'],
-      });
-    }
-
-    return result;
+      };
+    });
   }
 
   private async getUpcomingDeadlinesForManager(): Promise<any[]> {
