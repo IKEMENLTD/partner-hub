@@ -45,7 +45,7 @@ export class Partner {
   @Column({ name: 'contact_setup_completed', default: false })
   contactSetupCompleted: boolean;
 
-  @Column({ name: 'contact_setup_token', nullable: true })
+  @Column({ name: 'contact_setup_token', type: 'varchar', nullable: true })
   contactSetupToken: string | null;
 
   @Column({ name: 'contact_setup_token_expires_at', type: 'timestamptz', nullable: true })
