@@ -26,21 +26,26 @@ vi.mock('@/services/authService', () => ({
   },
 }));
 
+// Create a mutable mock state that can be modified in tests
+const createMockState = (overrides = {}) => ({
+  session: null,
+  user: null,
+  isLoading: false,
+  error: null,
+  setSession: vi.fn(),
+  setUser: vi.fn(),
+  setLoading: vi.fn(),
+  setError: vi.fn(),
+  setInitialized: vi.fn(),
+  logout: vi.fn(),
+  ...overrides,
+});
+
+let mockAuthState = createMockState();
+
 vi.mock('@/store', () => ({
   useAuthStore: vi.fn((selector) => {
-    const state = {
-      session: null,
-      user: null,
-      isLoading: false,
-      error: null,
-      setSession: vi.fn(),
-      setUser: vi.fn(),
-      setLoading: vi.fn(),
-      setError: vi.fn(),
-      setInitialized: vi.fn(),
-      logout: vi.fn(),
-    };
-    return selector ? selector(state) : state;
+    return selector ? selector(mockAuthState) : mockAuthState;
   }),
 }));
 
@@ -70,6 +75,8 @@ describe('useAuth hooks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Reset mock state before each test
+    mockAuthState = createMockState();
   });
 
   afterEach(() => {
@@ -547,12 +554,8 @@ describe('useAuth hooks', () => {
     it('should return session from store', () => {
       const mockSession = { access_token: 'test-token' };
 
-      // Re-mock useAuthStore for this test
-      const { useAuthStore } = require('@/store');
-      vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-        const state = { session: mockSession };
-        return selector ? selector(state) : state;
-      });
+      // Update mock state for this test
+      mockAuthState = createMockState({ session: mockSession });
 
       const { result } = renderHook(() => useSession());
 
@@ -560,11 +563,7 @@ describe('useAuth hooks', () => {
     });
 
     it('should return null when no session', () => {
-      const { useAuthStore } = require('@/store');
-      vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-        const state = { session: null };
-        return selector ? selector(state) : state;
-      });
+      mockAuthState = createMockState({ session: null });
 
       const { result } = renderHook(() => useSession());
 
@@ -574,11 +573,7 @@ describe('useAuth hooks', () => {
 
   describe('useAccessToken', () => {
     it('should return access token from session', () => {
-      const { useAuthStore } = require('@/store');
-      vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-        const state = { session: { access_token: 'my-token' } };
-        return selector ? selector(state) : state;
-      });
+      mockAuthState = createMockState({ session: { access_token: 'my-token' } });
 
       const { result } = renderHook(() => useAccessToken());
 
@@ -586,11 +581,7 @@ describe('useAuth hooks', () => {
     });
 
     it('should return null when no session', () => {
-      const { useAuthStore } = require('@/store');
-      vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-        const state = { session: null };
-        return selector ? selector(state) : state;
-      });
+      mockAuthState = createMockState({ session: null });
 
       const { result } = renderHook(() => useAccessToken());
 
@@ -598,11 +589,7 @@ describe('useAuth hooks', () => {
     });
 
     it('should return null when session has no access_token', () => {
-      const { useAuthStore } = require('@/store');
-      vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-        const state = { session: {} };
-        return selector ? selector(state) : state;
-      });
+      mockAuthState = createMockState({ session: {} });
 
       const { result } = renderHook(() => useAccessToken());
 

@@ -9,6 +9,7 @@ import { EmailService } from '../notification/services/email.service';
 import { ProjectStatisticsService } from './services/project-statistics.service';
 import { ProjectStatus, ProjectPriority } from './enums/project-status.enum';
 import { NotFoundException } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 
 describe('ProjectService', () => {
   let service: ProjectService;
@@ -176,10 +177,10 @@ describe('ProjectService', () => {
       expect(result).toEqual(mockProject);
     });
 
-    it('should throw NotFoundException when project not found', async () => {
+    it('should throw ResourceNotFoundException when project not found', async () => {
       mockProjectRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(ResourceNotFoundException);
     });
   });
 

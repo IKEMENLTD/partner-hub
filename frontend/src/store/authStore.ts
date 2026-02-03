@@ -32,33 +32,35 @@ import type { User } from '@/types';
  */
 
 // ============================================
-// localStorage操作の一元化
+// sessionStorage操作の一元化
+// SECURITY FIX: localStorage → sessionStorage に変更
+// sessionStorageはタブ/ウィンドウ閉じで自動削除され、XSS攻撃の影響を軽減
 // ============================================
 const RECOVERY_MODE_KEY = 'password_recovery_mode';
 
 /**
- * localStorageからリカバリーモードを取得
+ * sessionStorageからリカバリーモードを取得
  * @returns リカバリーモードの状態
  */
 export function getRecoveryModeFromStorage(): boolean {
   try {
-    return localStorage.getItem(RECOVERY_MODE_KEY) === 'true';
+    return sessionStorage.getItem(RECOVERY_MODE_KEY) === 'true';
   } catch {
     return false;
   }
 }
 
 /**
- * localStorageにリカバリーモードを保存
+ * sessionStorageにリカバリーモードを保存
  * @param value リカバリーモードの状態
  * @returns 保存成功したかどうか
  */
 export function setRecoveryModeInStorage(value: boolean): boolean {
   try {
     if (value) {
-      localStorage.setItem(RECOVERY_MODE_KEY, 'true');
+      sessionStorage.setItem(RECOVERY_MODE_KEY, 'true');
     } else {
-      localStorage.removeItem(RECOVERY_MODE_KEY);
+      sessionStorage.removeItem(RECOVERY_MODE_KEY);
     }
     return true;
   } catch (error) {

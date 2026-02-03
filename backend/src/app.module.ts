@@ -71,7 +71,9 @@ import { HealthModule } from './modules/health/health.module';
             synchronize: isProduction ? false : shouldSynchronize,
             logging: !isProduction,
             autoLoadEntities: true,
-            ssl: isProduction ? { rejectUnauthorized: false } : false,
+            // SECURITY FIX: Enable SSL certificate verification in production
+            // to prevent MITM attacks
+            ssl: isProduction ? { rejectUnauthorized: true } : false,
           };
         }
 

@@ -104,6 +104,67 @@ if (nodeEnv === 'production') {
 2. Supabase から JWT トークン取得
 3. バックエンドは `SUPABASE_JWT_SECRET` でトークン検証
 
+## エラーハンドリングガイドライン
+
+### 2026-02 カスタム例外体系
+
+**推奨パターン**: NestJS標準例外の代わりにカスタム例外を使用
+
+**例外クラス階層**:
+```
+BaseException
+├── ResourceNotFoundException  ← リソース未発見
+├── BusinessException          ← ビジネスロジック違反
+├── ValidationException        ← バリデーションエラー
+├── SystemException            ← システムエラー
+└── ConflictException          ← リソース競合
+```
+
+**ファクトリメソッドの使用**:
+```typescript
+// ❌ 非推奨: NestJS標準例外
+throw new NotFoundException(`Project with ID "${id}" not found`);
+
+// ✅ 推奨: カスタム例外のファクトリメソッド
+throw ResourceNotFoundException.forProject(id);
+throw ResourceNotFoundException.forTask(taskId);
+throw ResourceNotFoundException.forPartner(partnerId);
+```
+
+**エラーコード体系** (`/backend/src/common/exceptions/error-codes.ts`):
+- `AUTH_xxx`: 認証・認可関連
+- `USER_xxx`: ユーザー管理関連
+- `PROJECT_xxx`: プロジェクト関連
+- `TASK_xxx`: タスク関連
+- `PARTNER_xxx`: パートナー関連
+- `FILE_xxx`: ファイル管理関連
+- `VALIDATION_xxx`: バリデーション関連
+- `SYSTEM_xxx`: システム関連
+
+**エラーレスポンス形式**:
+```json
+{
+  "success": false,
+  "error": {
+    "code": "PROJECT_001",
+    "message": "プロジェクトが見つかりません",
+    "details": { "resourceType": "Project", "resourceId": "abc-123" }
+  },
+  "timestamp": "2026-02-03T...",
+  "path": "/api/v1/projects/abc-123"
+}
+```
+
+### セキュリティ修正 (2026-02)
+
+**実施済み修正**:
+1. SSL証明書検証を本番環境で有効化 (`rejectUnauthorized: true`)
+2. `localStorage` → `sessionStorage` に変更 (XSS対策)
+3. `RolesGuard` でデフォルト拒否を実装 (認証必須化)
+4. `avatarUrl` に `@IsUrl()` バリデーション追加
+
+---
+
 ## 解決した問題
 
 ### SSL証明書検証エラー (SELF_SIGNED_CERT_IN_CHAIN)

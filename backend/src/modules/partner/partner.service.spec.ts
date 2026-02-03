@@ -68,6 +68,8 @@ describe('PartnerService', () => {
   const mockEmailService = {
     sendPartnerWelcomeEmail: jest.fn().mockResolvedValue(undefined),
     sendPartnerInvitationEmail: jest.fn().mockResolvedValue(undefined),
+    sendReportUrlEmail: jest.fn().mockResolvedValue(undefined),
+    sendEmail: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockInvitationService = {

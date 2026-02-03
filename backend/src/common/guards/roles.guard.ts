@@ -1,28 +1,59 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
 
+/**
+ * SECURITY FIX: RolesGuard with secure defaults
+ * - @Roles() デコレータがない場合、認証済みユーザーのみ許可
+ * - @Public() デコレータがある場合のみ、未認証アクセスを許可
+ */
 @Injectable()
 export class RolesGuard implements CanActivate {
+  private readonly logger = new Logger(RolesGuard.name);
+
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // Check if route is public
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    if (!requiredRoles) {
+    const { user } = context.switchToHttp().getRequest();
+
+    // SECURITY FIX: Require authenticated user for all non-public routes
+    if (!user) {
+      this.logger.warn('Access denied: No authenticated user');
+      throw new ForbiddenException('Authentication required');
+    }
+
+    // If no specific roles required, allow any authenticated user
+    if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    // Check if user has required role
+    const hasRole = requiredRoles.some((role) => user.role === role);
 
-    if (!user) {
-      return false;
+    if (!hasRole) {
+      this.logger.warn(
+        `Access denied: User ${user.id} with role ${user.role} tried to access resource requiring ${requiredRoles.join(', ')}`
+      );
+      throw new ForbiddenException('Insufficient permissions');
     }
 
-    return requiredRoles.some((role) => user.role === role);
+    return true;
   }
 }

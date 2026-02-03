@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, IsEnum, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsEnum, IsBoolean, IsUrl, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '../enums/user-role.enum';
 
@@ -15,9 +15,14 @@ export class UpdateProfileDto {
   @MaxLength(50)
   lastName?: string;
 
-  @ApiPropertyOptional({ description: 'Avatar URL' })
+  @ApiPropertyOptional({ description: 'Avatar URL (must be a valid HTTPS URL)' })
   @IsOptional()
-  @IsString()
+  @ValidateIf((o) => o.avatarUrl !== null && o.avatarUrl !== '')
+  @IsUrl(
+    { protocols: ['https'], require_protocol: true },
+    { message: 'avatarUrl must be a valid HTTPS URL' }
+  )
+  @MaxLength(500)
   avatarUrl?: string;
 
   @ApiPropertyOptional({ description: 'User role (admin only)', enum: UserRole })

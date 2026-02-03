@@ -7,6 +7,7 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Project } from './entities/project.entity';
@@ -217,7 +218,8 @@ export class ProjectService {
     });
 
     if (!project) {
-      throw new NotFoundException(`Project with ID "${id}" not found`);
+      // Use custom exception for consistent error response format
+      throw ResourceNotFoundException.forProject(id);
     }
 
     // If userId is provided, check access control
@@ -383,7 +385,8 @@ export class ProjectService {
       withDeleted: true,
     });
     if (!project) {
-      throw new NotFoundException(`Project with ID "${id}" not found`);
+      // Use custom exception for consistent error response format
+      throw ResourceNotFoundException.forProject(id);
     }
     await this.projectRepository.remove(project);
     this.logger.log(`Project permanently deleted: ${project.name} (${id})`);
