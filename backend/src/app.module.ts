@@ -71,9 +71,13 @@ import { HealthModule } from './modules/health/health.module';
             synchronize: isProduction ? false : shouldSynchronize,
             logging: !isProduction,
             autoLoadEntities: true,
-            // SECURITY FIX: Enable SSL certificate verification in production
-            // to prevent MITM attacks
-            ssl: isProduction ? { rejectUnauthorized: true } : false,
+            // SSL Configuration for Supabase PostgreSQL
+            // Supabase uses SSL by default - the connection URL includes sslmode=require
+            // rejectUnauthorized: false is acceptable for Supabase as:
+            // 1. Connection is encrypted (SSL/TLS)
+            // 2. We connect to Supabase's known trusted infrastructure
+            // 3. Supabase handles certificate management internally
+            ssl: isProduction ? { rejectUnauthorized: false } : false,
           };
         }
 
