@@ -18,7 +18,7 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
-    public code?: string,
+    public errorCode?: string,
     public details?: Record<string, unknown>
   ) {
     super(message);
@@ -112,8 +112,8 @@ async function request<T>(
         const errorData = await retryResponse.json().catch(() => ({}));
         throw new ApiError(
           retryResponse.status,
-          errorData.message || `HTTP error! status: ${retryResponse.status}`,
-          errorData.code,
+          errorData.userMessage || errorData.message || `HTTP error! status: ${retryResponse.status}`,
+          errorData.errorCode,
           errorData.details
         );
       }
@@ -126,8 +126,8 @@ async function request<T>(
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
         response.status,
-        errorData.message || getDefaultErrorMessage(response.status),
-        errorData.code,
+        errorData.userMessage || errorData.message || getDefaultErrorMessage(response.status),
+        errorData.errorCode,
         errorData.details
       );
     }

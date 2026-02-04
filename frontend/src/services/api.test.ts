@@ -40,7 +40,7 @@ describe('api.ts', () => {
       expect(error.name).toBe('ApiError');
       expect(error.status).toBe(400);
       expect(error.message).toBe('Bad Request');
-      expect(error.code).toBe('VALIDATION_ERROR');
+      expect(error.errorCode).toBe('VALIDATION_ERROR');
       expect(error.details).toEqual({ field: 'email' });
     });
 
@@ -49,7 +49,7 @@ describe('api.ts', () => {
 
       expect(error.status).toBe(500);
       expect(error.message).toBe('Server Error');
-      expect(error.code).toBeUndefined();
+      expect(error.errorCode).toBeUndefined();
       expect(error.details).toBeUndefined();
     });
 
@@ -159,7 +159,7 @@ describe('api.ts', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        json: () => Promise.resolve({ message: 'Bad Request', code: 'INVALID_INPUT' }),
+        json: () => Promise.resolve({ message: 'Bad Request', errorCode: 'INVALID_INPUT', userMessage: '入力が無効です' }),
       });
 
       await expect(api.get('/test')).rejects.toThrow(ApiError);
@@ -442,6 +442,46 @@ describe('api.ts', () => {
       const result = extractData(backendResponse);
 
       expect(result).toEqual([{ id: '1' }, { id: '2' }]);
+    });
+  });
+
+  describe('Error handling - userMessage priority', () => {
+    it('should prefer userMessage over message', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: () => Promise.resolve({
+          message: 'English message',
+          userMessage: '日本語メッセージ',
+          errorCode: 'TEST_001',
+        }),
+      });
+
+      try {
+        await api.get('/test');
+      } catch (e) {
+        expect(e).toBeInstanceOf(ApiError);
+        expect((e as ApiError).message).toBe('日本語メッセージ');
+        expect((e as ApiError).errorCode).toBe('TEST_001');
+      }
+    });
+
+    it('should fallback to message when userMessage is not provided', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: () => Promise.resolve({
+          message: 'English message only',
+          errorCode: 'TEST_002',
+        }),
+      });
+
+      try {
+        await api.get('/test');
+      } catch (e) {
+        expect(e).toBeInstanceOf(ApiError);
+        expect((e as ApiError).message).toBe('English message only');
+      }
     });
   });
 
