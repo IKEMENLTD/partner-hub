@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RolesGuard } from './roles.guard';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
+import { AuthenticationException, AuthorizationException } from '../exceptions/business.exception';
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;
@@ -73,10 +74,10 @@ describe('RolesGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should throw ForbiddenException if user is not present on non-public route', () => {
+    it('should throw AuthenticationException if user is not present on non-public route', () => {
       const context = mockExecutionContext(null, [UserRole.ADMIN], false);
 
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow(AuthenticationException);
     });
 
     it('should return true if user has required role', () => {
@@ -92,7 +93,7 @@ describe('RolesGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should throw ForbiddenException if user does not have required role', () => {
+    it('should throw AuthorizationException if user does not have required role', () => {
       const user = {
         id: 'user-123',
         email: 'member@example.com',
@@ -100,7 +101,7 @@ describe('RolesGuard', () => {
       };
       const context = mockExecutionContext(user, [UserRole.ADMIN], false);
 
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow(AuthorizationException);
     });
 
     it('should return true if user has one of multiple required roles', () => {
@@ -116,7 +117,7 @@ describe('RolesGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should throw ForbiddenException if user has none of the required roles', () => {
+    it('should throw AuthorizationException if user has none of the required roles', () => {
       const user = {
         id: 'user-123',
         email: 'partner@example.com',
@@ -124,7 +125,7 @@ describe('RolesGuard', () => {
       };
       const context = mockExecutionContext(user, [UserRole.ADMIN, UserRole.MANAGER], false);
 
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow(AuthorizationException);
     });
   });
 
@@ -180,17 +181,17 @@ describe('RolesGuard', () => {
   });
 
   describe('Edge cases', () => {
-    it('should throw ForbiddenException for user without role property', () => {
+    it('should throw AuthorizationException for user without role property', () => {
       const user = { id: 'user-123', email: 'test@example.com' };
       const context = mockExecutionContext(user as any, [UserRole.ADMIN], false);
 
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow(AuthorizationException);
     });
 
-    it('should throw ForbiddenException for undefined user on non-public route', () => {
+    it('should throw AuthenticationException for undefined user on non-public route', () => {
       const context = mockExecutionContext(undefined, [UserRole.ADMIN], false);
 
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow(AuthenticationException);
     });
 
     it('should return true for empty required roles array with authenticated user', () => {
@@ -230,8 +231,8 @@ describe('RolesGuard', () => {
       };
       const context = mockExecutionContext(user as any, [UserRole.ADMIN], false);
 
-      // Should only check user.role, not user.roles - should throw ForbiddenException
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      // Should only check user.role, not user.roles - should throw AuthorizationException
+      expect(() => guard.canActivate(context)).toThrow(AuthorizationException);
     });
 
     it('should handle case-sensitive role comparison', () => {
@@ -242,7 +243,7 @@ describe('RolesGuard', () => {
       const context = mockExecutionContext(user, [UserRole.ADMIN], false);
 
       // Should fail due to case mismatch ('ADMIN' !== 'admin')
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow(AuthorizationException);
     });
 
     it('should reject null role', () => {
@@ -252,14 +253,14 @@ describe('RolesGuard', () => {
       };
       const context = mockExecutionContext(user, [UserRole.ADMIN], false);
 
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow(AuthorizationException);
     });
 
     it('should require authentication on non-public routes without roles', () => {
       const context = mockExecutionContext(null, null, false);
 
       // Non-public route without specific roles still requires authentication
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow(AuthenticationException);
     });
   });
 

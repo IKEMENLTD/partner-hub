@@ -8,7 +8,6 @@ import { UserProfile } from '../auth/entities/user-profile.entity';
 import { EmailService } from '../notification/services/email.service';
 import { ProjectStatisticsService } from './services/project-statistics.service';
 import { ProjectStatus, ProjectPriority } from './enums/project-status.enum';
-import { NotFoundException } from '@nestjs/common';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 
 describe('ProjectService', () => {
@@ -272,12 +271,12 @@ describe('ProjectService', () => {
       expect(mockProjectRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException if partner not found', async () => {
+    it('should throw ResourceNotFoundException if partner not found', async () => {
       mockProjectRepository.findOne.mockResolvedValue(mockProject);
       mockPartnerRepository.findOne.mockResolvedValue(null);
 
       await expect(service.addPartner('test-project-uuid', 'non-existent-partner')).rejects.toThrow(
-        NotFoundException,
+        ResourceNotFoundException,
       );
     });
 

@@ -4,7 +4,8 @@ import { Repository } from 'typeorm';
 import { AuthService } from './auth.service';
 import { UserProfile } from './entities/user-profile.entity';
 import { UserRole } from './enums/user-role.enum';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
+import { BusinessException } from '../../common/exceptions/business.exception';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -64,10 +65,10 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw NotFoundException when profile not found', async () => {
+    it('should throw ResourceNotFoundException when profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findProfileById('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(service.findProfileById('non-existent')).rejects.toThrow(ResourceNotFoundException);
     });
   });
 
@@ -104,11 +105,11 @@ describe('AuthService', () => {
       expect(mockProfileRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException if profile not found', async () => {
+    it('should throw ResourceNotFoundException if profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
       await expect(service.updateProfile('non-existent', updateDto)).rejects.toThrow(
-        NotFoundException,
+        ResourceNotFoundException,
       );
     });
   });
@@ -127,11 +128,11 @@ describe('AuthService', () => {
       expect(mockProfileRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException if profile not found', async () => {
+    it('should throw ResourceNotFoundException if profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
       await expect(service.updateUserRole('non-existent', UserRole.ADMIN)).rejects.toThrow(
-        NotFoundException,
+        ResourceNotFoundException,
       );
     });
   });
@@ -149,16 +150,16 @@ describe('AuthService', () => {
       expect(mockProfileRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException when trying to deactivate own account', async () => {
+    it('should throw BusinessException when trying to deactivate own account', async () => {
       await expect(service.deactivateUser('test-uuid', 'test-uuid')).rejects.toThrow(
-        BadRequestException,
+        BusinessException,
       );
     });
 
-    it('should throw NotFoundException if profile not found', async () => {
+    it('should throw ResourceNotFoundException if profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.deactivateUser('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(service.deactivateUser('non-existent')).rejects.toThrow(ResourceNotFoundException);
     });
   });
 
@@ -178,10 +179,10 @@ describe('AuthService', () => {
       expect(mockProfileRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException if profile not found', async () => {
+    it('should throw ResourceNotFoundException if profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.activateUser('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(service.activateUser('non-existent')).rejects.toThrow(ResourceNotFoundException);
     });
   });
 

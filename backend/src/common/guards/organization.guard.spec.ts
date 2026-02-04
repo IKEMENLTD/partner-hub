@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrganizationGuard, SKIP_ORGANIZATION_CHECK } from './organization.guard';
 import { UserProfile } from '../../modules/auth/entities/user-profile.entity';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
+import { AuthenticationException } from '../exceptions/business.exception';
+import { ResourceNotFoundException } from '../exceptions/resource-not-found.exception';
 
 describe('OrganizationGuard', () => {
   let guard: OrganizationGuard;
@@ -85,11 +87,11 @@ describe('OrganizationGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should throw ForbiddenException when user is not authenticated', async () => {
+    it('should throw AuthenticationException when user is not authenticated', async () => {
       const context = mockExecutionContext(null, false);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        ForbiddenException,
+        AuthenticationException,
       );
     });
 
@@ -106,7 +108,7 @@ describe('OrganizationGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should throw ForbiddenException when user profile not found', async () => {
+    it('should throw ResourceNotFoundException when user profile not found', async () => {
       const user = {
         id: 'user-123',
         role: UserRole.MEMBER,
@@ -117,7 +119,7 @@ describe('OrganizationGuard', () => {
       jest.spyOn(userProfileRepository, 'findOne').mockResolvedValue(null);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        ForbiddenException,
+        ResourceNotFoundException,
       );
     });
 

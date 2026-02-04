@@ -6,7 +6,7 @@ import { Reminder } from './entities/reminder.entity';
 import { Task } from '../task/entities/task.entity';
 import { Project } from '../project/entities/project.entity';
 import { ReminderType, ReminderStatus, ReminderChannel } from './enums/reminder-type.enum';
-import { NotFoundException } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 
 describe('ReminderService', () => {
   let service: ReminderService;
@@ -129,10 +129,10 @@ describe('ReminderService', () => {
       expect(result).toEqual(mockReminder);
     });
 
-    it('should throw NotFoundException when reminder not found', async () => {
+    it('should throw ResourceNotFoundException when reminder not found', async () => {
       mockReminderRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(ResourceNotFoundException);
     });
   });
 

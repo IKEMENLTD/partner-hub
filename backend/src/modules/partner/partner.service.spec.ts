@@ -10,7 +10,8 @@ import { EmailService } from '../notification/services/email.service';
 import { PartnerInvitationService } from './services/partner-invitation.service';
 import { PartnerReportTokenService } from '../partner-report/services/partner-report-token.service';
 import { PartnerStatus, PartnerType } from './enums/partner-status.enum';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
+import { ConflictException } from '../../common/exceptions/business.exception';
 
 describe('PartnerService', () => {
   let service: PartnerService;
@@ -166,10 +167,10 @@ describe('PartnerService', () => {
       expect(result).toEqual(mockPartner);
     });
 
-    it('should throw NotFoundException when partner not found', async () => {
+    it('should throw ResourceNotFoundException when partner not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(ResourceNotFoundException);
     });
   });
 

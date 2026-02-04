@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,6 +8,7 @@ import { SupabaseService } from '../../modules/supabase/supabase.service';
 import { UserProfile } from '../../modules/auth/entities/user-profile.entity';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { AuthenticationException } from '../exceptions/business.exception';
 
 describe('SupabaseAuthGuard', () => {
   let guard: SupabaseAuthGuard;
@@ -110,19 +111,19 @@ describe('SupabaseAuthGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should throw UnauthorizedException when no token provided', async () => {
+    it('should throw AuthenticationException when no token provided', async () => {
       const context = mockExecutionContext(undefined, false);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
+        AuthenticationException,
       );
     });
 
-    it('should throw UnauthorizedException for invalid token format', async () => {
+    it('should throw AuthenticationException for invalid token format', async () => {
       const context = mockExecutionContext('InvalidToken', false);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
+        AuthenticationException,
       );
     });
 
@@ -161,7 +162,7 @@ describe('SupabaseAuthGuard', () => {
       expect(userProfileRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw UnauthorizedException when Supabase returns error', async () => {
+    it('should throw AuthenticationException when Supabase returns error', async () => {
       const context = mockExecutionContext('Bearer invalid-token', false);
 
       jest.spyOn(supabaseService.admin.auth, 'getUser').mockResolvedValue({
@@ -170,11 +171,11 @@ describe('SupabaseAuthGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
+        AuthenticationException,
       );
     });
 
-    it('should throw UnauthorizedException when user is inactive', async () => {
+    it('should throw AuthenticationException when user is inactive', async () => {
       const context = mockExecutionContext('Bearer valid-token', false);
       const inactiveUser = {
         ...mockUserProfile,
@@ -190,11 +191,11 @@ describe('SupabaseAuthGuard', () => {
       jest.spyOn(userProfileRepository, 'findOne').mockResolvedValue(inactiveUser);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
+        AuthenticationException,
       );
     });
 
-    it('should throw UnauthorizedException when Supabase admin client is not available', async () => {
+    it('should throw AuthenticationException when Supabase admin client is not available', async () => {
       const context = mockExecutionContext('Bearer valid-token', false);
 
       // Temporarily set admin to null
@@ -205,7 +206,7 @@ describe('SupabaseAuthGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
+        AuthenticationException,
       );
 
       // Restore
@@ -236,7 +237,7 @@ describe('SupabaseAuthGuard', () => {
       const context = mockExecutionContext('Basic my-token', false);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
+        AuthenticationException,
       );
     });
   });
@@ -246,7 +247,7 @@ describe('SupabaseAuthGuard', () => {
       const context = mockExecutionContext('', false);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
+        AuthenticationException,
       );
     });
 
@@ -290,7 +291,7 @@ describe('SupabaseAuthGuard', () => {
       );
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
+        AuthenticationException,
       );
     });
   });

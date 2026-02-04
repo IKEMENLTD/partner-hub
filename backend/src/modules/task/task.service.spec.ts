@@ -7,7 +7,7 @@ import { Partner } from '../partner/entities/partner.entity';
 import { HealthScoreService } from '../project/services/health-score.service';
 import { EmailService } from '../notification/services/email.service';
 import { TaskStatus, TaskPriority, TaskType } from './enums/task-status.enum';
-import { NotFoundException } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 
 describe('TaskService', () => {
   let service: TaskService;
@@ -131,10 +131,10 @@ describe('TaskService', () => {
       expect(result).toEqual(mockTask);
     });
 
-    it('should throw NotFoundException when task not found', async () => {
+    it('should throw ResourceNotFoundException when task not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('non-existent-uuid')).rejects.toThrow(ResourceNotFoundException);
     });
   });
 
