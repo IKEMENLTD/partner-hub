@@ -10,7 +10,7 @@ import { tap } from 'rxjs/operators';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 
-// Simple in-memory metrics store
+// Simple in-memory metrics store with memory leak prevention
 export class MetricsStore {
   private static instance: MetricsStore;
   private requestCounts: Map<string, number> = new Map();
@@ -18,6 +18,12 @@ export class MetricsStore {
   private totalRequests: number = 0;
   private errorCount: number = 0;
   private startTime: Date = new Date();
+  private lastCleanup: Date = new Date();
+
+  // Memory limits
+  private static readonly MAX_ENDPOINTS = 100;
+  private static readonly MAX_RESPONSE_TIMES_PER_ENDPOINT = 100;
+  private static readonly CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
   static getInstance(): MetricsStore {
     if (!MetricsStore.instance) {
@@ -26,9 +32,45 @@ export class MetricsStore {
     return MetricsStore.instance;
   }
 
+  // Normalize endpoint to prevent unique IDs from creating too many entries
+  private normalizeEndpoint(endpoint: string): string {
+    // Replace UUIDs with :id
+    return endpoint
+      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, ':id')
+      // Replace numeric IDs with :id
+      .replace(/\/\d+/g, '/:id');
+  }
+
+  // Cleanup old/least used endpoints to prevent memory growth
+  private cleanupIfNeeded(): void {
+    const now = new Date();
+    if (now.getTime() - this.lastCleanup.getTime() < MetricsStore.CLEANUP_INTERVAL_MS) {
+      return;
+    }
+
+    this.lastCleanup = now;
+
+    // If we have too many endpoints, remove the least used ones
+    if (this.requestCounts.size > MetricsStore.MAX_ENDPOINTS) {
+      const sortedEndpoints = Array.from(this.requestCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, MetricsStore.MAX_ENDPOINTS);
+
+      this.requestCounts.clear();
+      this.responseTimes.clear();
+
+      for (const [endpoint, count] of sortedEndpoints) {
+        this.requestCounts.set(endpoint, count);
+      }
+    }
+  }
+
   incrementRequestCount(endpoint: string): void {
-    const current = this.requestCounts.get(endpoint) || 0;
-    this.requestCounts.set(endpoint, current + 1);
+    this.cleanupIfNeeded();
+
+    const normalizedEndpoint = this.normalizeEndpoint(endpoint);
+    const current = this.requestCounts.get(normalizedEndpoint) || 0;
+    this.requestCounts.set(normalizedEndpoint, current + 1);
     this.totalRequests++;
   }
 
@@ -37,13 +79,14 @@ export class MetricsStore {
   }
 
   recordResponseTime(endpoint: string, duration: number): void {
-    const times = this.responseTimes.get(endpoint) || [];
-    // Keep only last 1000 measurements per endpoint
-    if (times.length >= 1000) {
+    const normalizedEndpoint = this.normalizeEndpoint(endpoint);
+    const times = this.responseTimes.get(normalizedEndpoint) || [];
+    // Keep only last N measurements per endpoint
+    if (times.length >= MetricsStore.MAX_RESPONSE_TIMES_PER_ENDPOINT) {
       times.shift();
     }
     times.push(duration);
-    this.responseTimes.set(endpoint, times);
+    this.responseTimes.set(normalizedEndpoint, times);
   }
 
   getMetrics(): MetricsSummary {
