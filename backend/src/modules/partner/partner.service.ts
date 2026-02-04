@@ -1,11 +1,11 @@
 import {
   Injectable,
-  NotFoundException,
-  ConflictException,
   Logger,
   Inject,
   forwardRef,
 } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
+import { ConflictException as CustomConflictException } from '../../common/exceptions/business.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, In } from 'typeorm';
 import { Partner } from './entities/partner.entity';
@@ -60,7 +60,10 @@ export class PartnerService {
       where: { email: createPartnerDto.email },
     });
     if (existingPartner) {
-      throw new ConflictException('Partner with this email already exists');
+      throw new CustomConflictException('PARTNER_005', {
+        message: 'Partner with this email already exists',
+        userMessage: 'このメールアドレスのパートナーは既に登録されています',
+      });
     }
 
     // Get creator's organization
@@ -213,7 +216,7 @@ export class PartnerService {
     });
 
     if (!partner) {
-      throw new NotFoundException(`Partner with ID "${id}" not found`);
+      throw ResourceNotFoundException.forPartner(id);
     }
 
     return partner;
@@ -232,7 +235,10 @@ export class PartnerService {
         where: { email: updatePartnerDto.email },
       });
       if (existingPartner) {
-        throw new ConflictException('Partner with this email already exists');
+        throw new CustomConflictException('PARTNER_005', {
+          message: 'Partner with this email already exists',
+          userMessage: 'このメールアドレスのパートナーは既に登録されています',
+        });
       }
     }
 
@@ -289,7 +295,7 @@ export class PartnerService {
       withDeleted: true,
     });
     if (!partner) {
-      throw new NotFoundException(`Partner with ID "${id}" not found`);
+      throw ResourceNotFoundException.forPartner(id);
     }
     await this.partnerRepository.remove(partner);
     this.logger.log(`Partner permanently deleted: ${partner.name} (${id})`);

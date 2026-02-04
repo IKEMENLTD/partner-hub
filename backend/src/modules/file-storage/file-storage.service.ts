@@ -1,10 +1,12 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjectFile } from './entities/project-file.entity';
 import { FileCategory } from './enums/file-category.enum';
 import { SupabaseService } from '../supabase/supabase.service';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
+import { BusinessException } from '../../common/exceptions/business.exception';
 
 const BUCKET_NAME = 'project-files';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -36,15 +38,21 @@ export class FileStorageService {
   ): Promise<ProjectFile> {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      throw new BadRequestException(`ファイルサイズが上限（10MB）を超えています`);
+      throw new BusinessException('FILE_003', {
+        message: 'File size exceeds limit',
+        userMessage: 'ファイルサイズが上限（10MB）を超えています',
+        details: { maxSize: MAX_FILE_SIZE, actualSize: file.size },
+      });
     }
 
     // Validate file extension
     const extension = this.getFileExtension(file.originalname).toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
-      throw new BadRequestException(
-        `許可されていないファイル形式です。許可される形式: ${ALLOWED_EXTENSIONS.join(', ')}`,
-      );
+      throw new BusinessException('FILE_004', {
+        message: 'File type not allowed',
+        userMessage: `許可されていないファイル形式です。許可される形式: ${ALLOWED_EXTENSIONS.join(', ')}`,
+        details: { allowedExtensions: ALLOWED_EXTENSIONS, actualExtension: extension },
+      });
     }
 
     // Determine category if not provided
@@ -57,7 +65,10 @@ export class FileStorageService {
     // Upload to Supabase Storage
     const supabaseAdmin = this.supabaseService.admin;
     if (!supabaseAdmin) {
-      throw new BadRequestException('Supabase Storage is not configured');
+      throw new BusinessException('SYSTEM_001', {
+        message: 'Supabase Storage is not configured',
+        userMessage: 'ストレージサービスが利用できません',
+      });
     }
 
     const { data, error } = await supabaseAdmin.storage
@@ -69,7 +80,10 @@ export class FileStorageService {
 
     if (error) {
       this.logger.error(`Failed to upload file to Supabase: ${error.message}`);
-      throw new BadRequestException(`ファイルのアップロードに失敗しました: ${error.message}`);
+      throw new BusinessException('FILE_002', {
+        message: `Failed to upload file: ${error.message}`,
+        userMessage: 'ファイルのアップロードに失敗しました',
+      });
     }
 
     // Get public URL
@@ -127,7 +141,7 @@ export class FileStorageService {
     });
 
     if (!file) {
-      throw new NotFoundException('ファイルが見つかりません');
+      throw ResourceNotFoundException.forFile(fileId);
     }
 
     return file;
@@ -166,7 +180,10 @@ export class FileStorageService {
 
     const supabaseAdmin = this.supabaseService.admin;
     if (!supabaseAdmin) {
-      throw new BadRequestException('Supabase Storage is not configured');
+      throw new BusinessException('SYSTEM_001', {
+        message: 'Supabase Storage is not configured',
+        userMessage: 'ストレージサービスが利用できません',
+      });
     }
 
     const { data, error } = await supabaseAdmin.storage
@@ -175,7 +192,10 @@ export class FileStorageService {
 
     if (error) {
       this.logger.error(`Failed to generate signed URL: ${error.message}`);
-      throw new BadRequestException(`署名付きURLの生成に失敗しました: ${error.message}`);
+      throw new BusinessException('FILE_002', {
+        message: `Failed to generate signed URL: ${error.message}`,
+        userMessage: '署名付きURLの生成に失敗しました',
+      });
     }
 
     return {

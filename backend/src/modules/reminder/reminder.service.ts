@@ -1,6 +1,5 @@
 import {
   Injectable,
-  NotFoundException,
   Logger,
   Inject,
   forwardRef,
@@ -18,6 +17,7 @@ import { ReminderStatus, ReminderType, ReminderChannel } from './enums/reminder-
 import { TaskStatus } from '../task/enums/task-status.enum';
 import { ProjectStatus } from '../project/enums/project-status.enum';
 import { NotificationService } from '../notification/services/notification.service';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 
 @Injectable()
 export class ReminderService {
@@ -117,7 +117,11 @@ export class ReminderService {
     });
 
     if (!reminder) {
-      throw new NotFoundException(`Reminder with ID "${id}" not found`);
+      throw new ResourceNotFoundException('NOTIFICATION_001', {
+        resourceType: 'Reminder',
+        resourceId: id,
+        userMessage: 'リマインダーが見つかりません',
+      });
     }
 
     return reminder;

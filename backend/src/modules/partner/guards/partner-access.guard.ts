@@ -2,10 +2,10 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
-  NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
+import { AuthenticationException, AuthorizationException } from '../../../common/exceptions/business.exception';
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -50,7 +50,10 @@ export class PartnerAccessGuard implements CanActivate {
     const user = request.user;
 
     if (!user) {
-      throw new ForbiddenException('User not authenticated');
+      throw new AuthenticationException('AUTH_001', {
+        message: 'User not authenticated',
+        userMessage: '認証が必要です',
+      });
     }
 
     // Admin and Manager users have access to all partners
@@ -73,7 +76,7 @@ export class PartnerAccessGuard implements CanActivate {
     });
 
     if (!partner) {
-      throw new NotFoundException(`Partner with ID "${partnerId}" not found`);
+      throw ResourceNotFoundException.forPartner(partnerId);
     }
 
     // Check if user is the partner's linked user account
@@ -88,7 +91,10 @@ export class PartnerAccessGuard implements CanActivate {
     }
 
     this.logger.warn(`Access denied for user ${user.id} to partner ${partnerId}`);
-    throw new ForbiddenException('You do not have permission to access this partner');
+    throw new AuthorizationException('PARTNER_002', {
+      message: 'You do not have permission to access this partner',
+      userMessage: 'このパートナーへのアクセス権限がありません',
+    });
   }
 
   /**

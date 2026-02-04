@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { PartnerReport, ReportSource } from '../entities/partner-report.entity';
@@ -6,6 +6,7 @@ import { ReportRequest, RequestStatus } from '../entities/report-request.entity'
 import { CreateReportDto, QueryReportDto } from '../dto';
 import { PaginatedResponseDto } from '../../../common/dto/pagination.dto';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
 
 @Injectable()
 export class PartnerReportService {
@@ -179,7 +180,7 @@ export class PartnerReportService {
     });
 
     if (!report) {
-      throw new NotFoundException('報告が見つかりません');
+      throw ResourceNotFoundException.forReport(id);
     }
 
     return report;

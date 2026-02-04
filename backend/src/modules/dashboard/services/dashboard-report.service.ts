@@ -1,4 +1,5 @@
-import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { BusinessException } from '../../../common/exceptions/business.exception';
 import { GenerateReportDto, ReportType, ReportFormat, ReportGenerationResult } from '../dto';
 import {
   DashboardOverviewService,
@@ -72,7 +73,10 @@ export class DashboardReportService {
 
       case ReportType.CUSTOM:
         if (!dto.startDate || !dto.endDate) {
-          throw new BadRequestException('カスタムレポートには開始日と終了日が必要です');
+          throw new BusinessException('VALIDATION_001', {
+            message: 'Custom report requires start and end dates',
+            userMessage: 'カスタムレポートには開始日と終了日が必要です',
+          });
         }
         startDate = new Date(dto.startDate);
         startDate.setHours(0, 0, 0, 0);
@@ -81,7 +85,10 @@ export class DashboardReportService {
         break;
 
       default:
-        throw new BadRequestException('無効なレポートタイプです');
+        throw new BusinessException('VALIDATION_001', {
+          message: 'Invalid report type',
+          userMessage: '無効なレポートタイプです',
+        });
     }
 
     return { startDate, endDate };

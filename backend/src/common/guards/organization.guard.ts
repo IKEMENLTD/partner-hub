@@ -2,9 +2,10 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { AuthenticationException, AuthorizationException } from '../exceptions/business.exception';
+import { ResourceNotFoundException } from '../exceptions/resource-not-found.exception';
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -47,7 +48,10 @@ export class OrganizationGuard implements CanActivate {
     const user = request.user;
 
     if (!user) {
-      throw new ForbiddenException('User not authenticated');
+      throw new AuthenticationException('AUTH_001', {
+        message: 'User not authenticated',
+        userMessage: '認証が必要です',
+      });
     }
 
     // Super admin without organization can access all data
@@ -61,7 +65,7 @@ export class OrganizationGuard implements CanActivate {
     });
 
     if (!userProfile) {
-      throw new ForbiddenException('User profile not found');
+      throw ResourceNotFoundException.forUser(user.id);
     }
 
     // Store organizationId in request for use by services

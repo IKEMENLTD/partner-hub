@@ -1,4 +1,5 @@
-import { Injectable, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { AuthorizationException } from '../exceptions/business.exception';
 import { SelectQueryBuilder, ObjectLiteral } from 'typeorm';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
 
@@ -58,7 +59,10 @@ export class MultiTenantService {
     if (!userOrganizationId) {
       if (entity.organizationId) {
         this.logger.warn(`Unauthorized cross-tenant access attempt to ${entityName}`);
-        throw new ForbiddenException(`You do not have permission to access this ${entityName}`);
+        throw new AuthorizationException('AUTH_002', {
+        message: `You do not have permission to access this ${entityName}`,
+        userMessage: `この${entityName}へのアクセス権限がありません`,
+      });
       }
       return;
     }
@@ -68,7 +72,10 @@ export class MultiTenantService {
       this.logger.warn(
         `Cross-tenant access attempt: user org ${userOrganizationId} tried to access ${entityName} in org ${entity.organizationId}`,
       );
-      throw new ForbiddenException(`You do not have permission to access this ${entityName}`);
+      throw new AuthorizationException('AUTH_002', {
+        message: `You do not have permission to access this ${entityName}`,
+        userMessage: `この${entityName}へのアクセス権限がありません`,
+      });
     }
   }
 

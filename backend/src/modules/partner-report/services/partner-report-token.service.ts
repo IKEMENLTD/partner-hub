@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
+import { ConflictException as CustomConflictException } from '../../../common/exceptions/business.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
@@ -29,7 +31,7 @@ export class PartnerReportTokenService {
     });
 
     if (!partner) {
-      throw new NotFoundException('パートナーが見つかりません');
+      throw ResourceNotFoundException.forPartner(partnerId);
     }
 
     // 既存のアクティブなトークンをチェック
@@ -106,7 +108,11 @@ export class PartnerReportTokenService {
     });
 
     if (result.affected === 0) {
-      throw new NotFoundException('トークンが見つかりません');
+      throw new ResourceNotFoundException('PARTNER_001', {
+        resourceType: 'ReportToken',
+        resourceId: tokenId || partnerId,
+        userMessage: 'トークンが見つかりません',
+      });
     }
 
     this.logger.log(`トークン無効化: パートナー=${partnerId}`);
@@ -141,7 +147,7 @@ export class PartnerReportTokenService {
     });
 
     if (!partner) {
-      throw new NotFoundException('パートナーが見つかりません');
+      throw ResourceNotFoundException.forPartner(partnerId);
     }
 
     const token = randomBytes(32).toString('hex');

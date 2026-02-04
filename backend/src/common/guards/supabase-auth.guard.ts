@@ -1,10 +1,10 @@
 import {
   Injectable,
   ExecutionContext,
-  UnauthorizedException,
   Logger,
   CanActivate,
 } from '@nestjs/common';
+import { AuthenticationException } from '../exceptions/business.exception';
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -40,7 +40,10 @@ export class SupabaseAuthGuard implements CanActivate {
 
     if (!token) {
       this.logger.warn('No token provided in Authorization header');
-      throw new UnauthorizedException('No token provided');
+      throw new AuthenticationException('AUTH_001', {
+        message: 'No token provided',
+        userMessage: '認証トークンが必要です',
+      });
     }
 
     try {
@@ -49,7 +52,10 @@ export class SupabaseAuthGuard implements CanActivate {
 
       if (!supabaseAdmin) {
         this.logger.error('Supabase admin client not initialized');
-        throw new UnauthorizedException('Authentication service unavailable');
+        throw new AuthenticationException('AUTH_001', {
+          message: 'Authentication service unavailable',
+          userMessage: '認証サービスが利用できません',
+        });
       }
 
       // Verify token using Supabase's getUser method
@@ -60,12 +66,18 @@ export class SupabaseAuthGuard implements CanActivate {
 
       if (error) {
         this.logger.warn(`Token verification failed: ${error.message}`);
-        throw new UnauthorizedException('Invalid token');
+        throw new AuthenticationException('AUTH_003', {
+          message: 'Invalid token',
+          userMessage: '無効な認証トークンです',
+        });
       }
 
       if (!user) {
         this.logger.warn('No user returned from Supabase');
-        throw new UnauthorizedException('Invalid token');
+        throw new AuthenticationException('AUTH_003', {
+          message: 'Invalid token',
+          userMessage: '無効な認証トークンです',
+        });
       }
 
       this.logger.debug(`Supabase user verified: ${user.email}`);
@@ -91,7 +103,10 @@ export class SupabaseAuthGuard implements CanActivate {
 
       if (!userProfile.isActive) {
         this.logger.warn(`User is inactive: ${user.email}`);
-        throw new UnauthorizedException('User is inactive');
+        throw new AuthenticationException('AUTH_005', {
+          message: 'User account is inactive',
+          userMessage: 'アカウントが無効化されています',
+        });
       }
 
       // Attach user profile to request
@@ -100,11 +115,14 @@ export class SupabaseAuthGuard implements CanActivate {
 
       return true;
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
+      if (error instanceof AuthenticationException) {
         throw error;
       }
       this.logger.error(`Authentication error: ${error.message}`, error.stack);
-      throw new UnauthorizedException('Authentication failed');
+      throw new AuthenticationException('AUTH_001', {
+        message: 'Authentication failed',
+        userMessage: '認証に失敗しました',
+      });
     }
   }
 

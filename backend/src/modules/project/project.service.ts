@@ -1,13 +1,11 @@
 import {
   Injectable,
-  NotFoundException,
   Logger,
-  BadRequestException,
-  ForbiddenException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
+import { BusinessException, AuthorizationException } from '../../common/exceptions/business.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Project } from './entities/project.entity';
@@ -81,7 +79,10 @@ export class ProjectService {
         id: In(partnerIds),
       });
       if (partners.length !== partnerIds.length) {
-        throw new BadRequestException('Some partner IDs are invalid');
+        throw new BusinessException('PARTNER_001', {
+          message: 'Some partner IDs are invalid',
+          userMessage: '一部のパートナーIDが無効です',
+        });
       }
       project.partners = partners;
     }
@@ -226,7 +227,9 @@ export class ProjectService {
     if (userId) {
       const hasAccess = this.checkProjectAccess(project, userId);
       if (!hasAccess) {
-        throw new ForbiddenException('You do not have permission to access this project');
+        throw new AuthorizationException('PROJECT_002', {
+          message: 'You do not have permission to access this project',
+        });
       }
     }
 
@@ -292,7 +295,10 @@ export class ProjectService {
           id: In(partnerIds),
         });
         if (partners.length !== partnerIds.length) {
-          throw new BadRequestException('Some partner IDs are invalid');
+          throw new BusinessException('PARTNER_001', {
+            message: 'Some partner IDs are invalid',
+            userMessage: '一部のパートナーIDが無効です',
+          });
         }
         project.partners = partners;
       } else {
@@ -343,7 +349,7 @@ export class ProjectService {
     });
 
     if (!partner) {
-      throw new NotFoundException(`Partner with ID "${partnerId}" not found`);
+      throw ResourceNotFoundException.forPartner(partnerId);
     }
 
     if (!project.partners.find((p) => p.id === partnerId)) {

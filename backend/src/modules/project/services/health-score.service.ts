@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual, LessThan, Not, In } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -7,6 +7,7 @@ import { ProjectStakeholder } from '../entities/project-stakeholder.entity';
 import { Task } from '../../task/entities/task.entity';
 import { TaskStatus } from '../../task/enums/task-status.enum';
 import { ProjectStatus } from '../enums/project-status.enum';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
 
 /**
  * Health Score calculation formula:
@@ -124,7 +125,7 @@ export class HealthScoreService {
     });
 
     if (!project) {
-      throw new NotFoundException(`Project with ID "${projectId}" not found`);
+      throw ResourceNotFoundException.forProject(projectId);
     }
 
     // Skip calculation for completed or cancelled projects - return current score

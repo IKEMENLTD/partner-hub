@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,6 +11,8 @@ import { Task } from '../task/entities/task.entity';
 import { EmailService } from '../notification/services/email.service';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { Project } from '../project/entities/project.entity';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
+import { BusinessException, AuthorizationException } from '../../common/exceptions/business.exception';
 
 @Injectable()
 export class ProgressReportService {
@@ -48,7 +44,7 @@ export class ProgressReportService {
     });
 
     if (!task) {
-      throw new NotFoundException(`Task with ID ${taskId} not found`);
+      throw ResourceNotFoundException.forTask(taskId);
     }
 
     // Generate token and expiry
@@ -90,7 +86,7 @@ export class ProgressReportService {
     });
 
     if (!task) {
-      throw new NotFoundException(`Task with ID ${taskId} not found`);
+      throw ResourceNotFoundException.forTask(taskId);
     }
 
     // Send email with report link
@@ -144,17 +140,26 @@ export class ProgressReportService {
     });
 
     if (!report) {
-      throw new NotFoundException('Invalid or expired report token');
+      throw new ResourceNotFoundException('REPORT_001', {
+        resourceType: 'ReportToken',
+        userMessage: '無効または期限切れのレポートトークンです',
+      });
     }
 
     // Check if token is expired
     if (new Date() > report.tokenExpiresAt) {
-      throw new ForbiddenException('Report token has expired');
+      throw new AuthorizationException('REPORT_003', {
+        message: 'Report token has expired',
+        userMessage: 'レポートトークンが期限切れです',
+      });
     }
 
     // Check if already submitted
     if (report.isSubmitted) {
-      throw new BadRequestException('Report has already been submitted');
+      throw new BusinessException('VALIDATION_001', {
+        message: 'Report has already been submitted',
+        userMessage: 'このレポートは既に提出済みです',
+      });
     }
 
     return {
@@ -173,17 +178,26 @@ export class ProgressReportService {
     });
 
     if (!report) {
-      throw new NotFoundException('Invalid or expired report token');
+      throw new ResourceNotFoundException('REPORT_001', {
+        resourceType: 'ReportToken',
+        userMessage: '無効または期限切れのレポートトークンです',
+      });
     }
 
     // Check if token is expired
     if (new Date() > report.tokenExpiresAt) {
-      throw new ForbiddenException('Report token has expired');
+      throw new AuthorizationException('REPORT_003', {
+        message: 'Report token has expired',
+        userMessage: 'レポートトークンが期限切れです',
+      });
     }
 
     // Check if already submitted
     if (report.isSubmitted) {
-      throw new BadRequestException('Report has already been submitted');
+      throw new BusinessException('VALIDATION_001', {
+        message: 'Report has already been submitted',
+        userMessage: 'このレポートは既に提出済みです',
+      });
     }
 
     // Update report
@@ -283,11 +297,14 @@ export class ProgressReportService {
     });
 
     if (!report) {
-      throw new NotFoundException(`Progress report with ID ${reportId} not found`);
+      throw ResourceNotFoundException.forReport(reportId);
     }
 
     if (!report.isSubmitted) {
-      throw new BadRequestException('Cannot review an unsubmitted report');
+      throw new BusinessException('VALIDATION_001', {
+        message: 'Cannot review an unsubmitted report',
+        userMessage: '未提出のレポートはレビューできません',
+      });
     }
 
     report.status = dto.status;
@@ -311,7 +328,7 @@ export class ProgressReportService {
     });
 
     if (!report) {
-      throw new NotFoundException(`Progress report with ID ${reportId} not found`);
+      throw ResourceNotFoundException.forReport(reportId);
     }
 
     return report;

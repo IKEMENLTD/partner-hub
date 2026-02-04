@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import {
@@ -104,7 +105,11 @@ export class CustomFieldTemplateService {
     });
 
     if (!template) {
-      throw new NotFoundException(`Custom field template with ID "${id}" not found`);
+      throw new ResourceNotFoundException('SYSTEM_001', {
+        resourceType: 'CustomFieldTemplate',
+        resourceId: id,
+        userMessage: 'カスタムフィールドテンプレートが見つかりません',
+      });
     }
 
     return template;

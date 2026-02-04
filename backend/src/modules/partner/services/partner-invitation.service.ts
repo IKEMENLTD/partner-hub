@@ -1,9 +1,6 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,6 +18,8 @@ import {
   RegisterWithInvitationDto,
   InvitationRegisterResponseDto,
 } from '../dto/register-with-invitation.dto';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
+import { BusinessException, ConflictException as CustomConflictException } from '../../../common/exceptions/business.exception';
 
 @Injectable()
 export class PartnerInvitationService {
@@ -60,12 +59,15 @@ export class PartnerInvitationService {
       where: { id: partnerId },
     });
     if (!partner) {
-      throw new NotFoundException(`パートナーが見つかりません (ID: ${partnerId})`);
+      throw ResourceNotFoundException.forPartner(partnerId);
     }
 
     // Check if partner already has a linked user
     if (partner.userId) {
-      throw new ConflictException('このパートナーは既にユーザーアカウントに紐付けられています');
+      throw new CustomConflictException('PARTNER_006', {
+        message: 'Partner is already linked to a user account',
+        userMessage: 'このパートナーは既にユーザーアカウントに紐付けられています',
+      });
     }
 
     // Invalidate any existing pending invitations
@@ -126,15 +128,25 @@ export class PartnerInvitationService {
     });
 
     if (!invitation) {
-      throw new NotFoundException('無効な招待トークンです');
+      throw new ResourceNotFoundException('PARTNER_001', {
+        resourceType: 'Invitation',
+        resourceId: token,
+        userMessage: '無効な招待トークンです',
+      });
     }
 
     if (invitation.usedAt) {
-      throw new BadRequestException('この招待は既に使用されています');
+      throw new BusinessException('PARTNER_007', {
+        message: 'Invitation has already been used',
+        userMessage: 'この招待は既に使用されています',
+      });
     }
 
     if (new Date() > invitation.expiresAt) {
-      throw new BadRequestException('この招待は有効期限が切れています');
+      throw new BusinessException('PARTNER_007', {
+        message: 'Invitation has expired',
+        userMessage: 'この招待は有効期限が切れています',
+      });
     }
 
     return { invitation, partner: invitation.partner };
@@ -151,17 +163,23 @@ export class PartnerInvitationService {
       where: { id: userId },
     });
     if (!user) {
-      throw new NotFoundException('ユーザーが見つかりません');
+      throw ResourceNotFoundException.forUser(userId);
     }
 
     // Check if user email matches partner email (security check)
     if (user.email.toLowerCase() !== partner.email.toLowerCase()) {
-      throw new BadRequestException('ユーザーのメールアドレスが招待先のパートナーと一致しません');
+      throw new BusinessException('VALIDATION_001', {
+        message: 'User email does not match partner email',
+        userMessage: 'ユーザーのメールアドレスが招待先のパートナーと一致しません',
+      });
     }
 
     // Check if partner already has a linked user
     if (partner.userId) {
-      throw new ConflictException('このパートナーは既にユーザーアカウントに紐付けられています');
+      throw new CustomConflictException('PARTNER_006', {
+        message: 'Partner is already linked to a user account',
+        userMessage: 'このパートナーは既にユーザーアカウントに紐付けられています',
+      });
     }
 
     // Link partner to user and activate
@@ -267,7 +285,10 @@ export class PartnerInvitationService {
 
     // 2. Check if partner already has a linked user
     if (partner.userId) {
-      throw new ConflictException('このパートナーは既にユーザーアカウントに紐付けられています');
+      throw new CustomConflictException('PARTNER_006', {
+        message: 'Partner is already linked to a user account',
+        userMessage: 'このパートナーは既にユーザーアカウントに紐付けられています',
+      });
     }
 
     // 3. 入力値のサニタイズ
@@ -299,14 +320,16 @@ export class PartnerInvitationService {
     if (authError) {
       this.logger.error(`Supabase user creation failed: ${authError.message}`);
       if (authError.message.includes('already registered')) {
-        throw new ConflictException(
-          'このメールアドレスは既に登録されています。ログインしてください。',
-        );
+        throw new CustomConflictException('USER_002', {
+          message: 'Email already registered',
+          userMessage: 'このメールアドレスは既に登録されています。ログインしてください。',
+        });
       }
       // 内部エラーメッセージをユーザーに露出しない
-      throw new BadRequestException(
-        'ユーザー作成に失敗しました。入力内容を確認して再度お試しください。',
-      );
+      throw new BusinessException('USER_004', {
+        message: 'Failed to create user',
+        userMessage: 'ユーザー作成に失敗しました。入力内容を確認して再度お試しください。',
+      });
     }
 
     const supabaseUser = authData.user;

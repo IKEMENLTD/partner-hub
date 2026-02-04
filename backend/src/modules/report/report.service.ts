@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReportConfig, ReportPeriod } from './entities/report-config.entity';
@@ -124,7 +125,7 @@ export class ReportService {
     });
 
     if (!report) {
-      throw new NotFoundException(`Generated report with ID "${id}" not found`);
+      throw ResourceNotFoundException.forReport(id);
     }
 
     return report;

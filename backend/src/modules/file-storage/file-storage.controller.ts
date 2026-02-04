@@ -13,8 +13,8 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
-  BadRequestException,
 } from '@nestjs/common';
+import { BusinessException } from '../../common/exceptions/business.exception';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -85,11 +85,17 @@ export class FileStorageController {
     @CurrentUser('id') userId: string,
   ): Promise<FileResponseDto> {
     if (!file) {
-      throw new BadRequestException('ファイルが提供されていません');
+      throw new BusinessException('VALIDATION_001', {
+        message: 'No file provided',
+        userMessage: 'ファイルが提供されていません',
+      });
     }
 
     if (!projectId) {
-      throw new BadRequestException('プロジェクトIDが必要です');
+      throw new BusinessException('VALIDATION_001', {
+        message: 'Project ID is required',
+        userMessage: 'プロジェクトIDが必要です',
+      });
     }
 
     const fileCategory = category as FileCategory | undefined;

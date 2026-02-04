@@ -1,8 +1,6 @@
 import {
   Injectable,
-  NotFoundException,
   Logger,
-  BadRequestException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -15,6 +13,8 @@ import { TaskStatus } from './enums/task-status.enum';
 import { HealthScoreService } from '../project/services/health-score.service';
 import { EmailService } from '../notification/services/email.service';
 import { Partner } from '../partner/entities/partner.entity';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
+import { BusinessException } from '../../common/exceptions/business.exception';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -52,7 +52,11 @@ export class TaskService {
         where: { id: createTaskDto.parentTaskId },
       });
       if (!parentTask) {
-        throw new BadRequestException('Parent task not found');
+        throw new ResourceNotFoundException('TASK_009', {
+          resourceType: 'Task',
+          resourceId: createTaskDto.parentTaskId,
+          userMessage: '親タスクが見つかりません',
+        });
       }
     }
 
@@ -181,7 +185,7 @@ export class TaskService {
     });
 
     if (!task) {
-      throw new NotFoundException(`Task with ID "${id}" not found`);
+      throw ResourceNotFoundException.forTask(id);
     }
 
     return task;
@@ -194,13 +198,20 @@ export class TaskService {
     // Validate parent task if changing
     if (updateTaskDto.parentTaskId && updateTaskDto.parentTaskId !== task.parentTaskId) {
       if (updateTaskDto.parentTaskId === id) {
-        throw new BadRequestException('Task cannot be its own parent');
+        throw new BusinessException('TASK_010', {
+          message: 'Task cannot be its own parent',
+          userMessage: 'タスクに循環参照が検出されました',
+        });
       }
       const parentTask = await this.taskRepository.findOne({
         where: { id: updateTaskDto.parentTaskId },
       });
       if (!parentTask) {
-        throw new BadRequestException('Parent task not found');
+        throw new ResourceNotFoundException('TASK_009', {
+          resourceType: 'Task',
+          resourceId: updateTaskDto.parentTaskId,
+          userMessage: '親タスクが見つかりません',
+        });
       }
     }
 
@@ -318,7 +329,7 @@ export class TaskService {
       withDeleted: true,
     });
     if (!task) {
-      throw new NotFoundException(`Task with ID "${id}" not found`);
+      throw ResourceNotFoundException.forTask(id);
     }
     const projectId = task.projectId;
     await this.taskRepository.remove(task);

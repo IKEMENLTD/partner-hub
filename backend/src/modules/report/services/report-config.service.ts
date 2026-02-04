@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { ReportConfig, ReportPeriod, ReportStatus } from '../entities/report-config.entity';
@@ -81,7 +82,11 @@ export class ReportConfigService {
     });
 
     if (!config) {
-      throw new NotFoundException(`Report config with ID "${id}" not found`);
+      throw new ResourceNotFoundException('REPORT_001', {
+        resourceType: 'ReportConfig',
+        resourceId: id,
+        userMessage: 'レポート設定が見つかりません',
+      });
     }
 
     return config;

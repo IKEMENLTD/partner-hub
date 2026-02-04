@@ -2,10 +2,10 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
-  NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
+import { AuthenticationException, AuthorizationException } from '../../../common/exceptions/business.exception';
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -51,7 +51,10 @@ export class ProjectAccessGuard implements CanActivate {
     const user = request.user;
 
     if (!user) {
-      throw new ForbiddenException('User not authenticated');
+      throw new AuthenticationException('AUTH_001', {
+        message: 'User not authenticated',
+        userMessage: '認証が必要です',
+      });
     }
 
     // Admin users have access to all projects
@@ -74,7 +77,7 @@ export class ProjectAccessGuard implements CanActivate {
     });
 
     if (!project) {
-      throw new NotFoundException(`Project with ID "${projectId}" not found`);
+      throw ResourceNotFoundException.forProject(projectId);
     }
 
     // Check if user has direct access
@@ -90,7 +93,10 @@ export class ProjectAccessGuard implements CanActivate {
     }
 
     this.logger.warn(`Access denied for user ${user.id} to project ${projectId}`);
-    throw new ForbiddenException('You do not have permission to access this project');
+    throw new AuthorizationException('PROJECT_002', {
+      message: 'You do not have permission to access this project',
+      userMessage: 'このプロジェクトへのアクセス権限がありません',
+    });
   }
 
   /**

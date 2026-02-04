@@ -1,4 +1,5 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationSettings, DigestTime } from '../entities/notification-settings.entity';
@@ -97,7 +98,11 @@ export class NotificationSettingsService {
     });
 
     if (!updatedSettings) {
-      throw new NotFoundException('Notification settings not found after update');
+      throw new ResourceNotFoundException('SYSTEM_001', {
+        resourceType: 'NotificationSettings',
+        resourceId: settings.id,
+        userMessage: '通知設定の更新に失敗しました',
+      });
     }
 
     this.logger.log(`Updated notification settings for user: ${userId}`);

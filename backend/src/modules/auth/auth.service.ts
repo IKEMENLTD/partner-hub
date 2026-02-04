@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserProfile } from './entities/user-profile.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserRole } from './enums/user-role.enum';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
+import { BusinessException } from '../../common/exceptions/business.exception';
 
 /**
  * Auth Service - Supabase Edition
@@ -26,7 +28,7 @@ export class AuthService {
   async findProfileById(id: string): Promise<UserProfile> {
     const profile = await this.profileRepository.findOne({ where: { id } });
     if (!profile) {
-      throw new NotFoundException('User profile not found');
+      throw ResourceNotFoundException.forUser(id);
     }
     return profile;
   }
@@ -67,7 +69,10 @@ export class AuthService {
    */
   async deactivateUser(id: string, currentUserId?: string): Promise<void> {
     if (currentUserId && id === currentUserId) {
-      throw new BadRequestException('Cannot deactivate your own account');
+      throw new BusinessException('AUTH_004', {
+        message: 'Cannot deactivate your own account',
+        userMessage: '自分自身のアカウントは無効化できません',
+      });
     }
     const profile = await this.findProfileById(id);
     profile.isActive = false;

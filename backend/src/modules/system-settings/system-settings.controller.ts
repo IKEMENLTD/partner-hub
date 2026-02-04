@@ -1,4 +1,5 @@
-import { Controller, Get, Put, Post, Body, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, UseGuards } from '@nestjs/common';
+import { BusinessException } from '../../common/exceptions/business.exception';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { SystemSettingsService } from './system-settings.service';
 import { UpdateSystemSettingsDto } from './dto/update-system-settings.dto';
@@ -22,7 +23,10 @@ export class SystemSettingsController {
   @ApiResponse({ status: 200, description: 'システム設定', type: SystemSettings })
   async getSettings(@CurrentUser() user: UserProfile): Promise<SystemSettings> {
     if (!user.organizationId) {
-      throw new BadRequestException('組織に所属していません');
+      throw new BusinessException('AUTH_006', {
+        message: 'User does not belong to an organization',
+        userMessage: '組織に所属していません',
+      });
     }
     return this.systemSettingsService.getSettings(user.organizationId);
   }
@@ -36,7 +40,10 @@ export class SystemSettingsController {
     @Body() dto: UpdateSystemSettingsDto,
   ): Promise<SystemSettings> {
     if (!user.organizationId) {
-      throw new BadRequestException('組織に所属していません');
+      throw new BusinessException('AUTH_006', {
+        message: 'User does not belong to an organization',
+        userMessage: '組織に所属していません',
+      });
     }
     return this.systemSettingsService.updateSettings(user.organizationId, dto);
   }
@@ -50,7 +57,10 @@ export class SystemSettingsController {
     @Body('webhookUrl') webhookUrl: string,
   ): Promise<{ success: boolean; message: string }> {
     if (!webhookUrl) {
-      throw new BadRequestException('Webhook URLを指定してください');
+      throw new BusinessException('VALIDATION_001', {
+        message: 'Webhook URL is required',
+        userMessage: 'Webhook URLを指定してください',
+      });
     }
 
     const success = await this.systemSettingsService.testSlackWebhook(webhookUrl);

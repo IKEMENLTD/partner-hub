@@ -2,9 +2,9 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  UnauthorizedException,
-  NotFoundException,
 } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
+import { AuthenticationException } from '../../../common/exceptions/business.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PartnerReportToken } from '../entities/partner-report-token.entity';
@@ -21,7 +21,10 @@ export class ReportTokenGuard implements CanActivate {
     const token = request.params.token;
 
     if (!token) {
-      throw new UnauthorizedException('報告用トークンが必要です');
+      throw new AuthenticationException('AUTH_001', {
+        message: 'Report token is required',
+        userMessage: '報告用トークンが必要です',
+      });
     }
 
     const reportToken = await this.tokenRepository.findOne({
@@ -30,15 +33,25 @@ export class ReportTokenGuard implements CanActivate {
     });
 
     if (!reportToken) {
-      throw new NotFoundException('無効なトークンです');
+      throw new ResourceNotFoundException('AUTH_001', {
+        resourceType: 'ReportToken',
+        resourceId: token,
+        userMessage: '無効なトークンです',
+      });
     }
 
     if (!reportToken.isValid()) {
       if (!reportToken.isActive) {
-        throw new UnauthorizedException('このトークンは無効化されています');
+        throw new AuthenticationException('AUTH_003', {
+          message: 'Token has been deactivated',
+          userMessage: 'このトークンは無効化されています',
+        });
       }
       if (reportToken.expiresAt && new Date() > reportToken.expiresAt) {
-        throw new UnauthorizedException('このトークンは有効期限が切れています');
+        throw new AuthenticationException('AUTH_003', {
+          message: 'Token has expired',
+          userMessage: 'このトークンは有効期限が切れています',
+        });
       }
     }
 

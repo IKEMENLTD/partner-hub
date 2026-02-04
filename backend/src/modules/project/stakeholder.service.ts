@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProjectStakeholder } from './entities/project-stakeholder.entity';
@@ -13,6 +13,8 @@ import {
 } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { EmailService } from '../notification/services/email.service';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
+import { BusinessException } from '../../common/exceptions/business.exception';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -49,7 +51,7 @@ export class StakeholderService {
       where: { id: projectId },
     });
     if (!project) {
-      throw new NotFoundException(`Project with ID "${projectId}" not found`);
+      throw ResourceNotFoundException.forProject(projectId);
     }
 
     // Verify partner exists if provided
@@ -58,7 +60,7 @@ export class StakeholderService {
         where: { id: partnerId },
       });
       if (!partner) {
-        throw new NotFoundException(`Partner with ID "${partnerId}" not found`);
+        throw ResourceNotFoundException.forPartner(partnerId);
       }
     }
 
@@ -68,13 +70,18 @@ export class StakeholderService {
         where: { id: parentStakeholderId },
       });
       if (!parentStakeholder) {
-        throw new NotFoundException(
-          `Parent stakeholder with ID "${parentStakeholderId}" not found`,
-        );
+        throw new ResourceNotFoundException('PROJECT_001', {
+          resourceType: 'Stakeholder',
+          resourceId: parentStakeholderId,
+          userMessage: '親ステークホルダーが見つかりません',
+        });
       }
       // Ensure parent stakeholder belongs to the same project
       if (parentStakeholder.projectId !== projectId) {
-        throw new BadRequestException('Parent stakeholder must belong to the same project');
+        throw new BusinessException('VALIDATION_001', {
+          message: 'Parent stakeholder must belong to the same project',
+          userMessage: '親ステークホルダーは同じプロジェクトに属している必要があります',
+        });
       }
     }
 
@@ -125,7 +132,7 @@ export class StakeholderService {
       where: { id: projectId },
     });
     if (!project) {
-      throw new NotFoundException(`Project with ID "${projectId}" not found`);
+      throw ResourceNotFoundException.forProject(projectId);
     }
 
     const queryBuilder = this.stakeholderRepository
@@ -166,7 +173,11 @@ export class StakeholderService {
     });
 
     if (!stakeholder) {
-      throw new NotFoundException(`Stakeholder with ID "${id}" not found`);
+      throw new ResourceNotFoundException('PROJECT_001', {
+        resourceType: 'Stakeholder',
+        resourceId: id,
+        userMessage: 'ステークホルダーが見つかりません',
+      });
     }
 
     return stakeholder;
@@ -188,7 +199,7 @@ export class StakeholderService {
         where: { id: projectId },
       });
       if (!project) {
-        throw new NotFoundException(`Project with ID "${projectId}" not found`);
+        throw ResourceNotFoundException.forProject(projectId);
       }
       stakeholder.projectId = projectId;
     }
@@ -200,7 +211,7 @@ export class StakeholderService {
           where: { id: partnerId },
         });
         if (!partner) {
-          throw new NotFoundException(`Partner with ID "${partnerId}" not found`);
+          throw ResourceNotFoundException.forPartner(partnerId);
         }
       }
       stakeholder.partnerId = partnerId;
@@ -213,16 +224,24 @@ export class StakeholderService {
           where: { id: parentStakeholderId },
         });
         if (!parentStakeholder) {
-          throw new NotFoundException(
-            `Parent stakeholder with ID "${parentStakeholderId}" not found`,
-          );
+          throw new ResourceNotFoundException('PROJECT_001', {
+            resourceType: 'Stakeholder',
+            resourceId: parentStakeholderId,
+            userMessage: '親ステークホルダーが見つかりません',
+          });
         }
         if (parentStakeholder.projectId !== stakeholder.projectId) {
-          throw new BadRequestException('Parent stakeholder must belong to the same project');
+          throw new BusinessException('VALIDATION_001', {
+            message: 'Parent stakeholder must belong to the same project',
+            userMessage: '親ステークホルダーは同じプロジェクトに属している必要があります',
+          });
         }
         // Prevent circular references
         if (parentStakeholderId === id) {
-          throw new BadRequestException('Stakeholder cannot be its own parent');
+          throw new BusinessException('TASK_010', {
+            message: 'Stakeholder cannot be its own parent',
+            userMessage: 'ステークホルダーは自身を親に設定できません',
+          });
         }
       }
       stakeholder.parentStakeholderId = parentStakeholderId;
@@ -240,7 +259,11 @@ export class StakeholderService {
    */
   async updateTier(id: string, newTier: number): Promise<ProjectStakeholder> {
     if (newTier < 1 || newTier > 3) {
-      throw new BadRequestException('Tier must be between 1 and 3');
+      throw new BusinessException('VALIDATION_004', {
+        message: 'Tier must be between 1 and 3',
+        userMessage: 'ティアは1から3の間で指定してください',
+        details: { tier: newTier, min: 1, max: 3 },
+      });
     }
 
     const stakeholder = await this.findOne(id);
@@ -284,7 +307,7 @@ export class StakeholderService {
       where: { id: projectId },
     });
     if (!project) {
-      throw new NotFoundException(`Project with ID "${projectId}" not found`);
+      throw ResourceNotFoundException.forProject(projectId);
     }
 
     return this.stakeholderRepository.find({
@@ -303,7 +326,7 @@ export class StakeholderService {
       where: { id: projectId },
     });
     if (!project) {
-      throw new NotFoundException(`Project with ID "${projectId}" not found`);
+      throw ResourceNotFoundException.forProject(projectId);
     }
 
     // Fetch all stakeholders for the project
@@ -366,7 +389,7 @@ export class StakeholderService {
       where: { id: projectId },
     });
     if (!project) {
-      throw new NotFoundException(`Project with ID "${projectId}" not found`);
+      throw ResourceNotFoundException.forProject(projectId);
     }
 
     return this.stakeholderRepository.find({

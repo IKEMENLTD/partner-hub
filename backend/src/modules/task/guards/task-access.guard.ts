@@ -2,12 +2,12 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
-  NotFoundException,
   Logger,
   Inject,
   forwardRef,
 } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
+import { AuthenticationException, AuthorizationException } from '../../../common/exceptions/business.exception';
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -52,7 +52,10 @@ export class TaskAccessGuard implements CanActivate {
     const user = request.user;
 
     if (!user) {
-      throw new ForbiddenException('User not authenticated');
+      throw new AuthenticationException('AUTH_001', {
+        message: 'User not authenticated',
+        userMessage: '認証が必要です',
+      });
     }
 
     // Admin users have access to all tasks
@@ -74,7 +77,7 @@ export class TaskAccessGuard implements CanActivate {
     });
 
     if (!task) {
-      throw new NotFoundException(`Task with ID "${taskId}" not found`);
+      throw ResourceNotFoundException.forTask(taskId);
     }
 
     // Check if user has direct access to the task
@@ -92,7 +95,10 @@ export class TaskAccessGuard implements CanActivate {
     }
 
     this.logger.warn(`Access denied for user ${user.id} to task ${taskId}`);
-    throw new ForbiddenException('You do not have permission to access this task');
+    throw new AuthorizationException('TASK_003', {
+      message: 'You do not have permission to access this task',
+      userMessage: 'このタスクへのアクセス権限がありません',
+    });
   }
 
   /**

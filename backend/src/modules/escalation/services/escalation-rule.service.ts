@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { EscalationRule } from '../entities/escalation-rule.entity';
@@ -93,7 +94,11 @@ export class EscalationRuleService {
     });
 
     if (!rule) {
-      throw new NotFoundException(`Escalation rule with ID "${id}" not found`);
+      throw new ResourceNotFoundException('SYSTEM_001', {
+        resourceType: 'EscalationRule',
+        resourceId: id,
+        userMessage: 'エスカレーションルールが見つかりません',
+      });
     }
 
     return rule;

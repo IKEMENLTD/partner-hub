@@ -1,4 +1,5 @@
-import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, In, IsNull } from 'typeorm';
 import { Project } from '../project/entities/project.entity';
@@ -215,7 +216,7 @@ export class DashboardService {
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException(`User with ID "${userId}" not found`);
+      throw ResourceNotFoundException.forUser(userId);
     }
 
     // Get today's tasks

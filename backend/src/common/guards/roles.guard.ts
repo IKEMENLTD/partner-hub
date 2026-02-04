@@ -1,4 +1,5 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, Logger } from '@nestjs/common';
+import { AuthenticationException, AuthorizationException } from '../exceptions/business.exception';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -36,7 +37,10 @@ export class RolesGuard implements CanActivate {
     // SECURITY FIX: Require authenticated user for all non-public routes
     if (!user) {
       this.logger.warn('Access denied: No authenticated user');
-      throw new ForbiddenException('Authentication required');
+      throw new AuthenticationException('AUTH_001', {
+        message: 'Authentication required',
+        userMessage: '認証が必要です',
+      });
     }
 
     // If no specific roles required, allow any authenticated user
@@ -51,7 +55,10 @@ export class RolesGuard implements CanActivate {
       this.logger.warn(
         `Access denied: User ${user.id} with role ${user.role} tried to access resource requiring ${requiredRoles.join(', ')}`
       );
-      throw new ForbiddenException('Insufficient permissions');
+      throw new AuthorizationException('AUTH_002', {
+        message: 'Insufficient permissions',
+        userMessage: '権限が不足しています',
+      });
     }
 
     return true;

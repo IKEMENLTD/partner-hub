@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from '../entities/project.entity';
 import { ProjectStatus } from '../enums/project-status.enum';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
 
 @Injectable()
 export class ProjectStatisticsService {
@@ -150,7 +151,7 @@ export class ProjectStatisticsService {
     });
 
     if (!project) {
-      throw new NotFoundException(`Project with ID "${id}" not found`);
+      throw ResourceNotFoundException.forProject(id);
     }
 
     project.healthScore = this.calculateHealthScore(project);
@@ -174,7 +175,7 @@ export class ProjectStatisticsService {
     });
 
     if (!project) {
-      throw new NotFoundException(`Project with ID "${id}" not found`);
+      throw ResourceNotFoundException.forProject(id);
     }
 
     const events: Array<{

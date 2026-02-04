@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { Partner } from '../entities/partner.entity';
@@ -7,6 +7,7 @@ import { Task } from '../../task/entities/task.entity';
 import { TaskStatus } from '../../task/enums/task-status.enum';
 import { CreatePartnerEvaluationDto, QueryPartnerEvaluationDto } from '../dto';
 import { PaginatedResponseDto } from '../../../common/dto/pagination.dto';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
 
 export interface AutoMetrics {
   deadlineComplianceRate: number;
@@ -352,7 +353,7 @@ export class PartnerEvaluationService {
     });
 
     if (!partner) {
-      throw new NotFoundException(`Partner with ID "${partnerId}" not found`);
+      throw ResourceNotFoundException.forPartner(partnerId);
     }
 
     return partner;

@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
@@ -11,6 +11,8 @@ import {
   PartnerContactSetupTokenInfoDto,
 } from '../dto/partner-contact-setup.dto';
 import { PreferredChannel } from '../enums/preferred-channel.enum';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
+import { BusinessException } from '../../../common/exceptions/business.exception';
 
 @Injectable()
 export class PartnerContactSetupService {
@@ -45,7 +47,7 @@ export class PartnerContactSetupService {
     });
 
     if (!partner) {
-      throw new NotFoundException(`パートナーが見つかりません (ID: ${partnerId})`);
+      throw ResourceNotFoundException.forPartner(partnerId);
     }
 
     // 既にセットアップ済みの場合はスキップ
@@ -124,7 +126,10 @@ export class PartnerContactSetupService {
     // トークン検証
     const tokenInfo = await this.verifySetupToken(token);
     if (!tokenInfo.valid) {
-      throw new BadRequestException(tokenInfo.message);
+      throw new BusinessException('PARTNER_007', {
+        message: 'Invalid setup token',
+        userMessage: tokenInfo.message,
+      });
     }
 
     const partner = await this.partnerRepository.findOne({
@@ -132,7 +137,7 @@ export class PartnerContactSetupService {
     });
 
     if (!partner) {
-      throw new NotFoundException('パートナーが見つかりません');
+      throw ResourceNotFoundException.forPartner(token);
     }
 
     // LINE選択時はlineUserIdが必要（LINE友達追加フローの後に設定される）
@@ -192,7 +197,7 @@ export class PartnerContactSetupService {
     });
 
     if (!partner) {
-      throw new NotFoundException('パートナーが見つかりません');
+      throw ResourceNotFoundException.forPartner(partnerId);
     }
 
     return {
