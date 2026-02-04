@@ -170,8 +170,10 @@ export class HealthController {
 
   private checkMemory(): MemoryHealthCheck {
     const memoryUsage = process.memoryUsage();
-    const usedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
-    const totalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
+    // Use RSS (Resident Set Size) - total memory allocated for the process
+    const usedMB = Math.round(memoryUsage.rss / 1024 / 1024);
+    // Container memory limit (default 512MB for Render free tier)
+    const totalMB = parseInt(process.env.MEMORY_LIMIT_MB || '512', 10);
     const usagePercent = Math.round((usedMB / totalMB) * 100);
 
     let status: 'healthy' | 'warning' | 'critical' = 'healthy';
