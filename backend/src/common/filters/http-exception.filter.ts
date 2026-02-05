@@ -11,7 +11,6 @@ import {
   BaseException,
   CustomExceptionResponse,
 } from '../exceptions/base.exception';
-import { ValidationException } from '../exceptions/validation.exception';
 
 /**
  * API仕様書準拠のバリデーションエラー詳細形式
@@ -82,18 +81,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       code = exceptionResponse.code;
       message = exceptionResponse.userMessage;
       details = exceptionResponse.details;
-
-      // ValidationExceptionの特別処理 (API仕様書準拠の配列形式)
-      // fieldErrors: [{ field: string, constraints: string[] }] → [{ field, message }]
-      if (exception instanceof ValidationException && exception.fieldErrors) {
-        const validationDetails: ValidationErrorDetail[] = exception.fieldErrors.map(
-          (fieldError) => ({
-            field: fieldError.field,
-            message: fieldError.constraints.join(', '),
-          }),
-        );
-        details = validationDetails;
-      }
     }
     // 標準HttpExceptionの処理
     else if (exception instanceof HttpException) {

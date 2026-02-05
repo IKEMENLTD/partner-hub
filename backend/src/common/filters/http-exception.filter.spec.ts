@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ArgumentsHost, HttpException, HttpStatus, BadRequestException, UnauthorizedException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { HttpExceptionFilter } from './http-exception.filter';
 import { BaseException } from '../exceptions/base.exception';
-import { ValidationException } from '../exceptions/validation.exception';
 import { BusinessException } from '../exceptions/business.exception';
 
 describe('HttpExceptionFilter', () => {
@@ -118,30 +117,6 @@ describe('HttpExceptionFilter', () => {
       filter.catch(exception, mockHost);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
-    });
-
-    it('should handle ValidationException', () => {
-      const fieldErrors = [
-        { field: 'email', constraints: ['email must be valid'] },
-      ];
-      const exception = new ValidationException('VALIDATION_001', {
-        message: 'Validation failed',
-        fieldErrors,
-      });
-
-      filter.catch(exception, mockHost);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.objectContaining({
-            code: 'VALIDATION_001',
-            details: [
-              { field: 'email', message: 'email must be valid' },
-            ],
-          }),
-        }),
-      );
     });
 
     it('should handle BusinessException', () => {
