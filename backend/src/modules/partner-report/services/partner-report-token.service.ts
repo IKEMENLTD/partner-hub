@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
-import { ConflictException as CustomConflictException } from '../../../common/exceptions/business.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';

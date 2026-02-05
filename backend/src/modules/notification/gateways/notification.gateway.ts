@@ -14,8 +14,8 @@ import { SupabaseService } from '../../supabase/supabase.service';
 @WebSocketGateway({
   cors: {
     origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
-      // CORS is validated dynamically in the gateway via ConfigService
-      // This placeholder allows all — actual filtering is done in afterInit
+      // Socket.io CORS allows the upgrade request; origin is re-validated
+      // in handleConnection() using the configured allowed origins list
       callback(null, true);
     },
     credentials: true,
