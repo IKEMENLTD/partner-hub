@@ -11,6 +11,9 @@ import { Partner } from '../../partner/entities/partner.entity';
 export class PartnerReportTokenService {
   private readonly logger = new Logger(PartnerReportTokenService.name);
 
+  /** トークンのデフォルト有効期限（日数） */
+  private static readonly DEFAULT_TOKEN_EXPIRY_DAYS = 90;
+
   constructor(
     @InjectRepository(PartnerReportToken)
     private tokenRepository: Repository<PartnerReportToken>,
@@ -55,9 +58,8 @@ export class PartnerReportTokenService {
 
     // 新しいトークンを生成
     const token = randomBytes(32).toString('hex');
-    const expiresAt = expiresInDays
-      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
-      : null;
+    const days = expiresInDays || PartnerReportTokenService.DEFAULT_TOKEN_EXPIRY_DAYS;
+    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
     const reportToken = this.tokenRepository.create({
       partnerId,
@@ -69,7 +71,7 @@ export class PartnerReportTokenService {
 
     await this.tokenRepository.save(reportToken);
 
-    this.logger.log(`報告用トークン生成: パートナー=${partnerId}`);
+    this.logger.log(`報告用トークン生成: パートナー=${partnerId}, 有効期限=${days}日`);
 
     return reportToken;
   }
@@ -151,9 +153,8 @@ export class PartnerReportTokenService {
     }
 
     const token = randomBytes(32).toString('hex');
-    const expiresAt = expiresInDays
-      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
-      : null;
+    const days = expiresInDays || PartnerReportTokenService.DEFAULT_TOKEN_EXPIRY_DAYS;
+    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
     const reportToken = this.tokenRepository.create({
       partnerId,
@@ -165,7 +166,7 @@ export class PartnerReportTokenService {
 
     await this.tokenRepository.save(reportToken);
 
-    this.logger.log(`報告用トークン再生成: パートナー=${partnerId}`);
+    this.logger.log(`報告用トークン再生成: パートナー=${partnerId}, 有効期限=${days}日`);
 
     return reportToken;
   }
