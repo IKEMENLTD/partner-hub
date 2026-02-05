@@ -13,7 +13,6 @@ export { ErrorMessage, Alert } from './ErrorMessage';
 export { Modal, ModalFooter } from './Modal';
 
 // Molecules
-export { NotificationItem } from './molecules/NotificationItem';
 export { Tabs, TabList, TabPanel } from './Tabs';
 export {
   Table,
@@ -24,7 +23,6 @@ export {
   TableCell,
 } from './Table';
 export { Pagination, PaginationInfo } from './Pagination';
-export { HealthScoreBadge, HealthScoreDetail } from './HealthScoreBadge';
 export { ToastProvider } from './Toast';
 export { useToast } from './ToastContext';
 export type { ToastMessage, ToastType } from './ToastContext';
