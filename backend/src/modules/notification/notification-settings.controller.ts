@@ -5,7 +5,8 @@ import { EmailService } from './services/email.service';
 import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
-import { Public } from '../../common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Notification Settings')
 @Controller('users/me/notification-settings')
@@ -52,8 +53,8 @@ export class NotificationSettingsController {
   }
 
   @Post('test-email')
-  @Public()
-  @ApiOperation({ summary: 'テストメールを送信（デバッグ用）' })
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'テストメールを送信（管理者専用）' })
   @ApiQuery({ name: 'to', required: true, description: '送信先メールアドレス' })
   @ApiResponse({
     status: 200,
@@ -80,8 +81,8 @@ export class NotificationSettingsController {
   }
 
   @Get('email-config')
-  @Public()
-  @ApiOperation({ summary: 'メール設定状態を確認（デバッグ用）' })
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'メール設定状態を確認（管理者専用）' })
   async getEmailConfig() {
     const isConnected = await this.emailService.verifyConnection();
     return ApiResponseDto.success(

@@ -6,12 +6,18 @@ import {
   SubscribeMessage,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Server, Socket } from 'socket.io';
 import { InAppNotification } from '../entities/in-app-notification.entity';
+import { SupabaseService } from '../../supabase/supabase.service';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
+      // CORS is validated dynamically in the gateway via ConfigService
+      // This placeholder allows all — actual filtering is done in afterInit
+      callback(null, true);
+    },
     credentials: true,
   },
   namespace: '/notifications',
@@ -19,12 +25,72 @@ import { InAppNotification } from '../entities/in-app-notification.entity';
 export class NotificationGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(NotificationGateway.name);
   private userSockets: Map<string, Set<string>> = new Map();
+  private allowedOrigins: string[] = [];
 
   @WebSocketServer()
   server: Server;
 
-  handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly configService: ConfigService,
+  ) {
+    // Build allowed origins list
+    const nodeEnv = this.configService.get<string>('app.nodeEnv') || 'development';
+    if (nodeEnv === 'production') {
+      const corsOrigin = this.configService.get<string>('app.corsOrigin') || '';
+      this.allowedOrigins = corsOrigin
+        ? corsOrigin.split(',').map((o) => o.trim())
+        : [];
+    } else {
+      this.allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:5173',
+      ];
+    }
+  }
+
+  async handleConnection(client: Socket) {
+    try {
+      // Validate origin
+      const origin = client.handshake.headers.origin;
+      if (
+        this.allowedOrigins.length > 0 &&
+        origin &&
+        !this.allowedOrigins.includes(origin)
+      ) {
+        this.logger.warn(`Rejected connection from unauthorized origin: ${origin}`);
+        client.disconnect(true);
+        return;
+      }
+
+      // Extract token from auth or query
+      const token =
+        client.handshake.auth?.token ||
+        (client.handshake.query?.token as string);
+
+      if (!token) {
+        this.logger.warn(`Connection rejected: no auth token from ${client.id}`);
+        client.disconnect(true);
+        return;
+      }
+
+      // Verify JWT with Supabase
+      const { data, error } = await this.supabaseService.admin.auth.getUser(token);
+
+      if (error || !data?.user) {
+        this.logger.warn(`Connection rejected: invalid token from ${client.id}`);
+        client.disconnect(true);
+        return;
+      }
+
+      // Store authenticated userId on socket
+      (client as any).userId = data.user.id;
+      this.logger.log(`Client connected: ${client.id} (user: ${data.user.id})`);
+    } catch (err) {
+      this.logger.error(`Connection error: ${err.message}`);
+      client.disconnect(true);
+    }
   }
 
   handleDisconnect(client: Socket) {
@@ -42,9 +108,19 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
 
   @SubscribeMessage('subscribe')
   handleSubscribe(client: Socket, userId: string) {
-    if (!userId) {
-      this.logger.warn(`Subscribe attempt without userId from ${client.id}`);
-      return;
+    const authenticatedUserId = (client as any).userId;
+
+    if (!authenticatedUserId) {
+      this.logger.warn(`Subscribe rejected: unauthenticated client ${client.id}`);
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    // Prevent subscribing to other users' notifications
+    if (userId !== authenticatedUserId) {
+      this.logger.warn(
+        `Subscribe rejected: user ${authenticatedUserId} tried to subscribe to ${userId}`,
+      );
+      return { success: false, error: 'Cannot subscribe to other users' };
     }
 
     // Join user-specific room

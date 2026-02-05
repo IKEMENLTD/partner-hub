@@ -117,9 +117,12 @@ export function useInAppNotifications() {
       return;
     }
 
+    const token = useAuthStore.getState().session?.access_token;
+
     const socket = io(`${SOCKET_URL}/notifications`, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
+      auth: { token },
     });
 
     socket.on('connect', () => {
