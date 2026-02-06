@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout';
-import { ToastProvider } from '@/components/common';
+import { ToastProvider, ErrorBoundary } from '@/components/common';
 import { useUIStore, useAuthStore } from '@/store';
 import { useAuthListener } from '@/hooks';
 import { isSupabaseConfigured } from '@/lib/supabase';
@@ -83,6 +83,7 @@ function App() {
   }, [initTheme]);
 
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <BrowserRouter>
@@ -141,6 +142,7 @@ function App() {
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

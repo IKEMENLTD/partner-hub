@@ -79,7 +79,6 @@ export function PartnerReportPage() {
     setError(null);
     try {
       const response = await api.get<{ success?: boolean; data?: ReportFormInfo } & ReportFormInfo>(`/report/${token}`, true);
-      console.log('Form info response:', response);
       // Handle wrapped response { success: true, data: {...} }
       const formData = response.data || response;
       setFormInfo(formData as ReportFormInfo);
@@ -113,7 +112,6 @@ export function PartnerReportPage() {
   const fetchReportHistory = async () => {
     try {
       const response = await api.get<{ success?: boolean; data?: { reports: ReportHistoryItem[] }; reports?: ReportHistoryItem[] }>(`/report/${token}/history`, true);
-      console.log('Report history response:', response);
       // Handle wrapped response { success: true, data: { reports: [...] } }
       const historyData = response.data || response;
       setReportHistory(historyData.reports || []);

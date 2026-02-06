@@ -89,7 +89,6 @@ export function PartnerReportsListPage() {
         params.append('unreadOnly', 'true');
       }
       const response = await api.get<PaginatedReportsResponse | ApiResponse<PaginatedReportsResponse>>(`/partner-reports?${params.toString()}`);
-      console.log('Reports list response:', response);
       return unwrapResponse<PaginatedReportsResponse>(response);
     },
   });

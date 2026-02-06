@@ -33,6 +33,7 @@ export class DashboardController {
   }
 
   @Get('project-summaries')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get project summaries for dashboard' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Project summaries' })
@@ -50,6 +51,7 @@ export class DashboardController {
   }
 
   @Get('upcoming-deadlines')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get upcoming deadlines' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Upcoming deadlines' })
@@ -58,6 +60,7 @@ export class DashboardController {
   }
 
   @Get('overdue')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get overdue projects and tasks' })
   @ApiResponse({ status: 200, description: 'Overdue items' })
   async getOverdueItems() {
@@ -65,6 +68,7 @@ export class DashboardController {
   }
 
   @Get('recent-activity')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get recent activity' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Recent activity list' })
@@ -73,6 +77,7 @@ export class DashboardController {
   }
 
   @Get('task-distribution')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get task distribution statistics' })
   @ApiResponse({ status: 200, description: 'Task distribution data' })
   async getTaskDistribution() {
@@ -80,6 +85,7 @@ export class DashboardController {
   }
 
   @Get('project-progress')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get project progress statistics' })
   @ApiResponse({ status: 200, description: 'Project progress data' })
   async getProjectProgress() {

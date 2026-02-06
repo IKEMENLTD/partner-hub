@@ -10,6 +10,7 @@ export { Avatar, AvatarGroup } from './Avatar';
 export { Loading, PageLoading, InlineLoading } from './Loading';
 export { EmptyState } from './EmptyState';
 export { ErrorMessage, Alert } from './ErrorMessage';
+export { ErrorBoundary } from './ErrorBoundary';
 export { Modal, ModalFooter } from './Modal';
 
 // Molecules

@@ -74,7 +74,6 @@ export function PartnerDetailPage() {
     if (!id) return;
     try {
       const response = await api.get<{ success: boolean; data: ReportTokenInfo }>(`/partners/${id}/report-token`);
-      console.log('Fetched token response:', response);
       // Handle wrapped response { success: true, data: {...} }
       const tokenData = response.data || response;
       setReportToken(tokenData as ReportTokenInfo);
@@ -99,7 +98,6 @@ export function PartnerDetailPage() {
         ? `/partners/${id}/report-token/regenerate`
         : `/partners/${id}/report-token`;
       const response = await api.post<{ success: boolean; data: ReportTokenInfo & { message?: string } }>(endpoint, {});
-      console.log('Generated token response:', response);
       // Handle wrapped response { success: true, data: {...} }
       const tokenData = response.data || response;
       setReportToken(tokenData as ReportTokenInfo);
