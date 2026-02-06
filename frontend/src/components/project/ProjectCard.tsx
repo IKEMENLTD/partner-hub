@@ -79,7 +79,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Badge variant={status.variant}>{status.label}</Badge>
         <Badge variant={priority.variant}>{priority.label}</Badge>
-        {project.healthScore !== undefined && (
+        {project.healthScore !== undefined && project.status !== 'draft' && project.status !== 'planning' && (
           <HealthScoreIndicator score={project.healthScore} showLabel={true} showScore={true} size="sm" />
         )}
         {project.tags?.slice(0, 2).map((tag) => (

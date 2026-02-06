@@ -12,6 +12,7 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { SupabaseService } from '../../modules/supabase/supabase.service';
 import { UserProfile } from '../../modules/auth/entities/user-profile.entity';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
+import { UserProfileCacheService } from '../services/user-profile-cache.service';
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
@@ -22,6 +23,7 @@ export class SupabaseAuthGuard implements CanActivate {
     private supabaseService: SupabaseService,
     @InjectRepository(UserProfile)
     private userProfileRepository: Repository<UserProfile>,
+    private userProfileCache: UserProfileCacheService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -58,7 +60,7 @@ export class SupabaseAuthGuard implements CanActivate {
         });
       }
 
-      // Verify token using Supabase's getUser method
+      // JWT verification - always calls Supabase (never cached)
       const {
         data: { user },
         error,
@@ -82,26 +84,38 @@ export class SupabaseAuthGuard implements CanActivate {
 
       this.logger.debug(`Supabase user verified: ${user.email}`);
 
-      // Get or create user profile
-      let userProfile = await this.userProfileRepository.findOne({
-        where: { id: user.id },
-      });
+      // Get user profile from cache or DB
+      let userProfile = this.userProfileCache.get(user.id);
 
-      if (!userProfile) {
-        this.logger.log(`Creating profile for new user: ${user.email}`);
-        userProfile = this.userProfileRepository.create({
-          id: user.id,
-          email: user.email || '',
-          firstName: user.user_metadata?.first_name || '',
-          lastName: user.user_metadata?.last_name || '',
-          role: UserRole.MEMBER,
-          isActive: true,
+      if (userProfile) {
+        this.logger.debug(`Profile cache hit for user: ${user.email}`);
+      } else {
+        // Cache miss - query DB
+        userProfile = await this.userProfileRepository.findOne({
+          where: { id: user.id },
         });
-        await this.userProfileRepository.save(userProfile);
-        this.logger.log(`Profile created for user: ${user.email}`);
+
+        if (!userProfile) {
+          this.logger.log(`Creating profile for new user: ${user.email}`);
+          userProfile = this.userProfileRepository.create({
+            id: user.id,
+            email: user.email || '',
+            firstName: user.user_metadata?.first_name || '',
+            lastName: user.user_metadata?.last_name || '',
+            role: UserRole.MEMBER,
+            isActive: true,
+          });
+          await this.userProfileRepository.save(userProfile);
+          this.logger.log(`Profile created for user: ${user.email}`);
+        }
+
+        // Cache the profile
+        this.userProfileCache.set(user.id, userProfile);
       }
 
       if (!userProfile.isActive) {
+        // Remove inactive users from cache immediately
+        this.userProfileCache.invalidate(user.id);
         this.logger.warn(`User is inactive: ${user.email}`);
         throw new AuthenticationException('AUTH_005', {
           message: 'User account is inactive',

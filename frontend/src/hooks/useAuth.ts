@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuthStore } from '@/store';
 import { authService } from '@/services/authService';
+import { queryClient } from '@/lib/queryClient';
 import type { AuthError } from '@supabase/supabase-js';
 import type { User } from '@/types';
 
@@ -262,12 +263,14 @@ export function useLogout() {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.clear(); // キャッシュ全削除（テナント間データ漏洩防止）
       logout();
       // ログアウト後にログイン画面へリダイレクト
       window.location.href = '/login';
     },
     onError: () => {
       // APIエラーでも強制的にログアウト
+      queryClient.clear();
       logout();
       window.location.href = '/login';
     },

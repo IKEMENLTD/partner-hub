@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout';
 import { ToastProvider } from '@/components/common';
 import { useUIStore, useAuthStore } from '@/store';
 import { useAuthListener } from '@/hooks';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { queryClient } from '@/lib/queryClient';
 import {
   LoginPage,
   RegisterPage,
@@ -31,20 +32,6 @@ import {
   AdminSettingsPage,
   PartnerContactSetupPage,
 } from '@/pages';
-
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-    mutations: {
-      retry: 0,
-    },
-  },
-});
 
 // 認証初期化コンポーネント
 function AuthProvider({ children }: { children: React.ReactNode }) {

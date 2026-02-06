@@ -6,6 +6,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserRole } from './enums/user-role.enum';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { BusinessException } from '../../common/exceptions/business.exception';
+import { UserProfileCacheService } from '../../common/services/user-profile-cache.service';
 
 /**
  * Auth Service - Supabase Edition
@@ -20,6 +21,7 @@ export class AuthService {
   constructor(
     @InjectRepository(UserProfile)
     private profileRepository: Repository<UserProfile>,
+    private userProfileCache: UserProfileCacheService,
   ) {}
 
   /**
@@ -49,6 +51,7 @@ export class AuthService {
     const profile = await this.findProfileById(id);
     Object.assign(profile, updateProfileDto);
     await this.profileRepository.save(profile);
+    this.userProfileCache.invalidate(id);
     this.logger.log(`Profile updated: ${profile.email}`);
     return profile;
   }
@@ -60,6 +63,7 @@ export class AuthService {
     const profile = await this.findProfileById(id);
     profile.role = role;
     await this.profileRepository.save(profile);
+    this.userProfileCache.invalidate(id);
     this.logger.log(`Role updated for ${profile.email}: ${role}`);
     return profile;
   }
@@ -77,6 +81,7 @@ export class AuthService {
     const profile = await this.findProfileById(id);
     profile.isActive = false;
     await this.profileRepository.save(profile);
+    this.userProfileCache.invalidate(id);
     this.logger.log(`User deactivated: ${profile.email}`);
   }
 
@@ -87,6 +92,7 @@ export class AuthService {
     const profile = await this.findProfileById(id);
     profile.isActive = true;
     await this.profileRepository.save(profile);
+    this.userProfileCache.invalidate(id);
     this.logger.log(`User activated: ${profile.email}`);
   }
 

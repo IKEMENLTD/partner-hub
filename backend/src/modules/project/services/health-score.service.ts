@@ -128,6 +128,23 @@ export class HealthScoreService {
       throw ResourceNotFoundException.forProject(projectId);
     }
 
+    // Skip calculation for draft/planning projects - no meaningful data yet
+    if (project.status === ProjectStatus.DRAFT || project.status === ProjectStatus.PLANNING) {
+      return {
+        onTimeRate: 0,
+        completionRate: 0,
+        budgetHealth: 0,
+        totalScore: 0,
+        details: {
+          totalTasks: 0,
+          completedTasks: 0,
+          onTimeCompletedTasks: 0,
+          budget: Number(project.budget) || 0,
+          actualCost: Number(project.actualCost) || 0,
+        },
+      };
+    }
+
     // Skip calculation for completed or cancelled projects - return current score
     if (project.status === ProjectStatus.COMPLETED || project.status === ProjectStatus.CANCELLED) {
       return {
@@ -225,10 +242,10 @@ export class HealthScoreService {
     updatedProjects: number;
     errors: string[];
   }> {
-    // Get all active projects (not completed or cancelled)
+    // Get all active projects (exclude draft, planning, completed, cancelled)
     const projects = await this.projectRepository.find({
       where: {
-        status: Not(In([ProjectStatus.COMPLETED, ProjectStatus.CANCELLED])),
+        status: Not(In([ProjectStatus.DRAFT, ProjectStatus.PLANNING, ProjectStatus.COMPLETED, ProjectStatus.CANCELLED])),
       },
     });
 

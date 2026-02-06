@@ -9,12 +9,14 @@ import { UserProfile } from '../../modules/auth/entities/user-profile.entity';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { AuthenticationException } from '../exceptions/business.exception';
+import { UserProfileCacheService } from '../services/user-profile-cache.service';
 
 describe('SupabaseAuthGuard', () => {
   let guard: SupabaseAuthGuard;
   let reflector: Reflector;
   let supabaseService: SupabaseService;
   let userProfileRepository: Repository<UserProfile>;
+  let userProfileCache: UserProfileCacheService;
 
   const mockSupabaseUser = {
     id: 'user-123',
@@ -64,6 +66,7 @@ describe('SupabaseAuthGuard', () => {
             save: jest.fn(),
           },
         },
+        UserProfileCacheService,
       ],
     }).compile();
 
@@ -73,6 +76,7 @@ describe('SupabaseAuthGuard', () => {
     userProfileRepository = module.get<Repository<UserProfile>>(
       getRepositoryToken(UserProfile),
     );
+    userProfileCache = module.get<UserProfileCacheService>(UserProfileCacheService);
   });
 
   const mockExecutionContext = (

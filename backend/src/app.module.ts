@@ -20,6 +20,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
 import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard';
+import { UserProfileCacheModule } from './common/services/user-profile-cache.service';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -106,6 +107,9 @@ import { HealthModule } from './modules/health/health.module';
 
     // Supabase
     SupabaseModule,
+
+    // Global user profile cache (shared between guard and auth service)
+    UserProfileCacheModule,
 
     // UserProfile entity for SupabaseAuthGuard
     TypeOrmModule.forFeature([UserProfile]),

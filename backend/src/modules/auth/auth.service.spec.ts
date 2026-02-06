@@ -6,6 +6,7 @@ import { UserProfile } from './entities/user-profile.entity';
 import { UserRole } from './enums/user-role.enum';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { BusinessException } from '../../common/exceptions/business.exception';
+import { UserProfileCacheService } from '../../common/services/user-profile-cache.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -40,6 +41,7 @@ describe('AuthService', () => {
           provide: getRepositoryToken(UserProfile),
           useValue: mockProfileRepository,
         },
+        UserProfileCacheService,
       ],
     }).compile();
 

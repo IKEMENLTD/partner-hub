@@ -233,7 +233,7 @@ export function ProjectDetailPage() {
 
   const tabs = [
     { id: 'overview' as const, label: '概要', icon: <FileText className="h-4 w-4" /> },
-    { id: 'members' as const, label: '関係者', icon: <Users className="h-4 w-4" />, badge: project.partners?.length },
+    { id: 'members' as const, label: '関係者', icon: <Users className="h-4 w-4" />, badge: stakeholders?.length || undefined },
     { id: 'tasks' as const, label: 'タスク', icon: <CheckSquare className="h-4 w-4" /> },
     { id: 'timeline' as const, label: 'タイムライン', icon: <History className="h-4 w-4" /> },
     { id: 'files' as const, label: 'ファイル', icon: <Paperclip className="h-4 w-4" /> },
@@ -318,7 +318,7 @@ export function ProjectDetailPage() {
             {progress}%
           </p>
         </Card>
-        {project.healthScore !== undefined && (
+        {project.healthScore !== undefined && project.status !== 'draft' && project.status !== 'planning' && (
           <Card className="text-center">
             <HealthScoreCardDisplay score={project.healthScore} />
           </Card>
@@ -371,7 +371,7 @@ export function ProjectDetailPage() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Health Score Breakdown */}
-              {project.healthScore !== undefined && (
+              {project.healthScore !== undefined && project.status !== 'draft' && project.status !== 'planning' && (
                 <Card>
                   <CardHeader>案件ヘルススコア</CardHeader>
                   <CardContent>
