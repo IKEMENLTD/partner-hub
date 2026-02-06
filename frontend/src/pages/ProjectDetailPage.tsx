@@ -442,7 +442,7 @@ export function ProjectDetailPage() {
                   <CardHeader>予算</CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold text-gray-900">
-                      ¥{project.budget.toLocaleString()}
+                      ¥{Math.floor(project.budget).toLocaleString()}
                     </p>
                   </CardContent>
                 </Card>

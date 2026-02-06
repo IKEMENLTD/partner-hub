@@ -220,7 +220,7 @@ export function StakeholderCard({
         <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
           <p className="text-xs text-gray-500 dark:text-gray-400">契約金額</p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            ¥{stakeholder.contractAmount.toLocaleString()}
+            ¥{Math.floor(stakeholder.contractAmount).toLocaleString()}
           </p>
         </div>
       )}
