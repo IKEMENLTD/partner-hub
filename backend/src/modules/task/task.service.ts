@@ -199,7 +199,7 @@ export class TaskService {
     if (updateTaskDto.parentTaskId && updateTaskDto.parentTaskId !== task.parentTaskId) {
       if (updateTaskDto.parentTaskId === id) {
         throw new BusinessException('TASK_010', {
-          message: 'Task cannot be its own parent',
+          message: 'タスクを自身の親に設定することはできません',
           userMessage: 'タスクに循環参照が検出されました',
         });
       }

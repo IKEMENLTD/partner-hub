@@ -79,7 +79,7 @@ export class StakeholderService {
       // Ensure parent stakeholder belongs to the same project
       if (parentStakeholder.projectId !== projectId) {
         throw new BusinessException('VALIDATION_001', {
-          message: 'Parent stakeholder must belong to the same project',
+          message: '親関係者は同じ案件に所属している必要があります',
           userMessage: '親ステークホルダーは同じプロジェクトに属している必要があります',
         });
       }
@@ -232,14 +232,14 @@ export class StakeholderService {
         }
         if (parentStakeholder.projectId !== stakeholder.projectId) {
           throw new BusinessException('VALIDATION_001', {
-            message: 'Parent stakeholder must belong to the same project',
+            message: '親関係者は同じ案件に所属している必要があります',
             userMessage: '親ステークホルダーは同じプロジェクトに属している必要があります',
           });
         }
         // Prevent circular references
         if (parentStakeholderId === id) {
           throw new BusinessException('TASK_010', {
-            message: 'Stakeholder cannot be its own parent',
+            message: '関係者を自身の親に設定することはできません',
             userMessage: 'ステークホルダーは自身を親に設定できません',
           });
         }

@@ -65,7 +65,7 @@ export class PartnerInvitationService {
     // Check if partner already has a linked user
     if (partner.userId) {
       throw new CustomConflictException('PARTNER_006', {
-        message: 'Partner is already linked to a user account',
+        message: 'このパートナーは既にユーザーアカウントに紐付けられています',
         userMessage: 'このパートナーは既にユーザーアカウントに紐付けられています',
       });
     }
@@ -137,14 +137,14 @@ export class PartnerInvitationService {
 
     if (invitation.usedAt) {
       throw new BusinessException('PARTNER_007', {
-        message: 'Invitation has already been used',
+        message: 'この招待は既に使用されています',
         userMessage: 'この招待は既に使用されています',
       });
     }
 
     if (new Date() > invitation.expiresAt) {
       throw new BusinessException('PARTNER_007', {
-        message: 'Invitation has expired',
+        message: 'この招待は期限切れです',
         userMessage: 'この招待は有効期限が切れています',
       });
     }
@@ -169,7 +169,7 @@ export class PartnerInvitationService {
     // Check if user email matches partner email (security check)
     if (user.email.toLowerCase() !== partner.email.toLowerCase()) {
       throw new BusinessException('VALIDATION_001', {
-        message: 'User email does not match partner email',
+        message: 'ユーザーのメールアドレスがパートナーのメールアドレスと一致しません',
         userMessage: 'ユーザーのメールアドレスが招待先のパートナーと一致しません',
       });
     }
@@ -177,7 +177,7 @@ export class PartnerInvitationService {
     // Check if partner already has a linked user
     if (partner.userId) {
       throw new CustomConflictException('PARTNER_006', {
-        message: 'Partner is already linked to a user account',
+        message: 'このパートナーは既にユーザーアカウントに紐付けられています',
         userMessage: 'このパートナーは既にユーザーアカウントに紐付けられています',
       });
     }
@@ -286,7 +286,7 @@ export class PartnerInvitationService {
     // 2. Check if partner already has a linked user
     if (partner.userId) {
       throw new CustomConflictException('PARTNER_006', {
-        message: 'Partner is already linked to a user account',
+        message: 'このパートナーは既にユーザーアカウントに紐付けられています',
         userMessage: 'このパートナーは既にユーザーアカウントに紐付けられています',
       });
     }
@@ -321,13 +321,13 @@ export class PartnerInvitationService {
       this.logger.error(`Supabase user creation failed: ${authError.message}`);
       if (authError.message.includes('already registered')) {
         throw new CustomConflictException('USER_002', {
-          message: 'Email already registered',
+          message: 'このメールアドレスは既に登録されています',
           userMessage: 'このメールアドレスは既に登録されています。ログインしてください。',
         });
       }
       // 内部エラーメッセージをユーザーに露出しない
       throw new BusinessException('USER_004', {
-        message: 'Failed to create user',
+        message: 'ユーザーの作成に失敗しました',
         userMessage: 'ユーザー作成に失敗しました。入力内容を確認して再度お試しください。',
       });
     }

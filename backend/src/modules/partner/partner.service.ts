@@ -61,7 +61,7 @@ export class PartnerService {
     });
     if (existingPartner) {
       throw new CustomConflictException('PARTNER_005', {
-        message: 'Partner with this email already exists',
+        message: 'このメールアドレスのパートナーは既に存在します',
         userMessage: 'このメールアドレスのパートナーは既に登録されています',
       });
     }
@@ -236,7 +236,7 @@ export class PartnerService {
       });
       if (existingPartner) {
         throw new CustomConflictException('PARTNER_005', {
-          message: 'Partner with this email already exists',
+          message: 'このメールアドレスのパートナーは既に存在します',
           userMessage: 'このメールアドレスのパートナーは既に登録されています',
         });
       }

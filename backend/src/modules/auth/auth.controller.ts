@@ -108,7 +108,7 @@ export class AuthController {
     @CurrentUser('id') currentUserId: string,
   ) {
     await this.authService.deactivateUser(id, currentUserId);
-    return { message: 'User deactivated successfully' };
+    return { message: 'ユーザーを無効化しました' };
   }
 
   @UseGuards(RolesGuard)
@@ -120,7 +120,7 @@ export class AuthController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async activateUser(@Param('id', ParseUUIDPipe) id: string) {
     await this.authService.activateUser(id);
-    return { message: 'User activated successfully' };
+    return { message: 'ユーザーを有効化しました' };
   }
 
   // Note: DELETE endpoint removed - users are managed in Supabase Auth Dashboard

@@ -51,7 +51,7 @@ export class PartnerAccessGuard implements CanActivate {
 
     if (!user) {
       throw new AuthenticationException('AUTH_001', {
-        message: 'User not authenticated',
+        message: '認証されていません',
         userMessage: '認証が必要です',
       });
     }
@@ -92,7 +92,7 @@ export class PartnerAccessGuard implements CanActivate {
 
     this.logger.warn(`Access denied for user ${user.id} to partner ${partnerId}`);
     throw new AuthorizationException('PARTNER_002', {
-      message: 'You do not have permission to access this partner',
+      message: 'このパートナーへのアクセス権限がありません',
       userMessage: 'このパートナーへのアクセス権限がありません',
     });
   }

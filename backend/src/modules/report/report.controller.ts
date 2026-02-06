@@ -119,6 +119,6 @@ export class ReportController {
   @ApiResponse({ status: 200, description: 'Scheduled report processing triggered' })
   async triggerScheduledReports() {
     await this.reportSchedulerService.processScheduledReports();
-    return { message: 'Scheduled report processing triggered' };
+    return { message: 'スケジュールレポートの処理を開始しました' };
   }
 }

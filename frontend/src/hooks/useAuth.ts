@@ -15,9 +15,8 @@ import type { User } from '@/types';
  */
 
 // エラーメッセージを日本語に変換
-function getErrorMessage(error: AuthError): string {
-  const message = error.message || '';
-
+export function getAuthErrorMessage(error: AuthError | Error | unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
   // Rate limit error (dynamic seconds)
   const rateLimitMatch = message.match(/For security purposes, you can only request this after (\d+) seconds/);
   if (rateLimitMatch) {
@@ -192,7 +191,7 @@ export function useLogin() {
       setError(null);
     },
     onError: (error: AuthError) => {
-      setError(getErrorMessage(error));
+      setError(getAuthErrorMessage(error));
     },
     onSettled: () => {
       setLoading(false);
@@ -237,7 +236,7 @@ export function useRegister() {
       setError(null);
     },
     onError: (error: AuthError) => {
-      setError(getErrorMessage(error));
+      setError(getAuthErrorMessage(error));
     },
     onSettled: () => {
       setLoading(false);
@@ -296,7 +295,7 @@ export function useForgotPassword() {
       if (error) throw error;
     },
     onError: (error: AuthError) => {
-      console.error('Forgot password error:', getErrorMessage(error));
+      console.error('Forgot password error:', getAuthErrorMessage(error));
     },
   });
 }
@@ -331,7 +330,7 @@ export function useResetPassword() {
       logout();
     },
     onError: (error: AuthError) => {
-      console.error('Reset password error:', getErrorMessage(error));
+      console.error('Reset password error:', getAuthErrorMessage(error));
     },
   });
 }

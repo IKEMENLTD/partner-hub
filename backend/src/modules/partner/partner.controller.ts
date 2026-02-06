@@ -166,7 +166,7 @@ export class PartnerController {
   async sendInvitation(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
     const invitation = await this.partnerInvitationService.sendInvitation(id, userId);
     return {
-      message: 'Invitation sent successfully',
+      message: '招待を送信しました',
       expiresAt: invitation.expiresAt,
     };
   }
@@ -204,7 +204,7 @@ export class PartnerController {
       acceptDto.userId,
     );
     return {
-      message: 'Invitation accepted successfully',
+      message: '招待を承認しました',
       partner: {
         id: partner.id,
         name: partner.name,
@@ -249,7 +249,7 @@ export class PartnerController {
   ) {
     const invitation = await this.partnerInvitationService.resendInvitation(id, userId);
     return {
-      message: 'Invitation resent successfully',
+      message: '招待を再送信しました',
       expiresAt: invitation.expiresAt,
     };
   }
@@ -266,6 +266,6 @@ export class PartnerController {
   @ApiResponse({ status: 403, description: 'Access denied' })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.partnerService.remove(id);
-    return { message: 'Partner deleted successfully' };
+    return { message: 'パートナーを削除しました' };
   }
 }

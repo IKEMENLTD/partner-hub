@@ -74,7 +74,7 @@ export class DashboardReportService {
       case ReportType.CUSTOM:
         if (!dto.startDate || !dto.endDate) {
           throw new BusinessException('VALIDATION_001', {
-            message: 'Custom report requires start and end dates',
+            message: 'カスタムレポートには開始日と終了日が必要です',
             userMessage: 'カスタムレポートには開始日と終了日が必要です',
           });
         }
@@ -86,7 +86,7 @@ export class DashboardReportService {
 
       default:
         throw new BusinessException('VALIDATION_001', {
-          message: 'Invalid report type',
+          message: '無効なレポートタイプです',
           userMessage: '無効なレポートタイプです',
         });
     }

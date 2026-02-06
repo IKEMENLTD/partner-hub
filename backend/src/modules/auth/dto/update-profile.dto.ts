@@ -20,7 +20,7 @@ export class UpdateProfileDto {
   @ValidateIf((o) => o.avatarUrl !== null && o.avatarUrl !== '')
   @IsUrl(
     { protocols: ['https'], require_protocol: true },
-    { message: 'avatarUrl must be a valid HTTPS URL' }
+    { message: 'アバターURLは有効なHTTPS URLである必要があります' }
   )
   @MaxLength(500)
   avatarUrl?: string;

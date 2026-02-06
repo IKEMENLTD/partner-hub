@@ -45,13 +45,13 @@ export class CreateReportConfigDto {
   @ApiPropertyOptional({ description: 'Time to send the report (HH:mm format)', example: '09:00' })
   @IsOptional()
   @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'sendTime must be in HH:mm format',
+    message: '送信時刻はHH:mm形式で入力してください',
   })
   sendTime?: string;
 
   @ApiProperty({ description: 'List of email recipients', type: [String], example: ['user@example.com'] })
   @IsArray()
-  @ArrayMinSize(1, { message: 'At least one recipient is required' })
+  @ArrayMinSize(1, { message: '受信者を1名以上指定してください' })
   @IsEmail({}, { each: true })
   recipients: string[];
 

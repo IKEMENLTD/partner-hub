@@ -127,7 +127,7 @@ export class PartnerContactSetupService {
     const tokenInfo = await this.verifySetupToken(token);
     if (!tokenInfo.valid) {
       throw new BusinessException('PARTNER_007', {
-        message: 'Invalid setup token',
+        message: '無効なセットアップトークンです',
         userMessage: tokenInfo.message,
       });
     }

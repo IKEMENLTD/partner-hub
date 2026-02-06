@@ -24,7 +24,7 @@ export class SystemSettingsController {
   async getSettings(@CurrentUser() user: UserProfile): Promise<SystemSettings> {
     if (!user.organizationId) {
       throw new BusinessException('AUTH_006', {
-        message: 'User does not belong to an organization',
+        message: 'ユーザーは組織に所属していません',
         userMessage: '組織に所属していません',
       });
     }
@@ -41,7 +41,7 @@ export class SystemSettingsController {
   ): Promise<SystemSettings> {
     if (!user.organizationId) {
       throw new BusinessException('AUTH_006', {
-        message: 'User does not belong to an organization',
+        message: 'ユーザーは組織に所属していません',
         userMessage: '組織に所属していません',
       });
     }
@@ -58,7 +58,7 @@ export class SystemSettingsController {
   ): Promise<{ success: boolean; message: string }> {
     if (!webhookUrl) {
       throw new BusinessException('VALIDATION_001', {
-        message: 'Webhook URL is required',
+        message: 'Webhook URLは必須です',
         userMessage: 'Webhook URLを指定してください',
       });
     }

@@ -82,7 +82,7 @@ export class ReminderController {
   @ApiResponse({ status: 200, description: 'All reminders marked as read' })
   async markAllAsRead(@CurrentUser('id') userId: string) {
     await this.reminderService.markAllAsRead(userId);
-    return { message: 'All reminders marked as read' };
+    return { message: 'すべてのリマインダーを既読にしました' };
   }
 
   @Get('user/:userId')

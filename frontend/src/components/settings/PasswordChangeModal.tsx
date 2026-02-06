@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Eye, EyeOff, Check, X, Key, Loader2 } from 'lucide-react';
 import { Modal, Button, Input, useToast } from '@/components/common';
 import { supabase } from '@/lib/supabase';
+import { getAuthErrorMessage } from '@/hooks/useAuth';
 
 interface PasswordChangeModalProps {
   isOpen: boolean;
@@ -137,13 +138,10 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
 
       handleClose();
     } catch (error) {
-      const message = error instanceof Error
-        ? error.message
-        : 'パスワードの変更に失敗しました';
       addToast({
         type: 'error',
         title: 'エラー',
-        message,
+        message: getAuthErrorMessage(error),
       });
     } finally {
       setIsSubmitting(false);

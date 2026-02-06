@@ -22,7 +22,7 @@ export class ReportTokenGuard implements CanActivate {
 
     if (!token) {
       throw new AuthenticationException('AUTH_001', {
-        message: 'Report token is required',
+        message: 'レポートトークンが必要です',
         userMessage: '報告用トークンが必要です',
       });
     }
@@ -43,13 +43,13 @@ export class ReportTokenGuard implements CanActivate {
     if (!reportToken.isValid()) {
       if (!reportToken.isActive) {
         throw new AuthenticationException('AUTH_003', {
-          message: 'Token has been deactivated',
+          message: 'トークンは無効化されています',
           userMessage: 'このトークンは無効化されています',
         });
       }
       if (reportToken.expiresAt && new Date() > reportToken.expiresAt) {
         throw new AuthenticationException('AUTH_003', {
-          message: 'Token has expired',
+          message: 'トークンの有効期限が切れています',
           userMessage: 'このトークンは有効期限が切れています',
         });
       }

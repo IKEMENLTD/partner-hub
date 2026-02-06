@@ -80,7 +80,7 @@ export class ProjectService {
       });
       if (partners.length !== partnerIds.length) {
         throw new BusinessException('PARTNER_001', {
-          message: 'Some partner IDs are invalid',
+          message: '無効なパートナーIDが含まれています',
           userMessage: '一部のパートナーIDが無効です',
         });
       }
@@ -228,7 +228,7 @@ export class ProjectService {
       const hasAccess = this.checkProjectAccess(project, userId);
       if (!hasAccess) {
         throw new AuthorizationException('PROJECT_002', {
-          message: 'You do not have permission to access this project',
+          message: 'この案件へのアクセス権限がありません',
         });
       }
     }
@@ -296,7 +296,7 @@ export class ProjectService {
         });
         if (partners.length !== partnerIds.length) {
           throw new BusinessException('PARTNER_001', {
-            message: 'Some partner IDs are invalid',
+            message: '無効なパートナーIDが含まれています',
             userMessage: '一部のパートナーIDが無効です',
           });
         }

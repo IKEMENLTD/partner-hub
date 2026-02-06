@@ -74,7 +74,7 @@ export class AuthService {
   async deactivateUser(id: string, currentUserId?: string): Promise<void> {
     if (currentUserId && id === currentUserId) {
       throw new BusinessException('AUTH_004', {
-        message: 'Cannot deactivate your own account',
+        message: '自分自身のアカウントは無効化できません',
         userMessage: '自分自身のアカウントは無効化できません',
       });
     }

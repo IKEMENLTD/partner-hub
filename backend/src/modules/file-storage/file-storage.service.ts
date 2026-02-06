@@ -39,7 +39,7 @@ export class FileStorageService {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       throw new BusinessException('FILE_003', {
-        message: 'File size exceeds limit',
+        message: 'ファイルサイズが上限を超えています',
         userMessage: 'ファイルサイズが上限（10MB）を超えています',
         details: { maxSize: MAX_FILE_SIZE, actualSize: file.size },
       });
@@ -49,7 +49,7 @@ export class FileStorageService {
     const extension = this.getFileExtension(file.originalname).toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
       throw new BusinessException('FILE_004', {
-        message: 'File type not allowed',
+        message: '許可されていないファイル形式です',
         userMessage: `許可されていないファイル形式です。許可される形式: ${ALLOWED_EXTENSIONS.join(', ')}`,
         details: { allowedExtensions: ALLOWED_EXTENSIONS, actualExtension: extension },
       });
@@ -66,7 +66,7 @@ export class FileStorageService {
     const supabaseAdmin = this.supabaseService.admin;
     if (!supabaseAdmin) {
       throw new BusinessException('SYSTEM_001', {
-        message: 'Supabase Storage is not configured',
+        message: 'Supabase Storageが設定されていません',
         userMessage: 'ストレージサービスが利用できません',
       });
     }
@@ -81,7 +81,7 @@ export class FileStorageService {
     if (error) {
       this.logger.error(`Failed to upload file to Supabase: ${error.message}`);
       throw new BusinessException('FILE_002', {
-        message: `Failed to upload file: ${error.message}`,
+        message: `ファイルのアップロードに失敗しました: ${error.message}`,
         userMessage: 'ファイルのアップロードに失敗しました',
       });
     }
@@ -181,7 +181,7 @@ export class FileStorageService {
     const supabaseAdmin = this.supabaseService.admin;
     if (!supabaseAdmin) {
       throw new BusinessException('SYSTEM_001', {
-        message: 'Supabase Storage is not configured',
+        message: 'Supabase Storageが設定されていません',
         userMessage: 'ストレージサービスが利用できません',
       });
     }

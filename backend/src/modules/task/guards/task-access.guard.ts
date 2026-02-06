@@ -53,7 +53,7 @@ export class TaskAccessGuard implements CanActivate {
 
     if (!user) {
       throw new AuthenticationException('AUTH_001', {
-        message: 'User not authenticated',
+        message: '認証されていません',
         userMessage: '認証が必要です',
       });
     }
@@ -96,7 +96,7 @@ export class TaskAccessGuard implements CanActivate {
 
     this.logger.warn(`Access denied for user ${user.id} to task ${taskId}`);
     throw new AuthorizationException('TASK_003', {
-      message: 'You do not have permission to access this task',
+      message: 'このタスクへのアクセス権限がありません',
       userMessage: 'このタスクへのアクセス権限がありません',
     });
   }

@@ -30,13 +30,13 @@ export class UpdateUserDto {
 
 export class ChangePasswordDto {
   @ApiPropertyOptional({ description: 'Current password' })
-  @IsString({ message: 'Current password must be a string' })
-  @MinLength(8, { message: 'Current password must be at least 8 characters long' })
+  @IsString({ message: '現在のパスワードを入力してください' })
+  @MinLength(8, { message: '現在のパスワードは8文字以上で入力してください' })
   currentPassword: string;
 
   @ApiPropertyOptional({ description: 'New password' })
-  @IsString({ message: 'New password must be a string' })
-  @MinLength(8, { message: 'New password must be at least 8 characters long' })
-  @MaxLength(50, { message: 'New password must be at most 50 characters long' })
+  @IsString({ message: '新しいパスワードを入力してください' })
+  @MinLength(8, { message: '新しいパスワードは8文字以上で入力してください' })
+  @MaxLength(50, { message: '新しいパスワードは50文字以内で入力してください' })
   newPassword: string;
 }

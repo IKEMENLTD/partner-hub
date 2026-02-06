@@ -86,14 +86,14 @@ export class FileStorageController {
   ): Promise<FileResponseDto> {
     if (!file) {
       throw new BusinessException('VALIDATION_001', {
-        message: 'No file provided',
+        message: 'ファイルが指定されていません',
         userMessage: 'ファイルが提供されていません',
       });
     }
 
     if (!projectId) {
       throw new BusinessException('VALIDATION_001', {
-        message: 'Project ID is required',
+        message: '案件IDは必須です',
         userMessage: 'プロジェクトIDが必要です',
       });
     }

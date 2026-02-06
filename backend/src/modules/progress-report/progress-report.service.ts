@@ -149,7 +149,7 @@ export class ProgressReportService {
     // Check if token is expired
     if (new Date() > report.tokenExpiresAt) {
       throw new AuthorizationException('REPORT_003', {
-        message: 'Report token has expired',
+        message: 'レポートトークンの有効期限が切れています',
         userMessage: 'レポートトークンが期限切れです',
       });
     }
@@ -157,7 +157,7 @@ export class ProgressReportService {
     // Check if already submitted
     if (report.isSubmitted) {
       throw new BusinessException('VALIDATION_001', {
-        message: 'Report has already been submitted',
+        message: 'レポートは既に提出済みです',
         userMessage: 'このレポートは既に提出済みです',
       });
     }
@@ -187,7 +187,7 @@ export class ProgressReportService {
     // Check if token is expired
     if (new Date() > report.tokenExpiresAt) {
       throw new AuthorizationException('REPORT_003', {
-        message: 'Report token has expired',
+        message: 'レポートトークンの有効期限が切れています',
         userMessage: 'レポートトークンが期限切れです',
       });
     }
@@ -195,7 +195,7 @@ export class ProgressReportService {
     // Check if already submitted
     if (report.isSubmitted) {
       throw new BusinessException('VALIDATION_001', {
-        message: 'Report has already been submitted',
+        message: 'レポートは既に提出済みです',
         userMessage: 'このレポートは既に提出済みです',
       });
     }
@@ -302,7 +302,7 @@ export class ProgressReportService {
 
     if (!report.isSubmitted) {
       throw new BusinessException('VALIDATION_001', {
-        message: 'Cannot review an unsubmitted report',
+        message: '未提出のレポートはレビューできません',
         userMessage: '未提出のレポートはレビューできません',
       });
     }
