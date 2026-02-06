@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmailService } from './email.service';
 import { SlackService } from './slack.service';
+import { InAppNotificationService } from './in-app-notification.service';
+import { NotificationGateway } from '../gateways/notification.gateway';
 import { Reminder } from '../../reminder/entities/reminder.entity';
 import { Task } from '../../task/entities/task.entity';
 import { Project } from '../../project/entities/project.entity';
@@ -10,6 +12,7 @@ import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { ReminderChannel } from '../../reminder/enums/reminder-type.enum';
 import { NotificationChannel } from '../entities/notification-channel.entity';
 import { NotificationChannelType } from '../enums/notification-channel-type.enum';
+import { InAppNotificationType } from '../entities/in-app-notification.entity';
 
 export interface SendNotificationOptions {
   channel: ReminderChannel;
@@ -30,6 +33,8 @@ export class NotificationService {
   constructor(
     private emailService: EmailService,
     private slackService: SlackService,
+    private inAppNotificationService: InAppNotificationService,
+    private notificationGateway: NotificationGateway,
     @InjectRepository(UserProfile)
     private userProfileRepository: Repository<UserProfile>,
     @InjectRepository(NotificationChannel)
@@ -139,18 +144,97 @@ export class NotificationService {
   }
 
   /**
-   * Send in-app notification (placeholder for future implementation)
+   * Send in-app notification: persist to DB and push via WebSocket
    */
   private async sendInAppNotification(options: SendNotificationOptions): Promise<boolean> {
-    const { reminder, recipients } = options;
+    const { reminder, task, project, recipients, escalationReason, escalationLevel } = options;
 
-    // In-app notifications are handled by the reminder system itself
-    // This is a placeholder for real-time notification implementation (e.g., WebSocket)
-    this.logger.log(`In-app notification processed for ${recipients.length} recipients`);
+    if (recipients.length === 0) {
+      this.logger.warn('No recipients specified for in-app notification');
+      return false;
+    }
 
-    // For now, in-app notifications are considered successful
-    // as they are stored in the reminders table
-    return true;
+    try {
+      const { title, message, type, linkUrl } = this.buildInAppContent(options);
+
+      let successCount = 0;
+      for (const recipient of recipients) {
+        try {
+          const notification = await this.inAppNotificationService.create({
+            userId: recipient.id,
+            type,
+            title,
+            message,
+            linkUrl,
+            taskId: task?.id,
+            projectId: project?.id || task?.projectId,
+          });
+
+          // Push real-time via WebSocket
+          this.notificationGateway.sendToUser(recipient.id, notification);
+          const unreadCount = await this.inAppNotificationService.getUnreadCount(recipient.id);
+          this.notificationGateway.sendUnreadCount(recipient.id, unreadCount);
+
+          successCount++;
+        } catch (err) {
+          this.logger.error(`Failed to create in-app notification for user ${recipient.id}: ${err.message}`);
+        }
+      }
+
+      this.logger.log(`In-app notification sent to ${successCount}/${recipients.length} recipients`);
+      return successCount > 0;
+    } catch (error) {
+      this.logger.error(`In-app notification failed: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Build in-app notification content from options
+   */
+  private buildInAppContent(options: SendNotificationOptions): {
+    title: string;
+    message: string;
+    type: InAppNotificationType;
+    linkUrl?: string;
+  } {
+    const { reminder, task, project, escalationReason, escalationLevel } = options;
+
+    // Escalation notification
+    if (escalationReason && project) {
+      return {
+        title: `エスカレーション: ${project.name}`,
+        message: escalationReason,
+        type: 'system',
+        linkUrl: `/projects/${project.id}`,
+      };
+    }
+
+    // Reminder with task
+    if (reminder && task) {
+      return {
+        title: reminder.title || `タスクリマインダー: ${task.title}`,
+        message: reminder.message || `タスク「${task.title}」の期限が近づいています`,
+        type: 'deadline',
+        linkUrl: task.projectId ? `/projects/${task.projectId}/tasks/${task.id}` : undefined,
+      };
+    }
+
+    // Reminder without task
+    if (reminder) {
+      return {
+        title: reminder.title || 'リマインダー',
+        message: reminder.message || '',
+        type: 'system',
+        linkUrl: reminder.projectId ? `/projects/${reminder.projectId}` : undefined,
+      };
+    }
+
+    return {
+      title: '通知',
+      message: '',
+      type: 'system',
+    };
   }
 
   /**
