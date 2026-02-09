@@ -219,12 +219,13 @@ export class DashboardService {
       throw ResourceNotFoundException.forUser(userId);
     }
 
-    // Get today's tasks
+    // Get today's tasks (exclude orphaned tasks without project)
     const tasksForToday = await this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
+      .andWhere('task.projectId IS NOT NULL')
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
       })
@@ -234,12 +235,13 @@ export class DashboardService {
       .take(20)
       .getMany();
 
-    // Get upcoming deadlines
+    // Get upcoming deadlines (exclude orphaned tasks without project)
     const upcomingDeadlines = await this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
+      .andWhere('task.projectId IS NOT NULL')
       .andWhere('task.dueDate > :todayStr', { todayStr })
       .andWhere('task.dueDate <= :nextWeekStr', { nextWeekStr })
       .andWhere('task.status NOT IN (:...completedStatuses)', {

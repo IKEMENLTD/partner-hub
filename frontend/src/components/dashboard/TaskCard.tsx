@@ -59,15 +59,24 @@ export function TaskCard({ task, onStatusChange, compact = false }: TaskCardProp
           {task.status === 'completed' && <CheckCircle2 className="h-3 w-3" />}
         </button>
         <div className="flex-1 min-w-0">
-          <Link
-            to={`/projects/${task.projectId}/tasks/${task.id}`}
-            className={clsx(
-              'text-sm font-medium hover:text-primary-600 truncate block',
+          {task.projectId ? (
+            <Link
+              to={`/projects/${task.projectId}/tasks/${task.id}`}
+              className={clsx(
+                'text-sm font-medium hover:text-primary-600 truncate block',
+                task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'
+              )}
+            >
+              {task.title}
+            </Link>
+          ) : (
+            <span className={clsx(
+              'text-sm font-medium truncate block',
               task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'
-            )}
-          >
-            {task.title}
-          </Link>
+            )}>
+              {task.title}
+            </span>
+          )}
         </div>
         {task.dueDate && (
           <span
@@ -105,15 +114,24 @@ export function TaskCard({ task, onStatusChange, compact = false }: TaskCardProp
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <Link
-                to={`/projects/${task.projectId}/tasks/${task.id}`}
-                className={clsx(
-                  'text-base font-medium hover:text-primary-600',
+              {task.projectId ? (
+                <Link
+                  to={`/projects/${task.projectId}/tasks/${task.id}`}
+                  className={clsx(
+                    'text-base font-medium hover:text-primary-600',
+                    task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'
+                  )}
+                >
+                  {task.title}
+                </Link>
+              ) : (
+                <span className={clsx(
+                  'text-base font-medium',
                   task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'
-                )}
-              >
-                {task.title}
-              </Link>
+                )}>
+                  {task.title}
+                </span>
+              )}
               {task.description && (
                 <p className="mt-1 text-sm text-gray-500 line-clamp-2">
                   {task.description}
