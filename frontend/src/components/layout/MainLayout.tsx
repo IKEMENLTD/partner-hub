@@ -1,12 +1,26 @@
-import { Outlet, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '@/store';
+import { useResponsive } from '@/hooks';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import clsx from 'clsx';
 
 export function MainLayout() {
   const { isAuthenticated } = useAuthStore();
-  const { sidebarOpen } = useUIStore();
+  const { sidebarOpen, isMobile, closeMobileMenu, setIsMobile } = useUIStore();
+  const { isMobile: responsiveIsMobile } = useResponsive();
+  const location = useLocation();
+
+  // Sync responsive state to store
+  useEffect(() => {
+    setIsMobile(responsiveIsMobile);
+  }, [responsiveIsMobile, setIsMobile]);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    closeMobileMenu();
+  }, [location.pathname, closeMobileMenu]);
 
   // パスワードリカバリーモード中は保護されたページにアクセスできない
   // localStorage を使用して全タブで共有する
@@ -26,11 +40,13 @@ export function MainLayout() {
       <main
         className={clsx(
           'pt-16 transition-all duration-300',
-          sidebarOpen ? 'ml-64' : 'ml-16'
+          isMobile ? 'ml-0' : (sidebarOpen ? 'ml-64' : 'ml-16')
         )}
       >
-        <div className="min-h-[calc(100vh-4rem)] p-6">
-          <Outlet />
+        <div className="min-h-[calc(100vh-4rem)] main-content">
+          <div className="page-container">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

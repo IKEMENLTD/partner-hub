@@ -52,7 +52,7 @@ export function TabList({ tabs, className }: TabListProps) {
       role="tablist"
       aria-orientation="horizontal"
     >
-      <nav className="-mb-px flex gap-6">
+      <nav className="-mb-px flex gap-3 sm:gap-6 overflow-x-auto scrollbar-hide flex-nowrap whitespace-nowrap">
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab;
           return (

@@ -66,7 +66,7 @@ export function NotificationsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="page-header">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">通知</h1>
@@ -238,7 +238,7 @@ export function NotificationsPage() {
       )}
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid-stats">
         {Object.entries(notificationTypeConfig).map(([type, config]) => {
           const count = notifications.filter((n) => n.type === type).length;
           const Icon = config.icon;

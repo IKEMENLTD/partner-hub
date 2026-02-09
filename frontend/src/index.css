@@ -72,6 +72,44 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
   }
+
+  /* Responsive utility classes */
+  .page-container {
+    @apply 3xl:max-w-[1600px] 3xl:mx-auto;
+  }
+
+  .page-header {
+    @apply flex flex-col gap-3 xs:gap-4 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .grid-stats {
+    @apply grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6;
+  }
+
+  .grid-cards {
+    @apply grid gap-3 xs:gap-4 xs:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4;
+  }
+
+  .grid-form {
+    @apply grid gap-4 sm:gap-6 sm:grid-cols-2;
+  }
+
+  .main-content {
+    @apply p-3 xs:p-4 sm:p-5 lg:p-6 2xl:p-8;
+  }
+
+  .sidebar-backdrop {
+    @apply fixed inset-0 z-20 bg-black/50 transition-opacity lg:hidden;
+  }
+
+  /* Hide scrollbar for tabs */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer utilities {

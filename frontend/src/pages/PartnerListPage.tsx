@@ -87,7 +87,7 @@ export function PartnerListPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="page-header">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">パートナー一覧</h1>
           <p className="mt-1 text-gray-600">全 {totalItems} 社</p>
@@ -204,7 +204,7 @@ export function PartnerListPage() {
           }
         />
       ) : viewMode === 'grid' ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid-cards">
           {partners.map((partner) => (
             <PartnerCard
               key={partner.id}

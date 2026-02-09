@@ -167,7 +167,7 @@ export function PartnerDetailPage() {
           パートナー一覧に戻る
         </Link>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="page-header sm:!items-start">
           <div className="flex items-start gap-4">
             <div className="rounded-lg bg-gray-100 p-3">
               <Building className="h-8 w-8 text-gray-600" />

@@ -28,7 +28,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
           ref={ref}
           id={textareaId}
           className={clsx(
-            'block w-full rounded-lg border px-3 py-2 text-sm transition-colors',
+            'block w-full rounded-lg border px-3 py-2 text-sm transition-colors min-h-[44px]',
             'placeholder:text-gray-400',
             'focus:outline-none focus:ring-2 focus:ring-offset-0',
             error

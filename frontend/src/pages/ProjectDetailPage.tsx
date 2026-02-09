@@ -251,7 +251,7 @@ export function ProjectDetailPage() {
           案件一覧に戻る
         </Link>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="page-header sm:!items-start">
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
@@ -287,7 +287,7 @@ export function ProjectDetailPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+      <div className="grid-stats">
         <Card className="text-center">
           <Calendar className="h-5 w-5 mx-auto text-gray-400 mb-2" />
           <p className="text-xs text-gray-500 dark:text-gray-400">開始日</p>

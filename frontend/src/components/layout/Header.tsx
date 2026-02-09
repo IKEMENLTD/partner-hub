@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LogOut, User, ChevronDown } from 'lucide-react';
+import { LogOut, User, ChevronDown, Menu } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 import { getUserDisplayName } from '@/types';
 import { useLogout } from '@/hooks';
@@ -12,7 +12,7 @@ import clsx from 'clsx';
 export function Header() {
   const location = useLocation();
   const { user } = useAuthStore();
-  const { sidebarOpen } = useUIStore();
+  const { sidebarOpen, isMobile, openMobileMenu } = useUIStore();
   const { mutate: logout } = useLogout();
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -30,13 +30,24 @@ export function Header() {
     <header
       className={clsx(
         'fixed top-0 z-20 flex h-16 items-center justify-between border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 transition-all duration-300',
-        sidebarOpen ? 'left-64' : 'left-16',
+        isMobile ? 'left-0' : (sidebarOpen ? 'left-64' : 'left-16'),
         'right-0'
       )}
     >
-      {/* Search */}
-      <div className="flex-1 max-w-md">
-        <SearchBar />
+      {/* Left: Hamburger + Search */}
+      <div className="flex items-center gap-2 flex-1">
+        {isMobile && (
+          <button
+            onClick={openMobileMenu}
+            className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 lg:hidden"
+            aria-label="メニューを開く"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
+        <div className="flex-1 max-w-[180px] sm:max-w-md">
+          <SearchBar />
+        </div>
       </div>
 
       {/* Actions */}

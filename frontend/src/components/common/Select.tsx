@@ -50,7 +50,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             className={clsx(
-              'block w-full appearance-none rounded-lg border bg-white dark:bg-slate-800 px-3 py-2 pr-10 text-sm text-gray-900 dark:text-gray-100 transition-colors',
+              'block w-full appearance-none rounded-lg border bg-white dark:bg-slate-800 px-3 py-2 pr-10 text-sm text-gray-900 dark:text-gray-100 transition-colors min-h-[44px]',
               'focus:outline-none focus:ring-2 focus:ring-offset-0',
               error
                 ? 'border-red-300 focus:border-red-500 focus:ring-red-500'

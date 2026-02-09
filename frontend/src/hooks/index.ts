@@ -97,6 +97,7 @@ export {
   getProgressStatusColor,
 } from './usePartnerReports';
 export { useSearch, useGlobalSearch } from './useSearch';
+export { useResponsive } from './useResponsive';
 export {
   useReportConfigs,
   useReportConfig,

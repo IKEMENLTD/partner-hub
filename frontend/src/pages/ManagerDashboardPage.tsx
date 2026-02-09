@@ -108,7 +108,7 @@ export function ManagerDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="page-header">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">マネージャーダッシュボード</h1>
           <p className="mt-1 text-gray-600">
@@ -124,7 +124,7 @@ export function ManagerDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid-stats">
         <Card>
           <div className="flex items-center gap-4">
             <div className="rounded-lg bg-primary-100 p-3">
@@ -338,7 +338,7 @@ export function ManagerDashboardPage() {
               className="py-8"
             />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid-cards">
               {projects.map((project) => (
                 <ProjectCard key={project.id} project={project} />
               ))}

@@ -90,7 +90,7 @@ export function MyTodayPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="page-header">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             {getUserDisplayName(user)
@@ -111,7 +111,7 @@ export function MyTodayPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid-stats">
         <Card className="flex items-center gap-4">
           <div className="rounded-lg bg-primary-100 p-3">
             <Calendar className="h-6 w-6 text-primary-600" />

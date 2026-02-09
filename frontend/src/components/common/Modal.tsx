@@ -13,10 +13,10 @@ interface ModalProps {
 }
 
 const sizeStyles = {
-  sm: 'max-w-md',
-  md: 'max-w-lg',
-  lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
+  sm: 'max-w-[calc(100vw-2rem)] sm:max-w-md',
+  md: 'max-w-[calc(100vw-2rem)] sm:max-w-lg',
+  lg: 'max-w-[calc(100vw-2rem)] sm:max-w-2xl',
+  xl: 'max-w-[calc(100vw-2rem)] sm:max-w-4xl',
 };
 
 export function Modal({
@@ -83,7 +83,7 @@ export function Modal({
           )}
 
           {/* Content */}
-          <div className={clsx(!title && 'pt-6', 'px-6 py-4')}>{children}</div>
+          <div className={clsx(!title && 'pt-6', 'px-6 py-4 max-h-[70vh] overflow-y-auto')}>{children}</div>
         </div>
       </div>
     </>,
@@ -100,7 +100,7 @@ export function ModalFooter({ children, className }: ModalFooterProps) {
   return (
     <div
       className={clsx(
-        'flex items-center justify-end gap-3 border-t border-gray-200 dark:border-slate-700 px-6 py-4',
+        'flex flex-col-reverse xs:flex-row items-center justify-end gap-3 border-t border-gray-200 dark:border-slate-700 px-6 py-4',
         className
       )}
     >

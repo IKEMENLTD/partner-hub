@@ -78,6 +78,10 @@ function getVisiblePages(
   currentPage: number,
   totalPages: number
 ): (number | '...')[] {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   }

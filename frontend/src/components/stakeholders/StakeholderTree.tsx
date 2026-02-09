@@ -475,7 +475,7 @@ export function StakeholderListByTier({
                 ({tierStakeholders.length})
               </span>
             </h4>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid-cards">
               {tierStakeholders.map((stakeholder) => (
                 <div
                   key={stakeholder.id}

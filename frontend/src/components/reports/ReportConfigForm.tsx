@@ -199,7 +199,7 @@ export function ReportConfigForm({
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
             スケジュール設定
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid-form">
             <Select
               label="レポート期間"
               value={period}

@@ -145,7 +145,7 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="page-header">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">プロフィール</h1>
           <p className="mt-1 text-gray-600">

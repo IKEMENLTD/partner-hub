@@ -234,7 +234,7 @@ export function TaskCreatePage() {
               rows={4}
             />
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid-form">
               {/* Status */}
               <Select
                 label="ステータス"
@@ -254,7 +254,7 @@ export function TaskCreatePage() {
               />
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid-form">
               {/* Assignee */}
               <Select
                 label="担当者"

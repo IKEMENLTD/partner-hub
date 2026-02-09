@@ -44,7 +44,7 @@ export function ForgotPasswordPage() {
     return (
       <div className="flex min-h-screen">
         {/* Left side - Branding */}
-        <div className="hidden w-1/2 bg-primary-600 lg:flex lg:flex-col lg:justify-center lg:px-12">
+        <div className="hidden md:flex md:w-2/5 lg:w-1/2 bg-primary-600 md:flex-col md:justify-center md:px-8 lg:px-12">
           <div className="max-w-md">
             <h1 className="text-4xl font-bold text-white">Partner Hub</h1>
             <p className="mt-4 text-lg text-primary-100">
@@ -54,9 +54,9 @@ export function ForgotPasswordPage() {
         </div>
 
         {/* Right side - Success message */}
-        <div className="flex w-full flex-col justify-center px-6 lg:w-1/2 lg:px-16">
+        <div className="flex w-full flex-col justify-center px-4 xs:px-6 sm:px-8 lg:px-16 md:w-3/5 lg:w-1/2">
           <div className="mx-auto w-full max-w-md">
-            <div className="mb-8 lg:hidden">
+            <div className="mb-8 md:hidden">
               <h1 className="text-2xl font-bold text-primary-600">Partner Hub</h1>
             </div>
 
@@ -93,7 +93,7 @@ export function ForgotPasswordPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left side - Branding */}
-      <div className="hidden w-1/2 bg-primary-600 lg:flex lg:flex-col lg:justify-center lg:px-12">
+      <div className="hidden md:flex md:w-2/5 lg:w-1/2 bg-primary-600 md:flex-col md:justify-center md:px-8 lg:px-12">
         <div className="max-w-md">
           <h1 className="text-4xl font-bold text-white">Partner Hub</h1>
           <p className="mt-4 text-lg text-primary-100">
@@ -103,7 +103,7 @@ export function ForgotPasswordPage() {
       </div>
 
       {/* Right side - Forgot password form */}
-      <div className="flex w-full flex-col justify-center px-6 lg:w-1/2 lg:px-16">
+      <div className="flex w-full flex-col justify-center px-4 xs:px-6 sm:px-8 lg:px-16 md:w-3/5 lg:w-1/2">
         <div className="mx-auto w-full max-w-md">
           {/* Mobile logo */}
           <div className="mb-8 lg:hidden">

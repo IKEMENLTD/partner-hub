@@ -193,6 +193,7 @@ export function FileUpload({
             <Button
               variant="ghost"
               size="sm"
+              className="min-h-[44px] min-w-[44px]"
               onClick={handleRemove}
               disabled={isUploading}
             >
@@ -201,6 +202,7 @@ export function FileUpload({
             <Button
               variant="primary"
               size="sm"
+              className="min-h-[44px]"
               onClick={handleUpload}
               isLoading={isUploading}
             >

@@ -314,7 +314,7 @@ export function ProjectCreatePage() {
               required
             />
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid-form">
               {/* Status */}
               <Select
                 label="ステータス"
@@ -334,7 +334,7 @@ export function ProjectCreatePage() {
               />
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid-form">
               {/* Start Date */}
               <Input
                 label="開始日"

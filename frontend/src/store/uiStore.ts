@@ -18,6 +18,8 @@ const applyTheme = (theme: 'light' | 'dark' | 'system') => {
 
 interface UIState {
   sidebarOpen: boolean;
+  isMobile: boolean;
+  mobileMenuOpen: boolean;
   projectListView: ViewType;
   theme: 'light' | 'dark' | 'system';
   notifications: Notification[];
@@ -34,6 +36,9 @@ interface Notification {
 interface UIActions {
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
+  setIsMobile: (v: boolean) => void;
+  openMobileMenu: () => void;
+  closeMobileMenu: () => void;
   setProjectListView: (view: ViewType) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   initTheme: () => void;
@@ -47,6 +52,8 @@ type UIStore = UIState & UIActions;
 export const useUIStore = create<UIStore>()((set) => ({
   // State
   sidebarOpen: true,
+  isMobile: false,
+  mobileMenuOpen: false,
   projectListView: 'list',
   theme: 'light',
   notifications: [],
@@ -56,6 +63,17 @@ export const useUIStore = create<UIStore>()((set) => ({
     set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+
+  setIsMobile: (v) =>
+    set(() =>
+      v
+        ? { isMobile: true, sidebarOpen: false, mobileMenuOpen: false }
+        : { isMobile: false, mobileMenuOpen: false }
+    ),
+
+  openMobileMenu: () => set({ mobileMenuOpen: true }),
+
+  closeMobileMenu: () => set({ mobileMenuOpen: false }),
 
   setProjectListView: (view) => set({ projectListView: view }),
 

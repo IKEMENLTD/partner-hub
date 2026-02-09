@@ -41,7 +41,7 @@ export function ProjectKanban({ projects, onProjectClick }: ProjectKanbanProps) 
       {columns.map((column) => (
         <div
           key={column.status}
-          className="flex-shrink-0 w-80"
+          className="flex-shrink-0 w-64 sm:w-72 lg:w-80"
           role="region"
           aria-label={`${column.label}列`}
         >

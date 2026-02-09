@@ -79,7 +79,7 @@ export function TableHead({
     <th
       scope="col"
       className={clsx(
-        'px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400',
+        'px-2 py-2 sm:px-4 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400',
         alignStyles[align],
         sortable && 'cursor-pointer select-none hover:text-gray-700',
         className
@@ -131,7 +131,7 @@ export function TableCell({
   return (
     <td
       className={clsx(
-        'whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100',
+        'whitespace-nowrap px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-gray-900 dark:text-gray-100',
         alignStyles[align],
         className
       )}

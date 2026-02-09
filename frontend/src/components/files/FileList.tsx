@@ -153,6 +153,7 @@ export function FileList({
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="min-h-[44px] min-w-[44px]"
                         onClick={() =>
                           setActionMenuId(actionMenuId === file.id ? null : file.id)
                         }
@@ -162,7 +163,7 @@ export function FileList({
                       {actionMenuId === file.id && (
                         <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-md shadow-lg border z-10">
                           <button
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 min-h-[44px]"
                             onClick={() => handleDownload(file.id)}
                           >
                             <Download className="h-4 w-4" />
@@ -173,7 +174,7 @@ export function FileList({
                               href={file.publicUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 min-h-[44px]"
                               onClick={() => setActionMenuId(null)}
                             >
                               <ExternalLink className="h-4 w-4" />
@@ -182,7 +183,7 @@ export function FileList({
                           )}
                           {onDelete && (
                             <button
-                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 min-h-[44px]"
                               onClick={() => {
                                 setDeleteConfirmId(file.id);
                                 setActionMenuId(null);

@@ -112,13 +112,13 @@ export function CustomFieldBuilder({
               </div>
 
               <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-3">
+                <div className="grid-form items-center">
                   {/* フィールド名 */}
                   <Input
                     value={field.name}
                     onChange={(e) => handleUpdateField(field.id, { name: e.target.value })}
                     placeholder="フィールド名"
-                    className="flex-1"
+                    className="col-span-full sm:col-span-1"
                   />
 
                   {/* フィールドタイプ */}
@@ -132,29 +132,31 @@ export function CustomFieldBuilder({
                       });
                     }}
                     options={FIELD_TYPE_OPTIONS}
-                    className="w-32"
+                    className="w-full sm:w-32"
                   />
 
-                  {/* 必須チェック */}
-                  <label className="flex items-center gap-1 text-sm text-gray-600">
-                    <input
-                      type="checkbox"
-                      checked={field.required}
-                      onChange={(e) => handleUpdateField(field.id, { required: e.target.checked })}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    必須
-                  </label>
+                  {/* 必須チェック & 削除ボタン */}
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-1 text-sm text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={field.required}
+                        onChange={(e) => handleUpdateField(field.id, { required: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      必須
+                    </label>
 
-                  {/* 削除ボタン */}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveField(field.id)}
-                    className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-500"
-                    aria-label="フィールドを削除"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    {/* 削除ボタン */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveField(field.id)}
+                      className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-500"
+                      aria-label="フィールドを削除"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* 選択肢の編集（selectタイプの場合） */}

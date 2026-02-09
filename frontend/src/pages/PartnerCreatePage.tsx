@@ -233,7 +233,7 @@ export function PartnerCreatePage() {
               required
             />
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid-form">
               {/* Phone */}
               <Input
                 label="電話番号"
@@ -258,7 +258,7 @@ export function PartnerCreatePage() {
               />
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid-form">
               {/* Type */}
               <Select
                 label="タイプ"
@@ -336,7 +336,7 @@ export function PartnerCreatePage() {
               </p>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid-form">
               {/* Address */}
               <Input
                 label="住所"
