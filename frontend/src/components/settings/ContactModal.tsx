@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Phone, MapPin, MessageCircle, Send, Loader2 } from 'lucide-react';
+import { Mail, MapPin, MessageCircle, Send, Loader2 } from 'lucide-react';
 import { Modal, Button, Input, TextArea } from '@/components/common';
 
 interface ContactModalProps {
@@ -71,18 +71,6 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
           </div>
 
           <div className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
-              <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">電話</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                03-1234-5678
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
               <MapPin className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
@@ -104,7 +92,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             </p>
           </div>
           <p className="text-sm text-blue-700 dark:text-blue-300">
-            平日 9:00 - 18:00（土日祝日・年末年始を除く）
+            平日 10:00 - 18:00（土日祝日・年末年始を除く）
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
             通常、1-2営業日以内にご返信いたします
