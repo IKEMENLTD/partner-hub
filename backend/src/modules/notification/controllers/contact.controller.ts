@@ -45,7 +45,7 @@ export class ContactController {
       </table>
     `;
 
-    await this.emailService.sendEmail({
+    await this.emailService.sendEmailDirect({
       to: this.SUPPORT_EMAIL,
       subject: `【お問い合わせ】${dto.subject}`,
       html,
