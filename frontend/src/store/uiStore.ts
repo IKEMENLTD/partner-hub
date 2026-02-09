@@ -49,10 +49,14 @@ interface UIActions {
 
 type UIStore = UIState & UIActions;
 
+// ストア生成時にウィンドウ幅から初期値を判定（レイアウトフラッシュ防止）
+const initialIsMobile =
+  typeof window !== 'undefined' ? window.innerWidth < 1025 : false;
+
 export const useUIStore = create<UIStore>()((set) => ({
   // State
-  sidebarOpen: true,
-  isMobile: false,
+  sidebarOpen: !initialIsMobile,
+  isMobile: initialIsMobile,
   mobileMenuOpen: false,
   projectListView: 'list',
   theme: 'light',
