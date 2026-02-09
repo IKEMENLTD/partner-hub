@@ -228,43 +228,47 @@ export function ReportsPage() {
               <div className="space-y-3">
                 {reportsData.data.map((report) => (
                   <Card key={report.id} className="p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-5 w-5 text-primary-600 shrink-0" />
-                          <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                            {report.title}
-                          </h3>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                          <Badge className={getStatusColor(report.status)}>
-                            {getStatusLabel(report.status)}
-                          </Badge>
-                          <Badge variant="default">{getPeriodLabel(report.period)}</Badge>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {report.dateRangeStart} 〜 {report.dateRangeEnd}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            {formatDate(report.createdAt)}
-                          </span>
-                        </div>
+                    <div className="space-y-3">
+                      {/* Header: title + status */}
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                          {report.title}
+                        </h3>
+                        <Badge className={`shrink-0 ${getStatusColor(report.status)}`}>
+                          {getStatusLabel(report.status)}
+                        </Badge>
+                      </div>
+
+                      {/* Meta info */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+                        <Badge variant="default">{getPeriodLabel(report.period)}</Badge>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Calendar className="h-4 w-4 shrink-0" />
+                          {report.dateRangeStart} 〜 {report.dateRangeEnd}
+                        </span>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Clock className="h-4 w-4 shrink-0" />
+                          {formatDate(report.createdAt)}
+                        </span>
                         {report.sentTo && report.sentTo.length > 0 && (
-                          <div className="mt-2 flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                            <Mail className="h-4 w-4" />
-                            <span>{report.sentTo.length}名に送信済み</span>
-                          </div>
+                          <span className="flex items-center gap-1 whitespace-nowrap">
+                            <Mail className="h-4 w-4 shrink-0" />
+                            {report.sentTo.length}名に送信済み
+                          </span>
                         )}
                       </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setViewingReport(report)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        詳細
-                      </Button>
+
+                      {/* Action */}
+                      <div className="pt-1">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setViewingReport(report)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          詳細
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -322,45 +326,48 @@ export function ReportsPage() {
               <div className="space-y-3">
                 {configsData.data.map((config) => (
                   <Card key={config.id} className="p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Settings className="h-5 w-5 text-primary-600 shrink-0" />
-                          <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                            {config.name}
-                          </h3>
-                          <Badge className={getStatusColor(config.status)}>
-                            {getStatusLabel(config.status)}
-                          </Badge>
-                        </div>
-                        {config.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                            {config.description}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                          <Badge variant="default">{getPeriodLabel(config.period)}</Badge>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {config.period === 'weekly'
-                              ? `毎週${getDayOfWeekLabel(config.dayOfWeek)}曜日`
-                              : `毎月${config.dayOfMonth}日`}
-                            {' '}
-                            {config.sendTime}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-4 w-4" />
-                            {config.recipients.length}名
-                          </span>
-                          {config.status === 'active' && config.nextRunAt && (
-                            <span className="flex items-center gap-1 text-primary-600">
-                              <Clock className="h-4 w-4" />
-                              次回: {formatNextRun(config.nextRunAt)}
-                            </span>
-                          )}
-                        </div>
+                    <div className="space-y-3">
+                      {/* Header: name + status */}
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                          {config.name}
+                        </h3>
+                        <Badge className={`shrink-0 ${getStatusColor(config.status)}`}>
+                          {getStatusLabel(config.status)}
+                        </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
+
+                      {config.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {config.description}
+                        </p>
+                      )}
+
+                      {/* Schedule info - horizontal */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+                        <Badge variant="default">{getPeriodLabel(config.period)}</Badge>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Calendar className="h-4 w-4 shrink-0" />
+                          {config.period === 'weekly'
+                            ? `毎週${getDayOfWeekLabel(config.dayOfWeek)}曜日`
+                            : `毎月${config.dayOfMonth}日`}
+                          {' '}
+                          {config.sendTime}
+                        </span>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Mail className="h-4 w-4 shrink-0" />
+                          {config.recipients.length}名
+                        </span>
+                        {config.status === 'active' && config.nextRunAt && (
+                          <span className="flex items-center gap-1 whitespace-nowrap text-primary-600">
+                            <Clock className="h-4 w-4 shrink-0" />
+                            次回: {formatNextRun(config.nextRunAt)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2 pt-1">
                         <Button
                           variant="primary"
                           size="sm"

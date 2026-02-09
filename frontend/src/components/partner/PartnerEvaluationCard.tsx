@@ -304,7 +304,7 @@ function EvaluationFormModal({
           </div>
 
           {/* Evaluation Period */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 評価期間開始
@@ -318,7 +318,7 @@ function EvaluationFormModal({
                     evaluationPeriodStart: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full min-w-0 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm min-h-[44px]"
               />
             </div>
             <div>
@@ -334,7 +334,7 @@ function EvaluationFormModal({
                     evaluationPeriodEnd: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full min-w-0 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm min-h-[44px]"
               />
             </div>
           </div>
