@@ -33,6 +33,8 @@ import { TaskCard, UnreadReportsWidget } from '@/components/dashboard';
 
 export function MyTodayPage() {
   const { user } = useAuthStore();
+  const isInternal = user?.role === 'admin' || user?.role === 'manager' || user?.role === 'member';
+  const isManager = user?.role === 'admin' || user?.role === 'manager';
   const { data, isLoading, error, refetch } = useTodayStats();
 
   // Fetch recent projects from localStorage
@@ -101,13 +103,15 @@ export function MyTodayPage() {
             {format(today, 'yyyy年M月d日 (EEEE)', { locale: ja })}
           </p>
         </div>
-        <Button
-          as={Link}
-          to="/projects/new"
-          leftIcon={<Plus className="h-4 w-4" />}
-        >
-          新規案件
-        </Button>
+        {isManager && (
+          <Button
+            as={Link}
+            to="/projects/new"
+            leftIcon={<Plus className="h-4 w-4" />}
+          >
+            新規案件
+          </Button>
+        )}
       </div>
 
       {/* Quick Stats */}
@@ -152,97 +156,103 @@ export function MyTodayPage() {
           </div>
         </Card>
 
-        <Card className="flex items-center gap-4">
-          <div className="rounded-lg bg-blue-100 p-3">
-            <Briefcase className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">案件数</p>
-            <p className="text-2xl font-bold text-gray-900">{todayStats?.totalProjects ?? 0}</p>
-          </div>
-        </Card>
+        {isInternal && (
+          <Card className="flex items-center gap-4">
+            <div className="rounded-lg bg-blue-100 p-3">
+              <Briefcase className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">案件数</p>
+              <p className="text-2xl font-bold text-gray-900">{todayStats?.totalProjects ?? 0}</p>
+            </div>
+          </Card>
+        )}
 
-        <Card className="flex items-center gap-4">
-          <div className="rounded-lg bg-purple-100 p-3">
-            <Users className="h-6 w-6 text-purple-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">パートナー数</p>
-            <p className="text-2xl font-bold text-gray-900">{todayStats?.totalPartners ?? 0}</p>
-          </div>
-        </Card>
+        {isManager && (
+          <Card className="flex items-center gap-4">
+            <div className="rounded-lg bg-purple-100 p-3">
+              <Users className="h-6 w-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">パートナー数</p>
+              <p className="text-2xl font-bold text-gray-900">{todayStats?.totalPartners ?? 0}</p>
+            </div>
+          </Card>
+        )}
       </div>
 
-      {/* Recent Projects Section (below Quick Stats) */}
-      <Card padding="none">
-        <CardHeader
-          className="px-6 pt-6"
-          action={
-            <Link
-              to="/projects"
-              className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
-            >
-              すべて表示
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          }
-        >
-          <div className="flex items-center gap-2">
-            <FolderKanban className="h-5 w-5 text-primary-500" />
-            <span>最近使った案件</span>
-          </div>
-        </CardHeader>
-        <CardContent className="px-6 pb-6">
-          {recentProjects.length === 0 ? (
-            <EmptyState
-              icon={<FolderKanban className="h-10 w-10" />}
-              title="最近の案件がありません"
-              description="案件を作成または閲覧すると、ここに表示されます"
-              className="py-8"
-            />
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {recentProjects.slice(0, 5).map((project) => (
-                <Link
-                  key={project.id}
-                  to={`/projects/${project.id}`}
-                  className="flex flex-col p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-primary-300 transition-colors"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="rounded-lg bg-primary-100 p-2">
-                      <FolderKanban className="h-4 w-4 text-primary-600" />
-                    </div>
-                    <Badge
-                      variant={
-                        project.status === 'completed'
-                          ? 'success'
-                          : project.status === 'in_progress'
-                          ? 'primary'
-                          : 'default'
-                      }
-                      className="text-xs"
-                    >
-                      {project.status === 'completed'
-                        ? '完了'
-                        : project.status === 'in_progress'
-                        ? '進行中'
-                        : project.status === 'planning'
-                        ? '計画中'
-                        : project.status}
-                    </Badge>
-                  </div>
-                  <p className="font-medium text-gray-900 text-sm line-clamp-2">
-                    {project.name}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    更新: {format(new Date(project.updatedAt || project.startDate), 'M/d', { locale: ja })}
-                  </p>
-                </Link>
-              ))}
+      {/* Recent Projects Section (below Quick Stats) - Internal users only */}
+      {isInternal && (
+        <Card padding="none">
+          <CardHeader
+            className="px-6 pt-6"
+            action={
+              <Link
+                to="/projects"
+                className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
+              >
+                すべて表示
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            }
+          >
+            <div className="flex items-center gap-2">
+              <FolderKanban className="h-5 w-5 text-primary-500" />
+              <span>最近使った案件</span>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
+            {recentProjects.length === 0 ? (
+              <EmptyState
+                icon={<FolderKanban className="h-10 w-10" />}
+                title="最近の案件がありません"
+                description="案件を作成または閲覧すると、ここに表示されます"
+                className="py-8"
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                {recentProjects.slice(0, 5).map((project) => (
+                  <Link
+                    key={project.id}
+                    to={`/projects/${project.id}`}
+                    className="flex flex-col p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-primary-300 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="rounded-lg bg-primary-100 p-2">
+                        <FolderKanban className="h-4 w-4 text-primary-600" />
+                      </div>
+                      <Badge
+                        variant={
+                          project.status === 'completed'
+                            ? 'success'
+                            : project.status === 'in_progress'
+                            ? 'primary'
+                            : 'default'
+                        }
+                        className="text-xs"
+                      >
+                        {project.status === 'completed'
+                          ? '完了'
+                          : project.status === 'in_progress'
+                          ? '進行中'
+                          : project.status === 'planning'
+                          ? '計画中'
+                          : project.status}
+                      </Badge>
+                    </div>
+                    <p className="font-medium text-gray-900 text-sm line-clamp-2">
+                      {project.name}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      更新: {format(new Date(project.updatedAt || project.startDate), 'M/d', { locale: ja })}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Content - Today's Tasks and Upcoming Deadlines */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -333,8 +343,8 @@ export function MyTodayPage() {
         </Card>
       </div>
 
-      {/* Partner Reports */}
-      <UnreadReportsWidget />
+      {/* Partner Reports - Manager only */}
+      {isManager && <UnreadReportsWidget />}
 
       {/* Additional Sections */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
