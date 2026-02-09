@@ -151,7 +151,8 @@ export class DashboardService {
       this.taskRepository
         .createQueryBuilder('task')
         .innerJoinAndSelect('task.project', 'project')
-        .where('task.assigneeId = :userId', { userId })
+        .where('project.deletedAt IS NULL')
+        .andWhere('task.assigneeId = :userId', { userId })
         .andWhere('task.dueDate BETWEEN :today AND :nextWeek', { today, nextWeek })
         .andWhere('task.status NOT IN (:...completedStatuses)', {
           completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
@@ -219,12 +220,13 @@ export class DashboardService {
       throw ResourceNotFoundException.forUser(userId);
     }
 
-    // Get today's tasks (innerJoin ensures only tasks with existing projects)
+    // Get today's tasks (innerJoin + deletedAt filter ensures only tasks with active projects)
     const tasksForToday = await this.taskRepository
       .createQueryBuilder('task')
       .innerJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
-      .where('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
+      .where('project.deletedAt IS NULL')
+      .andWhere('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
       })
@@ -234,12 +236,13 @@ export class DashboardService {
       .take(20)
       .getMany();
 
-    // Get upcoming deadlines (innerJoin ensures only tasks with existing projects)
+    // Get upcoming deadlines (innerJoin + deletedAt filter ensures only tasks with active projects)
     const upcomingDeadlines = await this.taskRepository
       .createQueryBuilder('task')
       .innerJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
-      .where('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
+      .where('project.deletedAt IS NULL')
+      .andWhere('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
       .andWhere('task.dueDate > :todayStr', { todayStr })
       .andWhere('task.dueDate <= :nextWeekStr', { nextWeekStr })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
@@ -249,12 +252,13 @@ export class DashboardService {
       .take(10)
       .getMany();
 
-    // Get upcoming project deadlines
+    // Get upcoming project deadlines (exclude soft-deleted)
     const upcomingProjectDeadlines = await this.projectRepository
       .createQueryBuilder('project')
       .leftJoinAndSelect('project.owner', 'owner')
       .leftJoinAndSelect('project.manager', 'manager')
-      .where('project.endDate IS NOT NULL')
+      .where('project.deletedAt IS NULL')
+      .andWhere('project.endDate IS NOT NULL')
       .andWhere('project.endDate <= :nextWeekStr', { nextWeekStr })
       .andWhere('project.status NOT IN (:...completedStatuses)', {
         completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
@@ -332,10 +336,11 @@ export class DashboardService {
       this.overviewService.getPartnerPerformance(10),
     ]);
 
-    // Get projects at risk
+    // Get projects at risk (exclude soft-deleted)
     const projectsAtRisk = await this.projectRepository
       .createQueryBuilder('project')
-      .where('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
+      .where('project.deletedAt IS NULL')
+      .andWhere('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
       .andWhere('project.progress < 50')
       .andWhere('project.endDate < :futureDate', {
         futureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -423,7 +428,8 @@ export class DashboardService {
       .leftJoin('project.partners', 'partner')
       .select('partner.id', 'partnerId')
       .addSelect('COUNT(project.id)', 'count')
-      .where('partner.id IN (:...partnerIds)', { partnerIds })
+      .where('project.deletedAt IS NULL')
+      .andWhere('partner.id IN (:...partnerIds)', { partnerIds })
       .andWhere('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
       .groupBy('partner.id')
       .getRawMany();
@@ -596,7 +602,8 @@ export class DashboardService {
       .createQueryBuilder('task')
       .innerJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
-      .where('task.dueDate BETWEEN :today AND :nextWeek', { today, nextWeek })
+      .where('project.deletedAt IS NULL')
+      .andWhere('task.dueDate BETWEEN :today AND :nextWeek', { today, nextWeek })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
       })

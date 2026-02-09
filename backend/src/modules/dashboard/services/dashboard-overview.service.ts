@@ -286,7 +286,8 @@ export class DashboardOverviewService {
       this.projectRepository
         .createQueryBuilder('project')
         .leftJoinAndSelect('project.manager', 'manager')
-        .where('project.endDate BETWEEN :today AND :futureDate', { today, futureDate })
+        .where('project.deletedAt IS NULL')
+        .andWhere('project.endDate BETWEEN :today AND :futureDate', { today, futureDate })
         .andWhere('project.status NOT IN (:...completedStatuses)', {
           completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
         })
@@ -297,7 +298,8 @@ export class DashboardOverviewService {
         .createQueryBuilder('task')
         .leftJoinAndSelect('task.assignee', 'assignee')
         .innerJoinAndSelect('task.project', 'project')
-        .where('task.dueDate BETWEEN :today AND :futureDate', { today, futureDate })
+        .where('project.deletedAt IS NULL')
+        .andWhere('task.dueDate BETWEEN :today AND :futureDate', { today, futureDate })
         .andWhere('task.status NOT IN (:...completedStatuses)', {
           completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
         })
@@ -319,7 +321,8 @@ export class DashboardOverviewService {
       this.projectRepository
         .createQueryBuilder('project')
         .leftJoinAndSelect('project.manager', 'manager')
-        .where('project.endDate < :today', { today })
+        .where('project.deletedAt IS NULL')
+        .andWhere('project.endDate < :today', { today })
         .andWhere('project.status NOT IN (:...completedStatuses)', {
           completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
         })
@@ -329,7 +332,8 @@ export class DashboardOverviewService {
         .createQueryBuilder('task')
         .leftJoinAndSelect('task.assignee', 'assignee')
         .innerJoinAndSelect('task.project', 'project')
-        .where('task.dueDate < :today', { today })
+        .where('project.deletedAt IS NULL')
+        .andWhere('task.dueDate < :today', { today })
         .andWhere('task.status NOT IN (:...completedStatuses)', {
           completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
         })
@@ -409,6 +413,7 @@ export class DashboardOverviewService {
 
     const statusCounts = await this.projectRepository
       .createQueryBuilder('project')
+      .where('project.deletedAt IS NULL')
       .select('project.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .groupBy('project.status')
@@ -416,6 +421,7 @@ export class DashboardOverviewService {
 
     const avgProgress = await this.projectRepository
       .createQueryBuilder('project')
+      .where('project.deletedAt IS NULL')
       .select('AVG(project.progress)', 'avg')
       .getRawOne();
 
