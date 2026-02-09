@@ -131,7 +131,7 @@ export class ProgressReportController {
 
   @Get('task/:taskId')
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all progress reports for a task' })
   @ApiParam({ name: 'taskId', description: 'Task ID' })
   @ApiResponse({
@@ -160,7 +160,7 @@ export class ProgressReportController {
 
   @Get(':id')
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get a single progress report by ID' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiResponse({
@@ -181,7 +181,7 @@ export class ProgressReportController {
 
   @Patch(':id/review')
   @ApiBearerAuth()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Review a progress report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiResponse({

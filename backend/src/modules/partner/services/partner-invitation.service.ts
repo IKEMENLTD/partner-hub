@@ -344,8 +344,8 @@ export class PartnerInvitationService {
         email: partner.email.toLowerCase(),
         firstName: sanitizedFirstName,
         lastName: sanitizedLastName,
-        role: UserRole.PARTNER,
-        isActive: true,
+        role: UserRole.MEMBER,
+        isActive: false, // パートナーはトークンアクセスのみ、ログイン不可
         organizationId: partner.organizationId, // パートナーの組織IDを継承
       });
       await this.userProfileRepository.save(userProfile);

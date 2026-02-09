@@ -131,10 +131,6 @@ export function ProfilePage() {
     switch (role) {
       case 'admin':
         return { label: '管理者', variant: 'danger' as const };
-      case 'manager':
-        return { label: 'マネージャー', variant: 'primary' as const };
-      case 'partner':
-        return { label: 'パートナー', variant: 'success' as const };
       default:
         return { label: 'メンバー', variant: 'default' as const };
     }
@@ -338,13 +334,9 @@ export function ProfilePage() {
                 <Badge variant={roleInfo.variant}>{roleInfo.label}</Badge>
               </div>
               <p className="text-sm text-gray-500">
-                {user?.role === 'admin' && '全ての機能にアクセスできます。'}
-                {user?.role === 'manager' &&
-                  'プロジェクトの管理とメンバーの割り当てが可能です。'}
-                {user?.role === 'partner' &&
-                  '割り当てられたプロジェクトの閲覧と進捗報告が可能です。'}
-                {user?.role === 'member' &&
-                  '割り当てられたタスクの実行と進捗報告が可能です。'}
+                {user?.role === 'admin'
+                  ? '全ての機能にアクセスできます。'
+                  : '案件・タスクの操作と進捗報告が可能です。管理機能はアクセスできません。'}
               </p>
             </CardContent>
           </Card>

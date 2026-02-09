@@ -35,7 +35,7 @@ export class ReminderController {
   constructor(private readonly reminderService: ReminderService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new reminder' })
   @ApiResponse({ status: 201, description: 'Reminder created successfully' })
   async create(@Body() createReminderDto: CreateReminderDto, @CurrentUser('id') userId: string) {
@@ -43,7 +43,7 @@ export class ReminderController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all reminders with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of reminders' })
   async findAll(@Query() queryDto: QueryReminderDto) {
@@ -51,7 +51,7 @@ export class ReminderController {
   }
 
   @Get('statistics')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get reminder statistics' })
   @ApiResponse({ status: 200, description: 'Reminder statistics' })
   async getStatistics() {
@@ -86,7 +86,7 @@ export class ReminderController {
   }
 
   @Get('user/:userId')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get reminders for a specific user' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
@@ -108,7 +108,7 @@ export class ReminderController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update reminder' })
   @ApiParam({ name: 'id', description: 'Reminder ID' })
   @ApiResponse({ status: 200, description: 'Reminder updated successfully' })
@@ -130,7 +130,7 @@ export class ReminderController {
   }
 
   @Patch(':id/cancel')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Cancel reminder' })
   @ApiParam({ name: 'id', description: 'Reminder ID' })
   @ApiResponse({ status: 200, description: 'Reminder cancelled' })

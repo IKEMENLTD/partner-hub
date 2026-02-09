@@ -516,13 +516,7 @@ export function SettingsPage() {
               <div className="flex justify-between">
                 <span className="text-gray-500">権限</span>
                 <span className="text-gray-900">
-                  {user?.role === 'admin'
-                    ? '管理者'
-                    : user?.role === 'manager'
-                    ? 'マネージャー'
-                    : user?.role === 'partner'
-                    ? 'パートナー'
-                    : 'メンバー'}
+                  {user?.role === 'admin' ? '管理者' : 'メンバー'}
                 </span>
               </div>
             </CardContent>

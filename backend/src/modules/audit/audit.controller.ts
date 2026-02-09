@@ -83,7 +83,7 @@ export class AuditController {
   }
 
   @Get('entity/:entityName/:entityId')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get audit logs for a specific entity' })
   @ApiParam({ name: 'entityName', description: 'Entity name (e.g., Partner, Project, Task)' })
   @ApiParam({ name: 'entityId', description: 'Entity ID' })
@@ -93,7 +93,7 @@ export class AuditController {
   }
 
   @Get('user/:userId')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get audit logs for a specific user' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiQuery({
@@ -110,7 +110,7 @@ export class AuditController {
   }
 
   @Get('recent')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get recent audit logs' })
   @ApiQuery({
     name: 'limit',

@@ -75,9 +75,8 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ロール定義
-const MANAGER_ROLES: ('admin' | 'manager')[] = ['admin', 'manager'];
-const INTERNAL_ROLES: ('admin' | 'manager' | 'member')[] = ['admin', 'manager', 'member'];
+// admin限定ルート用
+const ADMIN_ONLY: ('admin')[] = ['admin'];
 
 function App() {
   const initTheme = useUIStore((state) => state.initTheme);
@@ -114,28 +113,25 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
 
-            {/* ADMIN + MANAGER + MEMBER only (exclude PARTNER) */}
-            <Route path="/projects" element={<RoleGuard allowedRoles={INTERNAL_ROLES}><ProjectListPage /></RoleGuard>} />
-            <Route path="/projects/:id" element={<RoleGuard allowedRoles={INTERNAL_ROLES}><ProjectDetailPage /></RoleGuard>} />
-            <Route path="/projects/:id/tasks/:taskId" element={<RoleGuard allowedRoles={INTERNAL_ROLES}><TaskDetailPage /></RoleGuard>} />
+            {/* All authenticated users (admin + member) */}
+            <Route path="/projects" element={<ProjectListPage />} />
+            <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route path="/projects/:id/tasks/:taskId" element={<TaskDetailPage />} />
+            <Route path="/projects/new" element={<ProjectCreatePage />} />
+            <Route path="/projects/:id/edit" element={<ProjectCreatePage />} />
+            <Route path="/projects/:id/tasks/new" element={<TaskCreatePage />} />
+            <Route path="/projects/:id/tasks/:taskId/edit" element={<TaskCreatePage />} />
 
-            {/* ADMIN + MANAGER only */}
-            <Route path="/projects/new" element={<RoleGuard allowedRoles={MANAGER_ROLES}><ProjectCreatePage /></RoleGuard>} />
-            <Route path="/projects/:id/edit" element={<RoleGuard allowedRoles={MANAGER_ROLES}><ProjectCreatePage /></RoleGuard>} />
-            <Route path="/projects/:id/tasks/new" element={<RoleGuard allowedRoles={INTERNAL_ROLES}><TaskCreatePage /></RoleGuard>} />
-            <Route path="/projects/:id/tasks/:taskId/edit" element={<RoleGuard allowedRoles={INTERNAL_ROLES}><TaskCreatePage /></RoleGuard>} />
-
-            <Route path="/partners" element={<RoleGuard allowedRoles={MANAGER_ROLES}><PartnerListPage /></RoleGuard>} />
-            <Route path="/partners/new" element={<RoleGuard allowedRoles={MANAGER_ROLES}><PartnerCreatePage /></RoleGuard>} />
-            <Route path="/partners/:id" element={<RoleGuard allowedRoles={MANAGER_ROLES}><PartnerDetailPage /></RoleGuard>} />
-            <Route path="/partners/:id/edit" element={<RoleGuard allowedRoles={MANAGER_ROLES}><PartnerCreatePage /></RoleGuard>} />
-            <Route path="/partner-reports" element={<RoleGuard allowedRoles={MANAGER_ROLES}><PartnerReportsListPage /></RoleGuard>} />
-
-            <Route path="/manager" element={<RoleGuard allowedRoles={MANAGER_ROLES}><ManagerDashboardPage /></RoleGuard>} />
-            <Route path="/reports" element={<RoleGuard allowedRoles={MANAGER_ROLES}><ReportsPage /></RoleGuard>} />
+            <Route path="/partners" element={<PartnerListPage />} />
+            <Route path="/partners/:id" element={<PartnerDetailPage />} />
+            <Route path="/partner-reports" element={<PartnerReportsListPage />} />
 
             {/* ADMIN only */}
-            <Route path="/admin/settings" element={<RoleGuard allowedRoles={['admin']}><AdminSettingsPage /></RoleGuard>} />
+            <Route path="/partners/new" element={<RoleGuard allowedRoles={ADMIN_ONLY}><PartnerCreatePage /></RoleGuard>} />
+            <Route path="/partners/:id/edit" element={<RoleGuard allowedRoles={ADMIN_ONLY}><PartnerCreatePage /></RoleGuard>} />
+            <Route path="/manager" element={<RoleGuard allowedRoles={ADMIN_ONLY}><ManagerDashboardPage /></RoleGuard>} />
+            <Route path="/reports" element={<RoleGuard allowedRoles={ADMIN_ONLY}><ReportsPage /></RoleGuard>} />
+            <Route path="/admin/settings" element={<RoleGuard allowedRoles={ADMIN_ONLY}><AdminSettingsPage /></RoleGuard>} />
 
             {/* Catch all - redirect to today */}
             <Route path="*" element={<Navigate to="/today" replace />} />

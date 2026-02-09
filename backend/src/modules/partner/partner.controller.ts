@@ -50,7 +50,7 @@ export class PartnerController {
   ) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new partner' })
   @ApiResponse({ status: 201, description: 'Partner created successfully' })
   @ApiResponse({ status: 409, description: 'Partner already exists' })
@@ -66,7 +66,7 @@ export class PartnerController {
   }
 
   @Get('statistics')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get partner statistics' })
   @ApiResponse({ status: 200, description: 'Partner statistics' })
   async getStatistics() {
@@ -112,7 +112,7 @@ export class PartnerController {
 
   @Patch(':id')
   @UseGuards(PartnerAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update partner' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'Partner updated successfully' })
@@ -124,7 +124,7 @@ export class PartnerController {
 
   @Patch(':id/status')
   @UseGuards(PartnerAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update partner status' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'Partner status updated' })
@@ -140,7 +140,7 @@ export class PartnerController {
 
   @Patch(':id/rating')
   @UseGuards(PartnerAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update partner rating' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'Partner rating updated' })
@@ -157,7 +157,7 @@ export class PartnerController {
   // ==================== Invitation Endpoints ====================
 
   @Post(':id/invite')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Send invitation email to partner' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 201, description: 'Invitation sent successfully' })
@@ -237,7 +237,7 @@ export class PartnerController {
   }
 
   @Post(':id/resend-invitation')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Resend invitation email to partner' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 201, description: 'Invitation resent successfully' })

@@ -98,14 +98,14 @@ export class SearchService {
       });
 
     // Role-based filtering
-    if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
-      this.logger.debug(`Applying role filter for non-admin/manager user: userId="${userId}"`);
+    if (userRole !== UserRole.ADMIN) {
+      this.logger.debug(`Applying role filter for non-admin user: userId="${userId}"`);
       queryBuilder.andWhere(
         '(project.ownerId = :userId OR project.managerId = :userId OR project.createdById = :userId)',
         { userId },
       );
     } else {
-      this.logger.debug(`Skipping role filter - user is admin or manager`);
+      this.logger.debug(`Skipping role filter - user is admin`);
     }
 
     // Order by updated date (most recent first) and take limit
@@ -196,7 +196,7 @@ export class SearchService {
       });
 
     // Role-based filtering
-    if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
+    if (userRole !== UserRole.ADMIN) {
       queryBuilder.andWhere('(task.assigneeId = :userId OR task.createdById = :userId)', {
         userId,
       });

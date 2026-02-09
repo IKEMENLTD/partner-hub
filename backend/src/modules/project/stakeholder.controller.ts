@@ -45,7 +45,7 @@ export class StakeholderController {
   // ============================================
 
   @Post('projects/:projectId/stakeholders')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Add a stakeholder to a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Stakeholder added successfully' })
@@ -62,7 +62,7 @@ export class StakeholderController {
   }
 
   @Get('projects/:projectId/stakeholders')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all stakeholders for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of stakeholders' })
@@ -75,7 +75,7 @@ export class StakeholderController {
   }
 
   @Get('projects/:projectId/stakeholders/tree')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get stakeholder tree structure for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({
@@ -91,7 +91,7 @@ export class StakeholderController {
   }
 
   @Get('projects/:projectId/stakeholders/by-tier/:tier')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get stakeholders by tier for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'tier', description: 'Tier level (1, 2, or 3)' })
@@ -105,7 +105,7 @@ export class StakeholderController {
   }
 
   @Get('projects/:projectId/stakeholders/primary')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get primary stakeholders for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of primary stakeholders' })
@@ -119,7 +119,7 @@ export class StakeholderController {
   // ============================================
 
   @Get('stakeholders/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get stakeholder by ID' })
   @ApiParam({ name: 'id', description: 'Stakeholder ID' })
   @ApiResponse({ status: 200, description: 'Stakeholder details' })
@@ -129,7 +129,7 @@ export class StakeholderController {
   }
 
   @Patch('stakeholders/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update stakeholder' })
   @ApiParam({ name: 'id', description: 'Stakeholder ID' })
   @ApiResponse({ status: 200, description: 'Stakeholder updated successfully' })
@@ -142,7 +142,7 @@ export class StakeholderController {
   }
 
   @Patch('stakeholders/:id/tier')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update stakeholder tier' })
   @ApiParam({ name: 'id', description: 'Stakeholder ID' })
   @ApiResponse({ status: 200, description: 'Stakeholder tier updated successfully' })
@@ -156,7 +156,7 @@ export class StakeholderController {
   }
 
   @Delete('stakeholders/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete stakeholder' })
   @ApiParam({ name: 'id', description: 'Stakeholder ID' })

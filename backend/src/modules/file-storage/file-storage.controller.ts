@@ -42,7 +42,7 @@ export class FileStorageController {
   constructor(private readonly fileStorageService: FileStorageService) {}
 
   @Post('files/upload')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload a file' })
   @ApiConsumes('multipart/form-data')
@@ -115,7 +115,7 @@ export class FileStorageController {
   }
 
   @Get('projects/:projectId/files')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get files for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({
@@ -131,7 +131,7 @@ export class FileStorageController {
   }
 
   @Get('tasks/:taskId/files')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get files for a task' })
   @ApiParam({ name: 'taskId', description: 'Task ID' })
   @ApiResponse({
@@ -145,7 +145,7 @@ export class FileStorageController {
   }
 
   @Get('files/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get file by ID' })
   @ApiParam({ name: 'id', description: 'File ID' })
   @ApiResponse({
@@ -160,7 +160,7 @@ export class FileStorageController {
   }
 
   @Delete('files/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a file' })
   @ApiParam({ name: 'id', description: 'File ID' })
@@ -171,7 +171,7 @@ export class FileStorageController {
   }
 
   @Get('files/:id/download')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get signed download URL for a file' })
   @ApiParam({ name: 'id', description: 'File ID' })
   @ApiQuery({

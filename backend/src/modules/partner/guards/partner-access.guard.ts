@@ -56,8 +56,8 @@ export class PartnerAccessGuard implements CanActivate {
       });
     }
 
-    // Admin and Manager users have access to all partners
-    if (user.role === UserRole.ADMIN || user.role === UserRole.MANAGER) {
+    // Admin users have access to all partners
+    if (user.role === UserRole.ADMIN) {
       return true;
     }
 

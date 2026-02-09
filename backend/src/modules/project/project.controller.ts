@@ -50,7 +50,7 @@ export class ProjectController {
   ) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Create a new project' })
   @ApiResponse({ status: 201, description: 'Project created successfully' })
   async create(@Body() createProjectDto: CreateProjectDto, @CurrentUser('id') userId: string) {
@@ -69,7 +69,7 @@ export class ProjectController {
   }
 
   @Get('statistics')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get project statistics' })
   @ApiResponse({ status: 200, description: 'Project statistics' })
   async getStatistics() {
@@ -77,7 +77,7 @@ export class ProjectController {
   }
 
   @Get('health-statistics')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get health score statistics across all projects' })
   @ApiResponse({ status: 200, description: 'Health score statistics' })
   async getHealthStatistics() {
@@ -139,7 +139,7 @@ export class ProjectController {
 
   @Patch(':id')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Update project' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Project updated successfully' })
@@ -151,7 +151,7 @@ export class ProjectController {
 
   @Patch(':id/status')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Update project status' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Project status updated' })
@@ -167,7 +167,7 @@ export class ProjectController {
 
   @Patch(':id/progress')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Update project progress' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Project progress updated' })
@@ -183,7 +183,7 @@ export class ProjectController {
 
   @Post(':id/partners/:partnerId')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Add partner to project' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiParam({ name: 'partnerId', description: 'Partner ID' })
@@ -198,7 +198,7 @@ export class ProjectController {
 
   @Delete(':id/partners/:partnerId')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Remove partner from project' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiParam({ name: 'partnerId', description: 'Partner ID' })
@@ -213,7 +213,7 @@ export class ProjectController {
 
   @Post(':id/members')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Add member to project' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Member added to project' })
@@ -228,7 +228,7 @@ export class ProjectController {
 
   @Delete(':id/members/:memberId')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Remove member from project' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiParam({ name: 'memberId', description: 'Member ID' })
@@ -244,7 +244,7 @@ export class ProjectController {
 
   @Delete(':id')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete project' })
   @ApiParam({ name: 'id', description: 'Project ID' })
@@ -258,7 +258,7 @@ export class ProjectController {
   // Health Score endpoints
   @Post(':id/recalculate-health')
   @UseGuards(ProjectAccessGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Recalculate health score for a project' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Health score recalculated successfully' })

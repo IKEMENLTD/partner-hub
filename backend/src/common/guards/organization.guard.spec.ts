@@ -177,35 +177,17 @@ describe('OrganizationGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow MANAGER to access their organization', async () => {
-      const manager = {
-        id: 'manager-123',
-        role: UserRole.MANAGER,
+    it('should allow MEMBER to access their organization', async () => {
+      const member = {
+        id: 'member-123',
+        role: UserRole.MEMBER,
         organizationId: 'org-123',
       };
-      const context = mockExecutionContext(manager, false);
+      const context = mockExecutionContext(member, false);
 
       jest.spyOn(userProfileRepository, 'findOne').mockResolvedValue({
         ...mockUserProfile,
-        role: UserRole.MANAGER,
-      } as unknown as UserProfile);
-
-      const result = await guard.canActivate(context);
-
-      expect(result).toBe(true);
-    });
-
-    it('should allow PARTNER to access assigned organization', async () => {
-      const partner = {
-        id: 'partner-123',
-        role: UserRole.PARTNER,
-        organizationId: 'org-123',
-      };
-      const context = mockExecutionContext(partner, false);
-
-      jest.spyOn(userProfileRepository, 'findOne').mockResolvedValue({
-        ...mockUserProfile,
-        role: UserRole.PARTNER,
+        role: UserRole.MEMBER,
       } as unknown as UserProfile);
 
       const result = await guard.canActivate(context);

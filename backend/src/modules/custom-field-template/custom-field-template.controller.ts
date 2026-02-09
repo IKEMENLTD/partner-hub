@@ -28,7 +28,7 @@ export class CustomFieldTemplateController {
   constructor(private readonly templateService: CustomFieldTemplateService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'カスタムフィールドテンプレートを作成' })
   @ApiResponse({ status: 201, description: 'テンプレートが作成されました' })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
@@ -53,7 +53,7 @@ export class CustomFieldTemplateController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'カスタムフィールドテンプレートを削除' })
   @ApiParam({ name: 'id', description: 'テンプレートID' })
@@ -73,7 +73,7 @@ export class CustomFieldTemplateController {
   }
 
   @Post(':id/deactivate')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'テンプレートを非アクティブ化' })
   @ApiParam({ name: 'id', description: 'テンプレートID' })
   @ApiResponse({ status: 200, description: 'テンプレートが非アクティブ化されました' })

@@ -50,7 +50,7 @@ export class PartnerContactSetupController {
    */
   @Post('send/:partnerId')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'パートナーにセットアップメールを送信' })
   @ApiResponse({ status: 200, description: 'メール送信完了' })
@@ -64,7 +64,7 @@ export class PartnerContactSetupController {
    */
   @Post('resend/:partnerId')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'セットアップメールを再送信' })
   @ApiResponse({ status: 200, description: 'メール再送信完了' })
@@ -78,7 +78,7 @@ export class PartnerContactSetupController {
    */
   @Get('status/:partnerId')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'パートナーの連絡先設定状況を取得' })
   async getSetupStatus(@Param('partnerId') partnerId: string) {

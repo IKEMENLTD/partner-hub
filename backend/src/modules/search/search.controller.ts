@@ -15,7 +15,7 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({
     summary: 'Global search across projects, partners, and tasks',
     description:

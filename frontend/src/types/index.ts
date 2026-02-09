@@ -18,7 +18,7 @@ export function getUserDisplayName(user: User | null | undefined): string {
   return `${user.lastName} ${user.firstName}`.trim();
 }
 
-export type UserRole = 'admin' | 'manager' | 'member' | 'partner';
+export type UserRole = 'admin' | 'member';
 
 export interface AuthState {
   user: User | null;

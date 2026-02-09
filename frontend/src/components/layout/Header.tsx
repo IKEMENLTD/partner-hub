@@ -81,13 +81,7 @@ export function Header() {
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getUserDisplayName(user)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
                   <Badge variant="primary" size="sm" className="mt-2">
-                    {user?.role === 'admin'
-                      ? '管理者'
-                      : user?.role === 'manager'
-                      ? 'マネージャー'
-                      : user?.role === 'partner'
-                      ? 'パートナー'
-                      : 'メンバー'}
+                    {user?.role === 'admin' ? '管理者' : 'メンバー'}
                   </Badge>
                 </div>
                 <Link

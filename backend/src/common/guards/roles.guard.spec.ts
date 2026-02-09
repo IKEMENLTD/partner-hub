@@ -107,25 +107,14 @@ describe('RolesGuard', () => {
     it('should return true if user has one of multiple required roles', () => {
       const user = {
         id: 'user-123',
-        email: 'manager@example.com',
-        role: UserRole.MANAGER,
+        email: 'member@example.com',
+        role: UserRole.MEMBER,
       };
-      const context = mockExecutionContext(user, [UserRole.ADMIN, UserRole.MANAGER], false);
+      const context = mockExecutionContext(user, [UserRole.ADMIN, UserRole.MEMBER], false);
 
       const result = guard.canActivate(context);
 
       expect(result).toBe(true);
-    });
-
-    it('should throw AuthorizationException if user has none of the required roles', () => {
-      const user = {
-        id: 'user-123',
-        email: 'partner@example.com',
-        role: UserRole.PARTNER,
-      };
-      const context = mockExecutionContext(user, [UserRole.ADMIN, UserRole.MANAGER], false);
-
-      expect(() => guard.canActivate(context)).toThrow(AuthorizationException);
     });
   });
 
@@ -133,15 +122,6 @@ describe('RolesGuard', () => {
     it('should allow ADMIN access to admin-only routes', () => {
       const user = { id: 'admin-1', role: UserRole.ADMIN };
       const context = mockExecutionContext(user, [UserRole.ADMIN], false);
-
-      const result = guard.canActivate(context);
-
-      expect(result).toBe(true);
-    });
-
-    it('should allow MANAGER access to manager routes', () => {
-      const user = { id: 'manager-1', role: UserRole.MANAGER };
-      const context = mockExecutionContext(user, [UserRole.MANAGER], false);
 
       const result = guard.canActivate(context);
 
@@ -157,20 +137,17 @@ describe('RolesGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow PARTNER access to partner routes', () => {
-      const user = { id: 'partner-1', role: UserRole.PARTNER };
-      const context = mockExecutionContext(user, [UserRole.PARTNER], false);
+    it('should deny MEMBER access to admin-only routes', () => {
+      const user = { id: 'member-1', role: UserRole.MEMBER };
+      const context = mockExecutionContext(user, [UserRole.ADMIN], false);
 
-      const result = guard.canActivate(context);
-
-      expect(result).toBe(true);
+      expect(() => guard.canActivate(context)).toThrow(AuthorizationException);
     });
 
     it('should allow access when user role matches any of multiple required roles', () => {
       const user = { id: 'member-1', role: UserRole.MEMBER };
       const context = mockExecutionContext(user, [
         UserRole.ADMIN,
-        UserRole.MANAGER,
         UserRole.MEMBER,
       ], false);
 
@@ -269,20 +246,6 @@ describe('RolesGuard', () => {
       const user = { id: 'user-123', role: UserRole.ADMIN };
       const context = mockExecutionContext(user, [
         UserRole.ADMIN,
-        UserRole.MANAGER,
-        UserRole.MEMBER,
-      ], false);
-
-      const result = guard.canActivate(context);
-
-      expect(result).toBe(true);
-    });
-
-    it('should allow access with middle matching role', () => {
-      const user = { id: 'user-123', role: UserRole.MANAGER };
-      const context = mockExecutionContext(user, [
-        UserRole.ADMIN,
-        UserRole.MANAGER,
         UserRole.MEMBER,
       ], false);
 
@@ -292,11 +255,10 @@ describe('RolesGuard', () => {
     });
 
     it('should allow access with last matching role', () => {
-      const user = { id: 'user-123', role: UserRole.PARTNER };
+      const user = { id: 'user-123', role: UserRole.MEMBER };
       const context = mockExecutionContext(user, [
         UserRole.ADMIN,
-        UserRole.MANAGER,
-        UserRole.PARTNER,
+        UserRole.MEMBER,
       ], false);
 
       const result = guard.canActivate(context);

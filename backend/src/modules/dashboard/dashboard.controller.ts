@@ -26,7 +26,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('overview')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get dashboard overview statistics' })
   @ApiResponse({ status: 200, description: 'Dashboard overview data' })
   async getOverview(@CurrentUser('id') userId: string) {
@@ -34,7 +34,7 @@ export class DashboardController {
   }
 
   @Get('project-summaries')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get project summaries for dashboard' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Project summaries' })
@@ -43,7 +43,7 @@ export class DashboardController {
   }
 
   @Get('partner-performance')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get partner performance metrics' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Partner performance data' })
@@ -52,7 +52,7 @@ export class DashboardController {
   }
 
   @Get('upcoming-deadlines')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get upcoming deadlines' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Upcoming deadlines' })
@@ -61,7 +61,7 @@ export class DashboardController {
   }
 
   @Get('overdue')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get overdue projects and tasks' })
   @ApiResponse({ status: 200, description: 'Overdue items' })
   async getOverdueItems() {
@@ -69,7 +69,7 @@ export class DashboardController {
   }
 
   @Get('recent-activity')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get recent activity' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Recent activity list' })
@@ -78,7 +78,7 @@ export class DashboardController {
   }
 
   @Get('task-distribution')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get task distribution statistics' })
   @ApiResponse({ status: 200, description: 'Task distribution data' })
   async getTaskDistribution() {
@@ -86,7 +86,7 @@ export class DashboardController {
   }
 
   @Get('project-progress')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get project progress statistics' })
   @ApiResponse({ status: 200, description: 'Project progress data' })
   async getProjectProgress() {
@@ -115,7 +115,7 @@ export class DashboardController {
   }
 
   @Get('stats')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get dashboard statistics (alias for overview)' })
   @ApiResponse({ status: 200, description: 'Dashboard statistics' })
   async getStats(@CurrentUser('id') userId: string) {
@@ -144,7 +144,7 @@ export class DashboardController {
   }
 
   @Get('manager')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get manager dashboard' })
   @ApiResponse({ status: 200, description: 'Manager dashboard data' })
   async getManagerDashboard(@Query('period') period?: string) {
@@ -152,7 +152,7 @@ export class DashboardController {
   }
 
   @Get('reports/generate')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Generate dashboard report' })
   @ApiQuery({
     name: 'reportType',

@@ -38,7 +38,7 @@ export class EscalationController {
   // ========================
 
   @Get('rules')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all escalation rules with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of escalation rules' })
   async findAllRules(@Query() queryDto: QueryEscalationRuleDto) {
@@ -46,7 +46,7 @@ export class EscalationController {
   }
 
   @Get('rules/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get escalation rule by ID' })
   @ApiParam({ name: 'id', description: 'Escalation Rule ID' })
   @ApiResponse({ status: 200, description: 'Escalation rule details' })
@@ -56,7 +56,7 @@ export class EscalationController {
   }
 
   @Post('rules')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new escalation rule' })
   @ApiResponse({ status: 201, description: 'Escalation rule created successfully' })
   async createRule(
@@ -67,7 +67,7 @@ export class EscalationController {
   }
 
   @Patch('rules/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update escalation rule' })
   @ApiParam({ name: 'id', description: 'Escalation Rule ID' })
   @ApiResponse({ status: 200, description: 'Escalation rule updated successfully' })
@@ -95,7 +95,7 @@ export class EscalationController {
   // ========================
 
   @Get('logs')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all escalation logs with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of escalation logs' })
   async findAllLogs(@Query() queryDto: QueryEscalationLogDto) {
@@ -103,7 +103,7 @@ export class EscalationController {
   }
 
   @Get('logs/project/:projectId')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get escalation history for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Escalation history for the project' })
@@ -116,7 +116,7 @@ export class EscalationController {
   // ========================
 
   @Post('check')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Manually trigger escalation check' })
   @ApiResponse({
     status: 200,
@@ -138,7 +138,7 @@ export class EscalationController {
   // ========================
 
   @Get('statistics')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get escalation statistics' })
   @ApiResponse({ status: 200, description: 'Escalation statistics' })
   async getStatistics() {
