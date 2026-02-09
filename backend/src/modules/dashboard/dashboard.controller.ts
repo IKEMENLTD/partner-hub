@@ -26,6 +26,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('overview')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get dashboard overview statistics' })
   @ApiResponse({ status: 200, description: 'Dashboard overview data' })
   async getOverview(@CurrentUser('id') userId: string) {
@@ -114,6 +115,7 @@ export class DashboardController {
   }
 
   @Get('stats')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get dashboard statistics (alias for overview)' })
   @ApiResponse({ status: 200, description: 'Dashboard statistics' })
   async getStats(@CurrentUser('id') userId: string) {

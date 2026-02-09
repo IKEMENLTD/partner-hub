@@ -16,9 +16,13 @@ import { RequestReportDto } from './dto/request-report.dto';
 import { SubmitReportDto } from './dto/submit-report.dto';
 import { ReviewReportDto } from './dto/review-report.dto';
 import { Public } from '../../common/decorators/public.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
 import { SkipThrottle } from '@nestjs/throttler';
 
 @ApiTags('Progress Reports')
+@UseGuards(RolesGuard)
 @Controller('progress-reports')
 export class ProgressReportController {
   constructor(private readonly progressReportService: ProgressReportService) {}
@@ -127,6 +131,7 @@ export class ProgressReportController {
 
   @Get('task/:taskId')
   @ApiBearerAuth()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get all progress reports for a task' })
   @ApiParam({ name: 'taskId', description: 'Task ID' })
   @ApiResponse({
@@ -155,6 +160,7 @@ export class ProgressReportController {
 
   @Get(':id')
   @ApiBearerAuth()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get a single progress report by ID' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiResponse({
@@ -175,6 +181,7 @@ export class ProgressReportController {
 
   @Patch(':id/review')
   @ApiBearerAuth()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Review a progress report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiResponse({

@@ -53,6 +53,7 @@ export class TaskController {
   }
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all tasks with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of tasks' })
   async findAll(@Query() queryDto: QueryTaskDto) {
@@ -60,6 +61,7 @@ export class TaskController {
   }
 
   @Get('statistics')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get task statistics' })
   @ApiQuery({ name: 'projectId', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Task statistics' })
@@ -68,6 +70,7 @@ export class TaskController {
   }
 
   @Get('overdue')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get overdue tasks' })
   @ApiResponse({ status: 200, description: 'List of overdue tasks' })
   async getOverdueTasks() {
@@ -75,6 +78,7 @@ export class TaskController {
   }
 
   @Get('upcoming')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get tasks with upcoming deadlines' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of upcoming tasks' })
@@ -83,6 +87,7 @@ export class TaskController {
   }
 
   @Get('by-project/:projectId')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get tasks by project ID' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of tasks for the project' })
@@ -91,6 +96,7 @@ export class TaskController {
   }
 
   @Get('by-assignee/:assigneeId')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get tasks by assignee ID' })
   @ApiParam({ name: 'assigneeId', description: 'Assignee user ID' })
   @ApiResponse({ status: 200, description: 'List of tasks for the assignee' })
@@ -99,6 +105,7 @@ export class TaskController {
   }
 
   @Get('by-partner/:partnerId')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get tasks by partner ID' })
   @ApiParam({ name: 'partnerId', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'List of tasks for the partner' })

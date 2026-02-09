@@ -24,6 +24,7 @@ export class PartnerEvaluationController {
   constructor(private readonly evaluationService: PartnerEvaluationService) {}
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get partner evaluation summary' })
   @ApiParam({ name: 'partnerId', description: 'Partner ID' })
   @ApiResponse({
@@ -36,6 +37,7 @@ export class PartnerEvaluationController {
   }
 
   @Get('history')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get partner evaluation history' })
   @ApiParam({ name: 'partnerId', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'List of evaluation history' })
@@ -63,6 +65,7 @@ export class PartnerEvaluationController {
   }
 
   @Get('auto-metrics')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get auto-calculated metrics for a partner' })
   @ApiParam({ name: 'partnerId', description: 'Partner ID' })
   @ApiResponse({

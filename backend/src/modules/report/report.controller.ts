@@ -22,10 +22,14 @@ import {
   GenerateReportDto,
 } from './dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserProfile } from '../auth/entities/user-profile.entity';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Reports')
 @Controller('reports')
+@UseGuards(RolesGuard)
 export class ReportController {
   constructor(
     private readonly reportService: ReportService,
@@ -35,6 +39,7 @@ export class ReportController {
   // ==================== Report Configs ====================
 
   @Get('configs')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get all report configurations', description: 'Retrieve a paginated list of report configurations with optional filtering' })
   @ApiResponse({ status: 200, description: 'Report configurations retrieved successfully' })
   async getConfigs(@Query() query: QueryReportConfigDto) {
@@ -42,6 +47,7 @@ export class ReportController {
   }
 
   @Post('configs')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Create a report configuration', description: 'Create a new scheduled report configuration' })
   @ApiResponse({ status: 201, description: 'Report configuration created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
@@ -50,6 +56,7 @@ export class ReportController {
   }
 
   @Get('configs/:id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get a report configuration', description: 'Retrieve a specific report configuration by ID' })
   @ApiParam({ name: 'id', description: 'Report configuration ID' })
   @ApiResponse({ status: 200, description: 'Report configuration retrieved successfully' })
@@ -59,6 +66,7 @@ export class ReportController {
   }
 
   @Put('configs/:id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Update a report configuration', description: 'Update an existing report configuration' })
   @ApiParam({ name: 'id', description: 'Report configuration ID' })
   @ApiResponse({ status: 200, description: 'Report configuration updated successfully' })
@@ -68,6 +76,7 @@ export class ReportController {
   }
 
   @Delete('configs/:id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a report configuration', description: 'Delete a report configuration by ID' })
   @ApiParam({ name: 'id', description: 'Report configuration ID' })
@@ -80,6 +89,7 @@ export class ReportController {
   // ==================== Generated Reports ====================
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get all generated reports', description: 'Retrieve a paginated list of generated reports with optional filtering' })
   @ApiResponse({ status: 200, description: 'Generated reports retrieved successfully' })
   async getGeneratedReports(@Query() query: QueryGeneratedReportDto) {
@@ -87,6 +97,7 @@ export class ReportController {
   }
 
   @Get(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get a generated report', description: 'Retrieve a specific generated report by ID' })
   @ApiParam({ name: 'id', description: 'Generated report ID' })
   @ApiResponse({ status: 200, description: 'Generated report retrieved successfully' })
@@ -96,6 +107,7 @@ export class ReportController {
   }
 
   @Post('generate')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Generate a report', description: 'Generate a report manually or based on an existing configuration' })
   @ApiResponse({ status: 201, description: 'Report generated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
@@ -114,6 +126,7 @@ export class ReportController {
   // ==================== Trigger for Testing ====================
 
   @Post('trigger-scheduled')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Trigger scheduled reports', description: 'Manually trigger the processing of all scheduled reports (for testing purposes)' })
   @ApiResponse({ status: 200, description: 'Scheduled report processing triggered' })

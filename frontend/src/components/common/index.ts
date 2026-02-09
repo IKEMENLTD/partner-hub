@@ -13,6 +13,9 @@ export { ErrorMessage, Alert } from './ErrorMessage';
 export { ErrorBoundary } from './ErrorBoundary';
 export { Modal, ModalFooter } from './Modal';
 
+// Guards
+export { RoleGuard } from './RoleGuard';
+
 // Molecules
 export { Tabs, TabList, TabPanel } from './Tabs';
 export {

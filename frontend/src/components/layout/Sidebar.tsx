@@ -13,14 +13,20 @@ import {
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 
-const mainNavItems = [
+// 全ロール共通
+const commonNavItems = [
   { icon: Home, label: 'ダッシュボード', path: '/today' },
-  { icon: FolderKanban, label: '案件一覧', path: '/projects' },
-  { icon: Users, label: 'パートナー', path: '/partners' },
-  { icon: MessageSquare, label: 'パートナー報告', path: '/partner-reports' },
 ];
 
+// ADMIN + MANAGER + MEMBER のみ（PARTNER除外）
+const internalNavItems = [
+  { icon: FolderKanban, label: '案件一覧', path: '/projects' },
+];
+
+// ADMIN + MANAGER のみ
 const managerNavItems = [
+  { icon: Users, label: 'パートナー', path: '/partners' },
+  { icon: MessageSquare, label: 'パートナー報告', path: '/partner-reports' },
   { icon: LayoutDashboard, label: 'マネージャー', path: '/manager' },
   { icon: FileText, label: '自動レポート', path: '/reports' },
 ];
@@ -30,6 +36,7 @@ export function Sidebar() {
   const { user } = useAuthStore();
   const { sidebarOpen, toggleSidebar, isMobile, mobileMenuOpen, closeMobileMenu } = useUIStore();
 
+  const isInternal = user?.role === 'admin' || user?.role === 'manager' || user?.role === 'member';
   const isManager = user?.role === 'admin' || user?.role === 'manager';
 
   const handleNavClick = () => {
@@ -86,8 +93,9 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-3">
+          {/* 全ロール共通 */}
           <ul className="space-y-1">
-            {mainNavItems.map((item) => {
+            {commonNavItems.map((item) => {
               const isActive = location.pathname.startsWith(item.path);
               return (
                 <li key={item.path}>
@@ -112,6 +120,36 @@ export function Sidebar() {
             })}
           </ul>
 
+          {/* ADMIN + MANAGER + MEMBER のみ */}
+          {isInternal && (
+            <ul className="space-y-1 mt-1">
+              {internalNavItems.map((item) => {
+                const isActive = location.pathname.startsWith(item.path);
+                return (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      onClick={handleNavClick}
+                      className={clsx(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                        isActive
+                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                      )}
+                      title={!isMobile && !sidebarOpen ? item.label : undefined}
+                    >
+                      <item.icon
+                        className={clsx('h-5 w-5 flex-shrink-0', isActive && 'text-primary-600')}
+                      />
+                      {(isMobile || sidebarOpen) && <span>{item.label}</span>}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {/* ADMIN + MANAGER のみ */}
           {isManager && (
             <>
               <div className="my-4 border-t border-gray-200 dark:border-slate-700" />

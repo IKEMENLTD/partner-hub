@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
@@ -15,14 +16,19 @@ import { CustomFieldTemplateService } from './custom-field-template.service';
 import { CreateCustomFieldTemplateDto, QueryCustomFieldTemplateDto } from './dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserProfile } from '../auth/entities/user-profile.entity';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Custom Field Templates')
 @ApiBearerAuth()
+@UseGuards(RolesGuard)
 @Controller('custom-field-templates')
 export class CustomFieldTemplateController {
   constructor(private readonly templateService: CustomFieldTemplateService) {}
 
   @Post()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'カスタムフィールドテンプレートを作成' })
   @ApiResponse({ status: 201, description: 'テンプレートが作成されました' })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
@@ -47,6 +53,7 @@ export class CustomFieldTemplateController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'カスタムフィールドテンプレートを削除' })
   @ApiParam({ name: 'id', description: 'テンプレートID' })
@@ -66,6 +73,7 @@ export class CustomFieldTemplateController {
   }
 
   @Post(':id/deactivate')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'テンプレートを非アクティブ化' })
   @ApiParam({ name: 'id', description: 'テンプレートID' })
   @ApiResponse({ status: 200, description: 'テンプレートが非アクティブ化されました' })

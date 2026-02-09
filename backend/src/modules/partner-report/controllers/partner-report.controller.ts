@@ -31,6 +31,7 @@ export class PartnerReportController {
   ) {}
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: '報告一覧を取得' })
   @ApiResponse({ status: 200, description: '報告一覧' })
   async findAll(@Query() queryDto: QueryReportDto, @CurrentUser('id') userId: string) {
@@ -38,6 +39,7 @@ export class PartnerReportController {
   }
 
   @Get('unread-count')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: '未読報告数を取得' })
   @ApiResponse({ status: 200, description: '未読報告数' })
   async getUnreadCount(@CurrentUser('id') userId: string) {
@@ -46,6 +48,7 @@ export class PartnerReportController {
   }
 
   @Get(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: '報告詳細を取得' })
   @ApiParam({ name: 'id', description: '報告ID' })
   @ApiResponse({ status: 200, description: '報告詳細' })
@@ -55,6 +58,7 @@ export class PartnerReportController {
   }
 
   @Patch(':id/read')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: '報告を既読にする' })
   @ApiParam({ name: 'id', description: '報告ID' })
   @ApiResponse({ status: 200, description: '既読にしました' })
@@ -64,6 +68,7 @@ export class PartnerReportController {
   }
 
   @Post('mark-read')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: '複数の報告を既読にする' })
   @ApiResponse({ status: 200, description: '既読にしました' })
   async markMultipleAsRead(@Body() body: { ids: string[] }, @CurrentUser('id') userId: string) {

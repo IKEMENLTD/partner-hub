@@ -62,6 +62,7 @@ export class StakeholderController {
   }
 
   @Get('projects/:projectId/stakeholders')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all stakeholders for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of stakeholders' })
@@ -74,6 +75,7 @@ export class StakeholderController {
   }
 
   @Get('projects/:projectId/stakeholders/tree')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get stakeholder tree structure for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({
@@ -89,6 +91,7 @@ export class StakeholderController {
   }
 
   @Get('projects/:projectId/stakeholders/by-tier/:tier')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get stakeholders by tier for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'tier', description: 'Tier level (1, 2, or 3)' })
@@ -102,6 +105,7 @@ export class StakeholderController {
   }
 
   @Get('projects/:projectId/stakeholders/primary')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get primary stakeholders for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of primary stakeholders' })
@@ -115,6 +119,7 @@ export class StakeholderController {
   // ============================================
 
   @Get('stakeholders/:id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get stakeholder by ID' })
   @ApiParam({ name: 'id', description: 'Stakeholder ID' })
   @ApiResponse({ status: 200, description: 'Stakeholder details' })
