@@ -11,6 +11,13 @@
     @apply text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-950 antialiased;
   }
 
+  /* Prevent iOS Safari auto-zoom on input focus (requires >= 16px) */
+  @media (max-width: 1024px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+  }
+
   /* Date/time inputs: prevent overflow on mobile */
   input[type="date"],
   input[type="datetime-local"],
