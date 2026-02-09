@@ -150,7 +150,7 @@ export class DashboardService {
       }),
       this.taskRepository
         .createQueryBuilder('task')
-        .leftJoinAndSelect('task.project', 'project')
+        .innerJoinAndSelect('task.project', 'project')
         .where('task.assigneeId = :userId', { userId })
         .andWhere('task.dueDate BETWEEN :today AND :nextWeek', { today, nextWeek })
         .andWhere('task.status NOT IN (:...completedStatuses)', {
@@ -219,13 +219,12 @@ export class DashboardService {
       throw ResourceNotFoundException.forUser(userId);
     }
 
-    // Get today's tasks (exclude orphaned tasks without project)
+    // Get today's tasks (innerJoin ensures only tasks with existing projects)
     const tasksForToday = await this.taskRepository
       .createQueryBuilder('task')
-      .leftJoinAndSelect('task.project', 'project')
+      .innerJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
-      .andWhere('task.projectId IS NOT NULL')
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
       })
@@ -235,13 +234,12 @@ export class DashboardService {
       .take(20)
       .getMany();
 
-    // Get upcoming deadlines (exclude orphaned tasks without project)
+    // Get upcoming deadlines (innerJoin ensures only tasks with existing projects)
     const upcomingDeadlines = await this.taskRepository
       .createQueryBuilder('task')
-      .leftJoinAndSelect('task.project', 'project')
+      .innerJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('(task.assigneeId = :userId OR task.createdById = :userId)', { userId })
-      .andWhere('task.projectId IS NOT NULL')
       .andWhere('task.dueDate > :todayStr', { todayStr })
       .andWhere('task.dueDate <= :nextWeekStr', { nextWeekStr })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
@@ -596,7 +594,7 @@ export class DashboardService {
 
     const tasks = await this.taskRepository
       .createQueryBuilder('task')
-      .leftJoinAndSelect('task.project', 'project')
+      .innerJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('task.dueDate BETWEEN :today AND :nextWeek', { today, nextWeek })
       .andWhere('task.status NOT IN (:...completedStatuses)', {

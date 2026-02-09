@@ -296,7 +296,7 @@ export class DashboardOverviewService {
       this.taskRepository
         .createQueryBuilder('task')
         .leftJoinAndSelect('task.assignee', 'assignee')
-        .leftJoinAndSelect('task.project', 'project')
+        .innerJoinAndSelect('task.project', 'project')
         .where('task.dueDate BETWEEN :today AND :futureDate', { today, futureDate })
         .andWhere('task.status NOT IN (:...completedStatuses)', {
           completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
@@ -328,7 +328,7 @@ export class DashboardOverviewService {
       this.taskRepository
         .createQueryBuilder('task')
         .leftJoinAndSelect('task.assignee', 'assignee')
-        .leftJoinAndSelect('task.project', 'project')
+        .innerJoinAndSelect('task.project', 'project')
         .where('task.dueDate < :today', { today })
         .andWhere('task.status NOT IN (:...completedStatuses)', {
           completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
