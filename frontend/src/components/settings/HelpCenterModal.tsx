@@ -280,7 +280,7 @@ export function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProps) {
   // メイン表示
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="ヘルプセンター" size="lg">
-      <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+      <div className="space-y-6">
         {/* Quick Guides */}
         <div>
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
