@@ -52,19 +52,20 @@ export function Modal({
 
       {/* Modal */}
       <div
-        className="fixed inset-0 z-[101] flex items-center justify-center p-4"
+        className="fixed inset-0 z-[101] overflow-y-auto p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
       >
-        <div
-          className={clsx(
-            'w-full max-h-[calc(100vh-2rem)] flex flex-col rounded-lg bg-white dark:bg-slate-800 shadow-xl',
-            sizeStyles[size],
-            className
-          )}
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="flex min-h-full items-center justify-center">
+          <div
+            className={clsx(
+              'w-full max-h-[calc(100dvh-2rem)] flex flex-col rounded-lg bg-white dark:bg-slate-800 shadow-xl',
+              sizeStyles[size],
+              className
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
           {/* Header */}
           {title && (
             <div className="flex items-center justify-between border-b border-gray-200 dark:border-slate-700 px-6 py-4">
@@ -84,6 +85,7 @@ export function Modal({
 
           {/* Content */}
           <div className={clsx(!title && 'pt-6', 'px-6 py-4 flex-1 min-h-0 overflow-y-auto')}>{children}</div>
+          </div>
         </div>
       </div>
     </>,
