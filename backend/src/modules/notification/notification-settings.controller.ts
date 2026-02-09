@@ -62,7 +62,7 @@ export class NotificationSettingsController {
   })
   async sendTestEmail(@Query('to') to: string) {
     try {
-      const result = await this.emailService.sendEmail({
+      const result = await this.emailService.sendEmailDirect({
         to,
         subject: '【テスト】Partner Hub メール送信確認',
         html: `

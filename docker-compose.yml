@@ -4,6 +4,16 @@ version: '3.8'
 # 環境変数は .env ファイルから読み込みます
 
 services:
+  # Redis (for BullMQ message queue)
+  redis:
+    image: redis:7-alpine
+    container_name: partner-hub-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
   # Backend API
   backend:
     build:
@@ -17,6 +27,8 @@ services:
       PORT: 3000
     ports:
       - "3000:3000"
+    depends_on:
+      - redis
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -38,3 +50,6 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+
+volumes:
+  redis_data:

@@ -7,7 +7,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { WinstonModule } from 'nest-winston';
 
 // Config
-import { databaseConfig, appConfig, supabaseConfig, emailConfig, slackConfig } from './config';
+import { databaseConfig, appConfig, supabaseConfig, emailConfig, slackConfig, redisConfig } from './config';
 import { winstonConfig } from './common/logger/winston.config';
 
 // Entities
@@ -48,7 +48,7 @@ import { HealthModule } from './modules/health/health.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
-      load: [databaseConfig, appConfig, supabaseConfig, emailConfig, slackConfig],
+      load: [databaseConfig, appConfig, supabaseConfig, emailConfig, slackConfig, redisConfig],
     }),
 
     // Winston Logger

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { QueueModule } from '../queue/queue.module';
 import { EmailService } from './services/email.service';
 import { SlackService } from './services/slack.service';
 import { LineService } from './services/line.service';
@@ -23,6 +24,7 @@ import { Reminder } from '../reminder/entities/reminder.entity';
 @Module({
   imports: [
     ConfigModule,
+    QueueModule,
     TypeOrmModule.forFeature([
       UserProfile,
       NotificationChannel,

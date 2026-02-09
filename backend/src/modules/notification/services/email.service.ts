@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 import { Reminder } from '../../reminder/entities/reminder.entity';
@@ -56,7 +58,10 @@ export class EmailService {
   private readonly fromAddress: string;
   private readonly fromName: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    @InjectQueue('email') private readonly emailQueue: Queue,
+  ) {
     this.isEnabled = this.configService.get<boolean>('email.enabled', false);
     this.fromAddress = this.configService.get<string>('email.from', 'noreply@example.com');
     this.fromName = this.configService.get<string>(
@@ -91,9 +96,37 @@ export class EmailService {
   }
 
   /**
-   * Send a generic email
+   * Send a generic email via queue (non-blocking)
+   * Falls back to direct send if queue is unavailable
    */
   async sendEmail(options: SendEmailOptions): Promise<boolean> {
+    const { to, subject, html, text } = options;
+    const recipients = Array.isArray(to) ? to : [to];
+
+    try {
+      // Enqueue each recipient as a separate job
+      for (const recipient of recipients) {
+        await this.emailQueue.add('send', {
+          to: recipient,
+          subject,
+          html,
+          text,
+          from: `"${this.fromName}" <${this.fromAddress}>`,
+        });
+      }
+      this.logger.log(`Email job(s) enqueued: subject="${subject}", recipients=${recipients.join(', ')}`);
+      return true;
+    } catch (error) {
+      this.logger.warn(`Failed to enqueue email, falling back to direct send: ${error.message}`);
+      return this.sendEmailDirect(options);
+    }
+  }
+
+  /**
+   * Send a generic email directly (synchronous, blocking)
+   * Used for test emails and as fallback when queue is unavailable
+   */
+  async sendEmailDirect(options: SendEmailOptions): Promise<boolean> {
     const { to, subject, html, text } = options;
     const recipients = Array.isArray(to) ? to.join(', ') : to;
 

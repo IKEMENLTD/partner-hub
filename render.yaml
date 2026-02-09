@@ -27,6 +27,9 @@ services:
       # Database URL (Supabase PostgreSQL 接続文字列)
       - key: DATABASE_URL
         sync: false
+      # Redis (Render Managed Redis or external)
+      - key: REDIS_URL
+        sync: false
       - key: LOG_LEVEL
         value: info
       - key: CORS_ORIGIN

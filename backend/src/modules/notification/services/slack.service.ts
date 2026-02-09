@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { WebClient, ChatPostMessageResponse } from '@slack/web-api';
 import { KnownBlock, Block } from '@slack/types';
 import { Reminder } from '../../reminder/entities/reminder.entity';
@@ -27,7 +29,10 @@ export class SlackService {
   private client: WebClient | null = null;
   private readonly isDevelopment: boolean;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectQueue('slack') private readonly slackQueue: Queue,
+  ) {
     const botToken = this.configService.get<string>('slack.botToken');
     this.isDevelopment = this.configService.get<boolean>('slack.isDevelopment', true);
 
@@ -55,9 +60,36 @@ export class SlackService {
   }
 
   /**
-   * Send a message with full options
+   * Send a message with full options via queue (non-blocking)
+   * Falls back to direct send if queue is unavailable
    */
   async sendMessageWithOptions(options: SlackMessageOptions): Promise<SlackMessageResult> {
+    const { channelId, text, blocks, threadTs } = options;
+
+    try {
+      await this.slackQueue.add('send', {
+        channelId,
+        text,
+        blocks,
+        threadTs,
+      });
+      this.logger.log(`Slack message job enqueued: channel=${channelId}`);
+      return {
+        success: true,
+        messageTs: `queued-${Date.now()}`,
+        channelId,
+      };
+    } catch (error) {
+      this.logger.warn(`Failed to enqueue Slack message, falling back to direct send: ${error.message}`);
+      return this.sendMessageDirect(options);
+    }
+  }
+
+  /**
+   * Send a message directly (synchronous, blocking)
+   * Used as fallback when queue is unavailable
+   */
+  async sendMessageDirect(options: SlackMessageOptions): Promise<SlackMessageResult> {
     const { channelId, text, blocks, threadTs } = options;
 
     // Development mode: log to console instead of sending
