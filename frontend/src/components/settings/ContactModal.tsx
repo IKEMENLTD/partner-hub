@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Mail, MapPin, MessageCircle, Send, Loader2 } from 'lucide-react';
+import { Mail, MapPin, MessageCircle, Send, Loader2, AlertCircle } from 'lucide-react';
 import { Modal, Button, Input, TextArea } from '@/components/common';
+import { api } from '@/services/api';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -30,12 +32,17 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    try {
+      await api.post('/contact/inquiry', formData);
+      setIsSubmitted(true);
+    } catch (err: unknown) {
+      const errorMessage = (err as { message?: string })?.message;
+      setError(errorMessage || '送信に失敗しました。時間をおいて再度お試しください。');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -46,6 +53,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
       message: '',
     });
     setIsSubmitted(false);
+    setError(null);
   };
 
   const handleClose = () => {
@@ -122,6 +130,13 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               お問い合わせフォーム
             </h3>
+
+            {error && (
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {error}
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input

@@ -49,19 +49,19 @@ export function PartnerCard({ partner, onClick }: PartnerCardProps) {
 
       {/* Contact info */}
       <div className="mt-4 space-y-2">
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <Mail className="h-4 w-4 text-gray-400" />
-          <span>{partner.email}</span>
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 min-w-0">
+          <Mail className="h-4 w-4 shrink-0 text-gray-400" />
+          <span className="truncate">{partner.email}</span>
         </div>
         {partner.phone && (
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Phone className="h-4 w-4 text-gray-400" />
-            <span>{partner.phone}</span>
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 min-w-0">
+            <Phone className="h-4 w-4 shrink-0 text-gray-400" />
+            <span className="truncate">{partner.phone}</span>
           </div>
         )}
         {partner.address && (
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <MapPin className="h-4 w-4 text-gray-400" />
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 min-w-0">
+            <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
             <span className="truncate">{partner.address}</span>
           </div>
         )}

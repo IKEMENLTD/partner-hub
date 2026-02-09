@@ -12,6 +12,7 @@ import { NotificationSettingsService } from './services/notification-settings.se
 import { InAppNotificationService } from './services/in-app-notification.service';
 import { NotificationSettingsController } from './notification-settings.controller';
 import { InAppNotificationController } from './controllers/in-app-notification.controller';
+import { ContactController } from './controllers/contact.controller';
 import { NotificationGateway } from './gateways/notification.gateway';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { NotificationChannel } from './entities/notification-channel.entity';
@@ -35,7 +36,7 @@ import { Reminder } from '../reminder/entities/reminder.entity';
       Reminder,
     ]),
   ],
-  controllers: [NotificationSettingsController, InAppNotificationController],
+  controllers: [NotificationSettingsController, InAppNotificationController, ContactController],
   providers: [
     EmailService,
     SlackService,
