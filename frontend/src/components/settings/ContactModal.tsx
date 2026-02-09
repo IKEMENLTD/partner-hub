@@ -55,7 +55,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="お問い合わせ" size="lg">
-      <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+      <div className="space-y-6">
         {/* Contact Info */}
         <div className="space-y-3">
           <div className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4">

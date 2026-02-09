@@ -59,7 +59,7 @@ export function Modal({
       >
         <div
           className={clsx(
-            'w-full rounded-lg bg-white dark:bg-slate-800 shadow-xl',
+            'w-full max-h-[calc(100vh-2rem)] flex flex-col rounded-lg bg-white dark:bg-slate-800 shadow-xl',
             sizeStyles[size],
             className
           )}
@@ -83,7 +83,7 @@ export function Modal({
           )}
 
           {/* Content */}
-          <div className={clsx(!title && 'pt-6', 'px-6 py-4 max-h-[70vh] overflow-y-auto')}>{children}</div>
+          <div className={clsx(!title && 'pt-6', 'px-6 py-4 flex-1 min-h-0 overflow-y-auto')}>{children}</div>
         </div>
       </div>
     </>,

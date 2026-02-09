@@ -24,7 +24,7 @@ export function ReportViewer({ isOpen, onClose, report }: ReportViewerProps) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={report.title} size="xl">
-      <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+      <div className="space-y-6">
         {/* Header Info */}
         <div className="flex flex-wrap items-center gap-4 pb-4 border-b border-gray-200 dark:border-slate-700">
           <Badge className={getStatusColor(report.status)}>

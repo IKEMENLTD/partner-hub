@@ -245,7 +245,7 @@ export function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProps) {
     const guide = guideContents[selectedGuide];
     return (
       <Modal isOpen={isOpen} onClose={onClose} title={guide.title} size="lg">
-        <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+        <div className="space-y-6">
           {/* 戻るボタン */}
           <button
             onClick={handleBackToMain}

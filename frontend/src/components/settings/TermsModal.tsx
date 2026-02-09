@@ -8,7 +8,7 @@ interface TermsModalProps {
 export function TermsModal({ isOpen, onClose }: TermsModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="利用規約" size="lg">
-      <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+      <div className="space-y-6 pr-2">
         <div className="text-sm text-gray-500 dark:text-gray-400">
           最終更新日: 2026年1月1日
         </div>
