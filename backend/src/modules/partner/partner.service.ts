@@ -66,6 +66,17 @@ export class PartnerService {
       });
     }
 
+    // Check if email is already used by a user account
+    const existingUser = await this.userProfileRepository.findOne({
+      where: { email: createPartnerDto.email },
+    });
+    if (existingUser) {
+      throw new CustomConflictException('PARTNER_006', {
+        message: 'このメールアドレスは既にユーザーアカウントで使用されています',
+        userMessage: 'このメールアドレスは既にユーザーアカウントで使用されています',
+      });
+    }
+
     // Get creator's organization
     const creator = await this.userProfileRepository.findOne({
       where: { id: createdById },
@@ -238,6 +249,17 @@ export class PartnerService {
         throw new CustomConflictException('PARTNER_005', {
           message: 'このメールアドレスのパートナーは既に存在します',
           userMessage: 'このメールアドレスのパートナーは既に登録されています',
+        });
+      }
+
+      // Check if email is already used by a user account
+      const existingUser = await this.userProfileRepository.findOne({
+        where: { email: updatePartnerDto.email },
+      });
+      if (existingUser) {
+        throw new CustomConflictException('PARTNER_006', {
+          message: 'このメールアドレスは既にユーザーアカウントで使用されています',
+          userMessage: 'このメールアドレスは既にユーザーアカウントで使用されています',
         });
       }
     }
