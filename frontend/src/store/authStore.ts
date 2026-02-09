@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import type { User } from '@/types';
+import { queryClient } from '@/lib/queryClient';
 
 /**
  * Auth Store - Supabase Edition
@@ -183,6 +184,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   logout: () => {
     // ログアウト時はリカバリーモードも終了
     setRecoveryModeInStorage(false);
+    // 前ユーザーのデータキャッシュをクリア
+    queryClient.clear();
     set({
       user: null,
       supabaseUser: null,
