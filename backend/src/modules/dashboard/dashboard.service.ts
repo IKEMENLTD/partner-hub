@@ -252,12 +252,13 @@ export class DashboardService {
       .take(10)
       .getMany();
 
-    // Get upcoming project deadlines (exclude soft-deleted)
+    // Get upcoming project deadlines (user's projects only, exclude soft-deleted)
     const upcomingProjectDeadlines = await this.projectRepository
       .createQueryBuilder('project')
       .leftJoinAndSelect('project.owner', 'owner')
       .leftJoinAndSelect('project.manager', 'manager')
       .where('project.deletedAt IS NULL')
+      .andWhere('(project.ownerId = :userId OR project.managerId = :userId)', { userId })
       .andWhere('project.endDate IS NOT NULL')
       .andWhere('project.endDate <= :nextWeekStr', { nextWeekStr })
       .andWhere('project.status NOT IN (:...completedStatuses)', {
