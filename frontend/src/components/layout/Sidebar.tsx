@@ -12,6 +12,7 @@ import {
   FileText,
   Bell,
   AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 
@@ -29,6 +30,7 @@ const adminNavItems = [
   { icon: LayoutDashboard, label: 'マネージャー', path: '/manager' },
   { icon: FileText, label: '自動レポート', path: '/reports' },
   { icon: AlertTriangle, label: 'エスカレーション', path: '/admin/escalations' },
+  { icon: Trash2, label: 'ゴミ箱', path: '/trash' },
 ];
 
 export function Sidebar() {

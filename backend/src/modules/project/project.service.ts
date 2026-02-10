@@ -7,7 +7,7 @@ import {
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { BusinessException, AuthorizationException } from '../../common/exceptions/business.exception';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not, IsNull } from 'typeorm';
 import { Project } from './entities/project.entity';
 import { ProjectTemplate } from './entities/project-template.entity';
 import { ProjectStakeholder } from './entities/project-stakeholder.entity';
@@ -532,6 +532,27 @@ export class ProjectService {
     this.logger.log(`Partner removed from project: ${partnerId} -> ${project.name}`);
 
     return this.findOne(projectId);
+  }
+
+  async findDeleted(): Promise<Project[]> {
+    return this.projectRepository.find({
+      withDeleted: true,
+      where: { deletedAt: Not(IsNull()) },
+      order: { deletedAt: 'DESC' },
+    });
+  }
+
+  async restore(id: string): Promise<Project> {
+    const project = await this.projectRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!project || !project.deletedAt) {
+      throw ResourceNotFoundException.forProject(id);
+    }
+    await this.projectRepository.recover(project);
+    this.logger.log(`Project restored: ${project.name} (${id})`);
+    return project;
   }
 
   async remove(id: string): Promise<void> {

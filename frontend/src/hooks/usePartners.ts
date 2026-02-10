@@ -59,6 +59,26 @@ export function useUpdatePartner() {
   });
 }
 
+export function useDeletedPartners() {
+  return useQuery({
+    queryKey: ['deleted-partners'],
+    queryFn: () => partnerService.getDeleted(),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useRestorePartner() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => partnerService.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deleted-partners'] });
+      queryClient.invalidateQueries({ queryKey: ['partners'] });
+    },
+  });
+}
+
 export function useDeletePartner() {
   const queryClient = useQueryClient();
 

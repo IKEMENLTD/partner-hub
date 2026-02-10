@@ -110,6 +110,26 @@ export function useRemoveProjectMember() {
   });
 }
 
+export function useDeletedProjects() {
+  return useQuery({
+    queryKey: ['deleted-projects'],
+    queryFn: () => projectService.getDeleted(),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useRestoreProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => projectService.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deleted-projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+}
+
 export function useProjectTemplates() {
   return useQuery({
     queryKey: ['project-templates'],

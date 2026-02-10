@@ -122,6 +122,24 @@ export class TaskController {
     return this.taskService.getTasksByPartner(partnerId);
   }
 
+  @Get('deleted')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get soft-deleted tasks' })
+  @ApiResponse({ status: 200, description: 'List of soft-deleted tasks' })
+  async findDeleted() {
+    return this.taskService.findDeleted();
+  }
+
+  @Patch(':id/restore')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Restore a soft-deleted task' })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiResponse({ status: 200, description: 'Task restored successfully' })
+  @ApiResponse({ status: 404, description: 'Deleted task not found' })
+  async restore(@Param('id', ParseUUIDPipe) id: string) {
+    return this.taskService.restore(id);
+  }
+
   @Get(':id/subtasks')
   @UseGuards(TaskAccessGuard)
   @ApiOperation({ summary: 'Get subtasks of a task' })

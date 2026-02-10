@@ -327,6 +327,34 @@ export class TaskService {
     return this.findOne(taskId);
   }
 
+  async findDeleted(): Promise<Task[]> {
+    return this.taskRepository.find({
+      withDeleted: true,
+      where: { deletedAt: Not(IsNull()) },
+      relations: ['project'],
+      order: { deletedAt: 'DESC' },
+    });
+  }
+
+  async restore(id: string): Promise<Task> {
+    const task = await this.taskRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!task || !task.deletedAt) {
+      throw ResourceNotFoundException.forTask(id);
+    }
+    await this.taskRepository.recover(task);
+    this.logger.log(`Task restored: ${task.title} (${id})`);
+
+    // Update project health score if task belongs to a project
+    if (task.projectId) {
+      await this.healthScoreService.onTaskChanged(task.projectId);
+    }
+
+    return task;
+  }
+
   async remove(id: string): Promise<void> {
     const task = await this.findOne(id);
     const projectId = task.projectId;

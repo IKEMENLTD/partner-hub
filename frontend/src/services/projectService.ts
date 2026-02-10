@@ -82,4 +82,14 @@ export const projectService = {
     const response = await api.get<{ success: boolean; data: ProjectTemplate[] }>('/projects/templates');
     return extractData(response);
   },
+
+  getDeleted: async (): Promise<Project[]> => {
+    const response = await api.get<{ success: boolean; data: Project[] }>('/projects/deleted');
+    return extractData(response);
+  },
+
+  restore: async (id: string): Promise<Project> => {
+    const response = await api.patch<{ success: boolean; data: Project }>(`/projects/${id}/restore`);
+    return extractData(response);
+  },
 };

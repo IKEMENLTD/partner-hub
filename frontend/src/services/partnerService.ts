@@ -115,6 +115,16 @@ export const partnerService = {
     return extractData(response);
   },
 
+  getDeleted: async (): Promise<Partner[]> => {
+    const response = await api.get<{ success: boolean; data: Partner[] }>('/partners/deleted');
+    return extractData(response);
+  },
+
+  restore: async (id: string): Promise<Partner> => {
+    const response = await api.patch<{ success: boolean; data: Partner }>(`/partners/${id}/restore`);
+    return extractData(response);
+  },
+
   // Register with invitation (new user registration via invitation)
   registerWithInvitation: async (
     request: RegisterWithInvitationRequest

@@ -7,7 +7,7 @@ import {
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { ConflictException as CustomConflictException } from '../../common/exceptions/business.exception';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, In } from 'typeorm';
+import { Repository, Like, In, Not, IsNull } from 'typeorm';
 import { Partner } from './entities/partner.entity';
 import { Project } from '../project/entities/project.entity';
 import { CreatePartnerDto, UpdatePartnerDto, QueryPartnerDto } from './dto';
@@ -301,6 +301,27 @@ export class PartnerService {
       partner.completedProjects += 1;
     }
     await this.partnerRepository.save(partner);
+  }
+
+  async findDeleted(): Promise<Partner[]> {
+    return this.partnerRepository.find({
+      withDeleted: true,
+      where: { deletedAt: Not(IsNull()) },
+      order: { deletedAt: 'DESC' },
+    });
+  }
+
+  async restore(id: string): Promise<Partner> {
+    const partner = await this.partnerRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!partner || !partner.deletedAt) {
+      throw ResourceNotFoundException.forPartner(id);
+    }
+    await this.partnerRepository.recover(partner);
+    this.logger.log(`Partner restored: ${partner.name} (${id})`);
+    return partner;
   }
 
   async remove(id: string): Promise<void> {

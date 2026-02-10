@@ -217,6 +217,27 @@ export function useToggleSubtask() {
   });
 }
 
+export function useDeletedTasks() {
+  return useQuery({
+    queryKey: ['deleted-tasks'],
+    queryFn: () => taskService.getDeleted(),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useRestoreTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => taskService.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deleted-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+    },
+  });
+}
+
 export function useProjectTasks(projectId: string | undefined, params?: UseTasksParams) {
   return useQuery({
     queryKey: ['project-tasks', projectId, params],

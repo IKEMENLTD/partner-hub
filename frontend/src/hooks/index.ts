@@ -17,6 +17,8 @@ export {
   useDeleteProject,
   useAddProjectMember,
   useRemoveProjectMember,
+  useDeletedProjects,
+  useRestoreProject,
   useProjectTemplates,
 } from './useProjects';
 export {
@@ -32,6 +34,8 @@ export {
   useAddComment,
   useAddSubtask,
   useToggleSubtask,
+  useDeletedTasks,
+  useRestoreTask,
   useProjectTasks,
 } from './useTasks';
 export {
@@ -40,6 +44,8 @@ export {
   usePartnerProjects,
   useCreatePartner,
   useUpdatePartner,
+  useDeletedPartners,
+  useRestorePartner,
   useDeletePartner,
 } from './usePartners';
 export {

@@ -88,6 +88,24 @@ export class PartnerController {
     return this.partnerService.getPartnersBySkills(skillsArray);
   }
 
+  @Get('deleted')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get soft-deleted partners' })
+  @ApiResponse({ status: 200, description: 'List of soft-deleted partners' })
+  async findDeleted() {
+    return this.partnerService.findDeleted();
+  }
+
+  @Patch(':id/restore')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Restore a soft-deleted partner' })
+  @ApiParam({ name: 'id', description: 'Partner ID' })
+  @ApiResponse({ status: 200, description: 'Partner restored successfully' })
+  @ApiResponse({ status: 404, description: 'Deleted partner not found' })
+  async restore(@Param('id', ParseUUIDPipe) id: string) {
+    return this.partnerService.restore(id);
+  }
+
   @Get(':id/projects')
   @UseGuards(PartnerAccessGuard)
   @ApiOperation({ summary: 'Get projects associated with a partner' })

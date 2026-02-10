@@ -123,6 +123,24 @@ export class ProjectController {
     return this.projectService.getProjectsByPartner(partnerId);
   }
 
+  @Get('deleted')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get soft-deleted projects' })
+  @ApiResponse({ status: 200, description: 'List of soft-deleted projects' })
+  async findDeleted() {
+    return this.projectService.findDeleted();
+  }
+
+  @Patch(':id/restore')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Restore a soft-deleted project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project restored successfully' })
+  @ApiResponse({ status: 404, description: 'Deleted project not found' })
+  async restore(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectService.restore(id);
+  }
+
   @Get(':id/timeline')
   @UseGuards(ProjectAccessGuard)
   @ApiOperation({ summary: 'Get project timeline/history' })
