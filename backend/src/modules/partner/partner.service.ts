@@ -124,9 +124,11 @@ export class PartnerService {
       const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173');
       const reportUrl = `${frontendUrl}/report/${token.token}`;
 
-      // パートナーのステータスをアクティブに
-      partner.status = PartnerStatus.ACTIVE;
-      await this.partnerRepository.save(partner);
+      // ステータスが明示的に設定されていない場合のみアクティブに
+      if (partner.status === PartnerStatus.PENDING) {
+        partner.status = PartnerStatus.ACTIVE;
+        await this.partnerRepository.save(partner);
+      }
 
       // 報告用URLメールを送信
       await this.emailService.sendReportUrlEmail(partner, reportUrl);

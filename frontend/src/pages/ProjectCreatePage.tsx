@@ -104,8 +104,11 @@ export function ProjectCreatePage() {
   useEffect(() => {
     if (isEditMode && projectData) {
       // 既存のstakeholdersからProjectStakeholderInput[]を構築
-      const stakeholderInputs: ProjectStakeholderInput[] = existingStakeholders
-        ? existingStakeholders.map((s: { partnerId?: string; tier: number; roleDescription?: string; isPrimary: boolean }) => ({
+      // APIはPaginatedResponseを返すが型定義が配列になっているため安全に取り出す
+      const raw = existingStakeholders as unknown;
+      const stakeholderList = Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data || [];
+      const stakeholderInputs: ProjectStakeholderInput[] = Array.isArray(stakeholderList) && stakeholderList.length > 0
+        ? stakeholderList.map((s: { partnerId?: string; tier: number; roleDescription?: string; isPrimary: boolean }) => ({
             partnerId: s.partnerId || '',
             tier: (s.tier as StakeholderTier) || 1,
             roleDescription: s.roleDescription,
