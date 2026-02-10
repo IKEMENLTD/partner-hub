@@ -388,6 +388,31 @@ export interface ProjectInput {
   stakeholders?: ProjectStakeholderInput[];
   tags?: string[];
   metadata?: Record<string, unknown>;
+  templateId?: string;
+}
+
+// プロジェクトテンプレート関連の型定義
+export interface ProjectTemplate {
+  id: string;
+  name: string;
+  description: string;
+  projectType: string;
+  phases: TemplatePhase[];
+  isActive: boolean;
+}
+
+export interface TemplatePhase {
+  name: string;
+  order: number;
+  estimatedDays: number;
+  tasks: TemplateTask[];
+}
+
+export interface TemplateTask {
+  name: string;
+  description: string;
+  estimatedDays: number;
+  order: number;
 }
 
 export interface TaskInput {

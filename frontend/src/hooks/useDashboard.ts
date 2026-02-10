@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardService } from '@/services';
+import type { ManagerDashboardData } from '@/services/dashboardService';
 
 export function useDashboardStats() {
   return useQuery({
@@ -47,5 +48,14 @@ export function useMarkAllAlertsAsRead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
     },
+  });
+}
+
+export function useManagerDashboard(period?: string) {
+  return useQuery<ManagerDashboardData>({
+    queryKey: ['manager-dashboard', period || 'month'],
+    queryFn: () => dashboardService.getManagerDashboard(period),
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
   });
 }

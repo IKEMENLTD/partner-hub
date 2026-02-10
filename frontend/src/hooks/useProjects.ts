@@ -109,3 +109,11 @@ export function useRemoveProjectMember() {
     },
   });
 }
+
+export function useProjectTemplates() {
+  return useQuery({
+    queryKey: ['project-templates'],
+    queryFn: () => projectService.getTemplates(),
+    staleTime: 10 * 60 * 1000, // 10分間キャッシュ
+  });
+}

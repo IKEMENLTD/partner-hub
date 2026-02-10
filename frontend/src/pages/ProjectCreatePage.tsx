@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, X, Plus, Building2, Trash2 } from 'lucide-react';
-import { useCreateProject, useUpdateProject, useProject, usePartners, useProjectStakeholders, useIncrementTemplateUsage } from '@/hooks';
-import type { ProjectInput, ProjectStatus, Priority, StakeholderTier, ProjectStakeholderInput, CustomFieldDefinition, CustomFieldValue, CustomFieldTemplate } from '@/types';
+import { ArrowLeft, Save, X, Plus, Building2, Trash2, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { useCreateProject, useUpdateProject, useProject, usePartners, useProjectStakeholders, useIncrementTemplateUsage, useProjectTemplates } from '@/hooks';
+import type { ProjectInput, ProjectStatus, Priority, StakeholderTier, ProjectStakeholderInput, CustomFieldDefinition, CustomFieldValue, CustomFieldTemplate, ProjectTemplate as ProjectTemplateType } from '@/types';
 import {
   CustomFieldBuilder,
   CustomFieldRenderer,
@@ -59,6 +59,7 @@ export function ProjectCreatePage() {
   const { mutate: updateProject, isPending: isUpdating, error: updateError } = useUpdateProject();
   const { data: partnersData } = usePartners({ pageSize: 100 });
   const { data: existingStakeholders } = useProjectStakeholders(id);
+  const { data: templates, isLoading: isLoadingTemplates } = useProjectTemplates();
 
   const isPending = isCreating || isUpdating;
   const error = createError || updateError;
@@ -82,6 +83,10 @@ export function ProjectCreatePage() {
 
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // プロジェクトテンプレート関連の状態
+  const [selectedProjectTemplateId, setSelectedProjectTemplateId] = useState<string>('');
+  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
 
   // カスタムフィールド関連の状態
   const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>([]);
@@ -294,6 +299,24 @@ export function ProjectCreatePage() {
     }
   };
 
+  // プロジェクトテンプレート選択時のハンドラー
+  const handleProjectTemplateChange = (templateId: string) => {
+    setSelectedProjectTemplateId(templateId);
+    setFormData((prev) => ({
+      ...prev,
+      templateId: templateId || undefined,
+    }));
+    if (templateId) {
+      setShowTemplatePreview(true);
+    } else {
+      setShowTemplatePreview(false);
+    }
+  };
+
+  const selectedProjectTemplate = templates?.find(
+    (t: ProjectTemplateType) => t.id === selectedProjectTemplateId
+  );
+
   // テンプレート選択時のハンドラー
   const handleTemplateSelect = (template: CustomFieldTemplate | null) => {
     if (template) {
@@ -352,6 +375,100 @@ export function ProjectCreatePage() {
       )}
 
       <form onSubmit={handleSubmit}>
+        {/* プロジェクトテンプレート選択 (新規作成時のみ) */}
+        {!isEditMode && (
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-500" />
+                <span>テンプレートから作成</span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Select
+                label="テンプレート"
+                name="projectTemplate"
+                value={selectedProjectTemplateId}
+                onChange={(e) => handleProjectTemplateChange(e.target.value)}
+                options={[
+                  { value: '', label: 'テンプレートなし' },
+                  ...(templates || []).map((t: ProjectTemplateType) => ({
+                    value: t.id,
+                    label: t.name,
+                  })),
+                ]}
+                disabled={isLoadingTemplates}
+              />
+              {selectedProjectTemplate && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <p className="text-sm text-blue-800 mb-3">
+                    {selectedProjectTemplate.description}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplatePreview((prev) => !prev)}
+                    className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    {showTemplatePreview ? (
+                      <>
+                        <ChevronUp className="h-4 w-4" />
+                        フェーズとタスクを非表示
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4" />
+                        フェーズとタスクをプレビュー
+                      </>
+                    )}
+                  </button>
+                  {showTemplatePreview && (
+                    <div className="mt-3 space-y-3">
+                      {[...selectedProjectTemplate.phases]
+                        .sort((a, b) => a.order - b.order)
+                        .map((phase) => (
+                          <div key={phase.order} className="rounded-md border border-blue-100 bg-white p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-semibold text-gray-900">
+                                Phase {phase.order}: {phase.name}
+                              </h4>
+                              <span className="text-xs text-gray-500">
+                                {phase.estimatedDays}日間
+                              </span>
+                            </div>
+                            <ul className="space-y-1">
+                              {[...phase.tasks]
+                                .sort((a, b) => a.order - b.order)
+                                .map((task) => (
+                                  <li
+                                    key={task.order}
+                                    className="flex items-center justify-between text-sm text-gray-600 pl-3 border-l-2 border-blue-200"
+                                  >
+                                    <span>{task.name}</span>
+                                    <span className="text-xs text-gray-400">
+                                      {task.estimatedDays}日
+                                    </span>
+                                  </li>
+                                ))}
+                            </ul>
+                          </div>
+                        ))}
+                      <p className="text-xs text-gray-500">
+                        合計: {selectedProjectTemplate.phases.reduce(
+                          (sum, p) => sum + p.tasks.reduce((s, t) => s + t.estimatedDays, 0),
+                          0
+                        )}日間 / {selectedProjectTemplate.phases.reduce(
+                          (sum, p) => sum + p.tasks.length,
+                          0
+                        )}タスク
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>基本情報</CardHeader>
           <CardContent className="space-y-6">

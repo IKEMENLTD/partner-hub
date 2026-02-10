@@ -17,6 +17,7 @@ export {
   useDeleteProject,
   useAddProjectMember,
   useRemoveProjectMember,
+  useProjectTemplates,
 } from './useProjects';
 export {
   useTasks,
@@ -46,6 +47,7 @@ export {
   useAlerts,
   useMarkAlertAsRead,
   useMarkAllAlertsAsRead,
+  useManagerDashboard,
 } from './useDashboard';
 export {
   useProjectStakeholders,

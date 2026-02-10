@@ -9,9 +9,11 @@ import { BusinessException, AuthorizationException } from '../../common/exceptio
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Project } from './entities/project.entity';
+import { ProjectTemplate } from './entities/project-template.entity';
 import { ProjectStakeholder } from './entities/project-stakeholder.entity';
 import { Partner } from '../partner/entities/partner.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
+import { Task } from '../task/entities/task.entity';
 import { CreateProjectDto, UpdateProjectDto, QueryProjectDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { ProjectStatus } from './enums/project-status.enum';
@@ -41,19 +43,23 @@ export class ProjectService {
   constructor(
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
+    @InjectRepository(ProjectTemplate)
+    private templateRepository: Repository<ProjectTemplate>,
     @InjectRepository(ProjectStakeholder)
     private stakeholderRepository: Repository<ProjectStakeholder>,
     @InjectRepository(Partner)
     private partnerRepository: Repository<Partner>,
     @InjectRepository(UserProfile)
     private userProfileRepository: Repository<UserProfile>,
+    @InjectRepository(Task)
+    private taskRepository: Repository<Task>,
     private emailService: EmailService,
     @Inject(forwardRef(() => ProjectStatisticsService))
     private statisticsService: ProjectStatisticsService,
   ) {}
 
   async create(createProjectDto: CreateProjectDto, createdById: string): Promise<Project> {
-    const { partnerIds, stakeholders, tags, ...projectData } = createProjectDto;
+    const { partnerIds, stakeholders, tags, templateId, ...projectData } = createProjectDto;
 
     // Get creator's organization
     const creator = await this.userProfileRepository.findOne({
@@ -128,9 +134,86 @@ export class ProjectService {
       this.logger.log(`Created ${stakeholderEntities.length} stakeholders (from partnerIds) for project ${project.id}`);
     }
 
+    // Apply template tasks if templateId is provided
+    if (templateId) {
+      await this.applyTemplate(project.id, templateId, project.startDate, createdById);
+    }
+
     this.logger.log(`Project created: ${project.name} (${project.id})`);
 
     return this.findOne(project.id);
+  }
+
+  /**
+   * Get all active project templates
+   */
+  async getTemplates(): Promise<ProjectTemplate[]> {
+    return this.templateRepository.find({
+      where: { isActive: true },
+      order: { name: 'ASC' },
+    });
+  }
+
+  /**
+   * Apply a template to a project by creating tasks from the template phases
+   */
+  private async applyTemplate(
+    projectId: string,
+    templateId: string,
+    projectStartDate: Date | null,
+    createdById: string,
+  ): Promise<void> {
+    const template = await this.templateRepository.findOne({
+      where: { id: templateId, isActive: true },
+    });
+
+    if (!template) {
+      this.logger.warn(`Template not found or inactive: ${templateId}`);
+      return;
+    }
+
+    const phases = template.phases || [];
+    const startDate = projectStartDate ? new Date(projectStartDate) : new Date();
+
+    // Sort phases by order
+    const sortedPhases = [...phases].sort((a, b) => a.order - b.order);
+
+    let cumulativeDays = 0;
+
+    for (const phase of sortedPhases) {
+      const sortedTasks = [...(phase.tasks || [])].sort((a, b) => a.order - b.order);
+
+      for (const templateTask of sortedTasks) {
+        const taskStartDate = new Date(startDate);
+        taskStartDate.setDate(taskStartDate.getDate() + cumulativeDays);
+
+        const taskDueDate = new Date(taskStartDate);
+        taskDueDate.setDate(taskDueDate.getDate() + templateTask.estimatedDays);
+
+        const task = this.taskRepository.create({
+          title: `[${phase.name}] ${templateTask.name}`,
+          description: templateTask.description,
+          projectId,
+          startDate: taskStartDate,
+          dueDate: taskDueDate,
+          estimatedHours: templateTask.estimatedDays * 8, // 1日 = 8時間として換算
+          createdById,
+          metadata: {
+            templateId,
+            phaseName: phase.name,
+            phaseOrder: phase.order,
+            taskOrder: templateTask.order,
+          },
+        });
+
+        await this.taskRepository.save(task);
+        cumulativeDays += templateTask.estimatedDays;
+      }
+    }
+
+    this.logger.log(
+      `Applied template "${template.name}" to project ${projectId}: created tasks from ${sortedPhases.length} phases`,
+    );
   }
 
   /**

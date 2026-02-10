@@ -12,6 +12,81 @@ export interface GenerateReportParams {
   endDate?: string;
 }
 
+// Manager Dashboard types
+export interface ProjectAtRisk {
+  id: string;
+  name: string;
+  status: string;
+  progress: number;
+  daysRemaining: number;
+  overdueTaskCount: number;
+  riskLevel: 'medium' | 'high' | 'critical';
+  riskReasons: string[];
+}
+
+export interface TeamWorkloadItem {
+  userId: string;
+  userName: string;
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  overdueTasks: number;
+}
+
+export interface UpcomingDeadline {
+  id: string;
+  title: string;
+  projectId: string;
+  projectName?: string;
+  assigneeId?: string;
+  assigneeName?: string;
+  dueDate: string;
+  status: string;
+  priority: string;
+  daysRemaining: number;
+}
+
+export interface ManagerDashboardData {
+  period: string;
+  periodStart: string;
+  periodEnd: string;
+  projectSummary: {
+    total: number;
+    active: number;
+    completed: number;
+    delayed: number;
+    onTrack: number;
+    atRisk: number;
+  };
+  taskSummary: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    pending: number;
+    overdue: number;
+    completionRate: number;
+  };
+  partnerPerformance: Array<{
+    partnerId: string;
+    partnerName: string;
+    activeProjects: number;
+    tasksCompleted: number;
+    tasksTotal: number;
+    onTimeDeliveryRate: number;
+    rating: number;
+  }>;
+  projectsAtRisk: ProjectAtRisk[];
+  recentActivities: Array<Record<string, unknown>>;
+  budgetOverview: {
+    totalBudget: number;
+    totalSpent: number;
+    utilizationRate: number;
+    projectBudgets: Array<Record<string, unknown>>;
+  };
+  upcomingDeadlines: UpcomingDeadline[];
+  teamWorkload: TeamWorkloadItem[];
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api/v1`
   : '/api/v1';
@@ -32,9 +107,9 @@ export const dashboardService = {
     return extractData(response);
   },
 
-  getManagerDashboard: async (period?: string): Promise<Record<string, unknown>> => {
+  getManagerDashboard: async (period?: string): Promise<ManagerDashboardData> => {
     const query = period ? `?period=${period}` : '';
-    const response = await api.get<{ success: boolean; data: Record<string, unknown> }>(`/dashboard/manager${query}`);
+    const response = await api.get<{ success: boolean; data: ManagerDashboardData }>(`/dashboard/manager${query}`);
     return extractData(response);
   },
 

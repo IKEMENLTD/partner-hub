@@ -10,8 +10,13 @@ import {
   FileText,
   FileDown,
   Calendar,
+  ShieldAlert,
+  UserCheck,
+  Milestone,
+  Clock,
 } from 'lucide-react';
-import { useDashboardStats, useProjects, usePartners } from '@/hooks';
+import { useDashboardStats, useProjects, usePartners, useManagerDashboard } from '@/hooks';
+import type { ProjectAtRisk, TeamWorkloadItem, UpcomingDeadline } from '@/services/dashboardService';
 import {
   Card,
   CardHeader,
@@ -42,6 +47,7 @@ export function ManagerDashboardPage() {
     page: 1,
     pageSize: 5,
   });
+  const { data: managerData, isLoading: isLoadingManager } = useManagerDashboard();
 
   // Report generation state
   const [showReportModal, setShowReportModal] = useState(false);
@@ -49,7 +55,7 @@ export function ManagerDashboardPage() {
   const [reportFormat, setReportFormat] = useState<ReportFormat>('csv');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const isLoading = isLoadingStats || isLoadingProjects || isLoadingPartners;
+  const isLoading = isLoadingStats || isLoadingProjects || isLoadingPartners || isLoadingManager;
 
   if (isLoading) {
     return <PageLoading />;
@@ -67,6 +73,9 @@ export function ManagerDashboardPage() {
   const stats = statsData;
   const projects = projectsData?.data || [];
   const partners = partnersData?.data || [];
+  const projectsAtRisk: ProjectAtRisk[] = managerData?.projectsAtRisk || [];
+  const teamWorkload: TeamWorkloadItem[] = managerData?.teamWorkload || [];
+  const upcomingDeadlines: UpcomingDeadline[] = managerData?.upcomingDeadlines || [];
 
   const projectCompletionRate = stats?.totalProjects
     ? Math.round((stats.completedProjects / stats.totalProjects) * 100)
@@ -306,6 +315,259 @@ export function ManagerDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Section 1: 危険案件一覧 */}
+      <Card>
+        <CardHeader
+          action={
+            <Link
+              to="/projects"
+              className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
+            >
+              案件一覧
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          }
+        >
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-red-500" />
+            <span>危険案件一覧</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {projectsAtRisk.length === 0 ? (
+            <div className="flex items-center justify-center py-8 text-gray-500">
+              <CheckSquare className="mr-2 h-5 w-5 text-green-500" />
+              <span>危険な案件はありません</span>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {projectsAtRisk.map((project) => (
+                <Link
+                  key={project.id}
+                  to={`/projects/${project.id}`}
+                  className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-4 px-4 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900 truncate">
+                        {project.name}
+                      </p>
+                      <Badge
+                        variant={
+                          project.riskLevel === 'critical'
+                            ? 'danger'
+                            : project.riskLevel === 'high'
+                            ? 'warning'
+                            : 'default'
+                        }
+                      >
+                        {project.riskLevel === 'critical'
+                          ? '危険'
+                          : project.riskLevel === 'high'
+                          ? '高リスク'
+                          : '注意'}
+                      </Badge>
+                    </div>
+                    <div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
+                      <span>進捗: {project.progress}%</span>
+                      <span>残り {project.daysRemaining} 日</span>
+                      {project.overdueTaskCount > 0 && (
+                        <span className="text-red-500">
+                          期限超過タスク: {project.overdueTaskCount}件
+                        </span>
+                      )}
+                    </div>
+                    {project.riskReasons.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {project.riskReasons.map((reason, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700"
+                          >
+                            {reason}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="ml-4 flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center"
+                      style={{
+                        background: `conic-gradient(${
+                          project.progress < 30 ? '#ef4444' : project.progress < 60 ? '#f59e0b' : '#22c55e'
+                        } ${project.progress * 3.6}deg, #e5e7eb ${project.progress * 3.6}deg)`,
+                      }}
+                    >
+                      <div className="h-7 w-7 rounded-full bg-white flex items-center justify-center">
+                        <span className="text-xs font-bold">{project.progress}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Section 2: 担当者別負荷 */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-5 w-5 text-blue-500" />
+            <span>担当者別負荷</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {teamWorkload.length === 0 ? (
+            <div className="flex items-center justify-center py-8 text-gray-500">
+              <Users className="mr-2 h-5 w-5 text-gray-400" />
+              <span>チームメンバーがいません</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 text-left text-gray-500">
+                    <th className="pb-3 font-medium">担当者</th>
+                    <th className="pb-3 font-medium text-center">全タスク</th>
+                    <th className="pb-3 font-medium text-center">完了</th>
+                    <th className="pb-3 font-medium text-center">進行中</th>
+                    <th className="pb-3 font-medium text-center">期限超過</th>
+                    <th className="pb-3 font-medium" style={{ minWidth: '120px' }}>進捗</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {teamWorkload.map((member) => {
+                    const completionRate = member.totalTasks > 0
+                      ? Math.round((member.completedTasks / member.totalTasks) * 100)
+                      : 0;
+                    return (
+                      <tr key={member.userId} className="hover:bg-gray-50">
+                        <td className="py-3">
+                          <span className="font-medium text-gray-900">{member.userName}</span>
+                        </td>
+                        <td className="py-3 text-center text-gray-700">{member.totalTasks}</td>
+                        <td className="py-3 text-center text-green-600">{member.completedTasks}</td>
+                        <td className="py-3 text-center text-blue-600">{member.inProgressTasks}</td>
+                        <td className="py-3 text-center">
+                          {member.overdueTasks > 0 ? (
+                            <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                              {member.overdueTasks}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">0</span>
+                          )}
+                        </td>
+                        <td className="py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 flex-1 rounded-full bg-gray-200">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  completionRate >= 80
+                                    ? 'bg-green-500'
+                                    : completionRate >= 50
+                                    ? 'bg-blue-500'
+                                    : completionRate >= 25
+                                    ? 'bg-yellow-500'
+                                    : 'bg-red-500'
+                                }`}
+                                style={{ width: `${completionRate}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-500 w-8 text-right">{completionRate}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Section 3: 今週のマイルストーン */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Milestone className="h-5 w-5 text-amber-500" />
+            <span>今週のマイルストーン</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {upcomingDeadlines.length === 0 ? (
+            <div className="flex items-center justify-center py-8 text-gray-500">
+              <Calendar className="mr-2 h-5 w-5 text-gray-400" />
+              <span>今週のマイルストーンはありません</span>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {upcomingDeadlines.map((deadline) => (
+                <Link
+                  key={deadline.id}
+                  to={`/projects/${deadline.projectId}`}
+                  className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-4 px-4 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">
+                      {deadline.title}
+                    </p>
+                    <div className="mt-1 flex items-center gap-3 text-sm text-gray-500">
+                      {deadline.projectName && (
+                        <span className="truncate">{deadline.projectName}</span>
+                      )}
+                      {deadline.assigneeName && (
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {deadline.assigneeName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-4 flex items-center gap-3 flex-shrink-0">
+                    <Badge
+                      variant={
+                        deadline.status === 'in_progress'
+                          ? 'primary'
+                          : deadline.status === 'todo'
+                          ? 'default'
+                          : deadline.status === 'in_review'
+                          ? 'warning'
+                          : deadline.status === 'blocked'
+                          ? 'danger'
+                          : 'default'
+                      }
+                    >
+                      {deadline.status === 'in_progress'
+                        ? '進行中'
+                        : deadline.status === 'todo'
+                        ? '未着手'
+                        : deadline.status === 'in_review'
+                        ? 'レビュー中'
+                        : deadline.status === 'blocked'
+                        ? 'ブロック中'
+                        : deadline.status}
+                    </Badge>
+                    <div className="flex items-center gap-1 text-sm">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <span className={deadline.daysRemaining <= 1 ? 'font-medium text-red-600' : 'text-gray-600'}>
+                        {deadline.daysRemaining <= 0
+                          ? '今日'
+                          : deadline.daysRemaining === 1
+                          ? '明日'
+                          : `${deadline.daysRemaining}日後`}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Projects */}
       <Card>

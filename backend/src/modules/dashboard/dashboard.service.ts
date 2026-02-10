@@ -377,6 +377,7 @@ export class DashboardService {
       })),
       budgetOverview: await this.calculateBudgetOverview(),
       upcomingDeadlines: await this.getUpcomingDeadlinesForManager(),
+      teamWorkload: await this.getTeamWorkload(),
     };
   }
 
@@ -622,10 +623,71 @@ export class DashboardService {
         ? `${t.assignee.firstName} ${t.assignee.lastName}`
         : undefined,
       dueDate: t.dueDate,
+      status: t.status,
       priority: t.priority,
       daysRemaining: Math.floor(
         (new Date(t.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
       ),
     }));
+  }
+
+  private async getTeamWorkload(): Promise<any[]> {
+    const today = new Date();
+
+    // Get all users who have tasks assigned
+    const taskCounts = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.assigneeId', 'assigneeId')
+      .addSelect('COUNT(*)', 'totalTasks')
+      .addSelect(
+        `SUM(CASE WHEN task.status = '${TaskStatus.COMPLETED}' THEN 1 ELSE 0 END)`,
+        'completedTasks',
+      )
+      .addSelect(
+        `SUM(CASE WHEN task.status = '${TaskStatus.IN_PROGRESS}' THEN 1 ELSE 0 END)`,
+        'inProgressTasks',
+      )
+      .addSelect(
+        `SUM(CASE WHEN task.dueDate < :today AND task.status NOT IN (:...completedStatuses) THEN 1 ELSE 0 END)`,
+        'overdueTasks',
+      )
+      .where('task.assigneeId IS NOT NULL')
+      .andWhere('task.deletedAt IS NULL')
+      .setParameter('today', today)
+      .setParameter('completedStatuses', [TaskStatus.COMPLETED, TaskStatus.CANCELLED])
+      .groupBy('task.assigneeId')
+      .getRawMany();
+
+    if (taskCounts.length === 0) {
+      return [];
+    }
+
+    // Get user names for all assignees
+    const userIds = taskCounts.map((tc) => tc.assigneeId);
+    const users = await this.userRepository.find({
+      where: { id: In(userIds) },
+      select: ['id', 'firstName', 'lastName', 'email'],
+    });
+
+    const userMap = new Map<string, { firstName: string; lastName: string; email: string }>();
+    users.forEach((u) => {
+      userMap.set(u.id, { firstName: u.firstName, lastName: u.lastName, email: u.email });
+    });
+
+    return taskCounts.map((tc) => {
+      const user = userMap.get(tc.assigneeId);
+      const userName = user
+        ? `${user.lastName} ${user.firstName}`.trim() || user.email
+        : '不明';
+
+      return {
+        userId: tc.assigneeId,
+        userName,
+        totalTasks: parseInt(tc.totalTasks, 10),
+        completedTasks: parseInt(tc.completedTasks, 10),
+        inProgressTasks: parseInt(tc.inProgressTasks, 10),
+        overdueTasks: parseInt(tc.overdueTasks, 10),
+      };
+    });
   }
 }

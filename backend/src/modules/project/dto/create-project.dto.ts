@@ -123,4 +123,9 @@ export class CreateProjectDto {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, any>;
+
+  @ApiPropertyOptional({ description: 'Template ID to auto-apply tasks from' })
+  @IsOptional()
+  @IsUUID()
+  templateId?: string;
 }

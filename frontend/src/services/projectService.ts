@@ -1,5 +1,5 @@
 import { api, PaginatedResponse, transformPaginatedResponse, extractData } from './api';
-import type { Project, ProjectInput, ProjectFilter, TimelineEvent } from '@/types';
+import type { Project, ProjectInput, ProjectFilter, TimelineEvent, ProjectTemplate } from '@/types';
 
 interface ProjectListParams extends ProjectFilter {
   page?: number;
@@ -76,5 +76,10 @@ export const projectService = {
 
   removeMember: async (projectId: string, memberId: string): Promise<void> => {
     await api.delete<{ success: boolean; data: null }>(`/projects/${projectId}/members/${memberId}`);
+  },
+
+  getTemplates: async (): Promise<ProjectTemplate[]> => {
+    const response = await api.get<{ success: boolean; data: ProjectTemplate[] }>('/projects/templates');
+    return extractData(response);
   },
 };

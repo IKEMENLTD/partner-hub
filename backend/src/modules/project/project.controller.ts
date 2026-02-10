@@ -57,6 +57,14 @@ export class ProjectController {
     return this.projectService.create(createProjectDto, userId);
   }
 
+  @Get('templates')
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
+  @ApiOperation({ summary: 'Get active project templates' })
+  @ApiResponse({ status: 200, description: 'List of active project templates' })
+  async getTemplates() {
+    return this.projectService.getTemplates();
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all projects with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of projects' })
