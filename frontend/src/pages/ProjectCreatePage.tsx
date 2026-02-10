@@ -160,6 +160,16 @@ export function ProjectCreatePage() {
   }, [isEditMode, projectData, existingStakeholders]);
 
   const partners = partnersData?.data || [];
+  // 編集時: 削除済みパートナーをstakeholdersから除外
+  useEffect(() => {
+    if (isEditMode && partners.length > 0 && formData.stakeholders && formData.stakeholders.length > 0) {
+      const validPartnerIds = new Set(partners.map((p) => p.id));
+      const filtered = formData.stakeholders.filter((s) => validPartnerIds.has(s.partnerId));
+      if (filtered.length !== formData.stakeholders.length) {
+        setFormData((prev) => ({ ...prev, stakeholders: filtered }));
+      }
+    }
+  }, [isEditMode, partners]); // eslint-disable-line react-hooks/exhaustive-deps
   // 既にstakeholdersに追加されているパートナーを除外
   const selectedPartnerIdsInStakeholders = (formData.stakeholders || []).map((s) => s.partnerId);
   const availablePartnerOptions = [
@@ -245,9 +255,16 @@ export function ProjectCreatePage() {
 
     // stakeholders がある場合は partnerIds を送らない（stakeholders が優先）
     const { partnerIds: _unused, ...formDataWithoutPartnerIds } = formData;
+
+    // 削除済みパートナーを除外（存在するパートナーIDのみに絞る）
+    const validPartnerIds = new Set(partners.map((p) => p.id));
+    const validStakeholders = (formData.stakeholders || []).filter(
+      (s) => validPartnerIds.has(s.partnerId)
+    );
+
     const submitData: ProjectInput = {
       ...formDataWithoutPartnerIds,
-      stakeholders: formData.stakeholders,
+      stakeholders: validStakeholders,
       metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
     };
 
