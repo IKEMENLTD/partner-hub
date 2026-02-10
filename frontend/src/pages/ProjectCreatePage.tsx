@@ -244,10 +244,9 @@ export function ProjectCreatePage() {
       ...(formData.metadata || {}),
     };
 
-    // 値が入力されているカスタムフィールドのみ保存
-    const filledValues = customFieldValues.filter((v) => v.value !== null && v.value !== '');
-    if (filledValues.length > 0) {
-      metadata.customFields = filledValues;
+    // カスタムフィールドがあれば保存（値が空でもフィールド定義を維持）
+    if (customFields.length > 0) {
+      metadata.customFields = customFieldValues;
     }
     if (selectedTemplateId) {
       metadata.customFieldTemplateId = selectedTemplateId;
