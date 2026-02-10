@@ -72,6 +72,11 @@ export const taskService = {
     return extractData(response);
   },
 
+  bulkCreate: async (data: { projectId: string; tasks: { title: string }[] }): Promise<Task[]> => {
+    const response = await api.post<{ success: boolean; data: Task[] }>('/tasks/bulk', data);
+    return extractData(response);
+  },
+
   update: async (id: string, data: Partial<TaskInput>): Promise<Task> => {
     const response = await api.patch<{ success: boolean; data: Task }>(`/tasks/${id}`, data);
     return extractData(response);

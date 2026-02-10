@@ -9,8 +9,11 @@ import {
   Min,
   IsArray,
   IsObject,
+  ValidateNested,
+  ArrayMinSize,
+  ArrayMaxSize,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus, TaskPriority, TaskType } from '../enums/task-status.enum';
 
@@ -96,4 +99,25 @@ export class CreateTaskDto {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, any>;
+}
+
+export class BulkCreateTaskItemDto {
+  @ApiProperty({ description: 'Task title', example: 'キックオフミーティング' })
+  @IsString()
+  @MaxLength(200)
+  title: string;
+}
+
+export class BulkCreateTaskDto {
+  @ApiProperty({ description: 'Project ID' })
+  @IsUUID()
+  projectId: string;
+
+  @ApiProperty({ description: 'Array of tasks to create', type: [BulkCreateTaskItemDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @ValidateNested({ each: true })
+  @Type(() => BulkCreateTaskItemDto)
+  tasks: BulkCreateTaskItemDto[];
 }

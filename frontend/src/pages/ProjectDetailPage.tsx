@@ -21,6 +21,7 @@ import {
   useProjectTimeline,
   useDeleteProject,
   useUpdateTaskStatus,
+  useBulkCreateTasks,
   useStakeholderTree,
   useProjectStakeholders,
   useAddStakeholder,
@@ -49,7 +50,7 @@ import {
   Modal,
   ModalFooter,
 } from '@/components/common';
-import { TaskList } from '@/components/task';
+import { TaskList, BulkAddTaskModal } from '@/components/task';
 import { ProjectTimeline, HealthScoreCardDisplay, HealthScoreBreakdown } from '@/components/project';
 import {
   StakeholderTree,
@@ -84,6 +85,7 @@ export function ProjectDetailPage() {
   const { data: timelineData } = useProjectTimeline(id);
   const { mutate: deleteProject, isPending: isDeleting } = useDeleteProject();
   const { mutate: updateTaskStatus } = useUpdateTaskStatus();
+  const { mutate: bulkCreateTasks, isPending: isBulkCreating } = useBulkCreateTasks();
 
   // ステークホルダー関連
   const { data: stakeholderTree, isLoading: isLoadingStakeholders } = useStakeholderTree(id);
@@ -104,6 +106,7 @@ export function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState<ProjectDetailTab>('overview');
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
 
   // ステークホルダーモーダル状態
   const [showAddStakeholderModal, setShowAddStakeholderModal] = useState(false);
@@ -489,6 +492,7 @@ export function ProjectDetailPage() {
             onTaskStatusChange={handleTaskStatusChange}
             onTaskClick={(task) => navigate(`/projects/${project.id}/tasks/${task.id}`)}
             onAddTask={() => navigate(`/projects/${project.id}/tasks/new`)}
+            onBulkAddTask={() => setShowBulkAddModal(true)}
             showFilters
           />
         </TabPanel>
@@ -578,6 +582,23 @@ export function ProjectDetailPage() {
         existingStakeholders={Array.isArray(stakeholders) ? stakeholders : (stakeholders as unknown as { data?: ProjectStakeholder[] })?.data || []}
         editingStakeholder={editingStakeholder}
         isLoading={isAddingStakeholder || isUpdatingStakeholder}
+      />
+
+      {/* Bulk Add Task Modal */}
+      <BulkAddTaskModal
+        isOpen={showBulkAddModal}
+        onClose={() => setShowBulkAddModal(false)}
+        onSubmit={(titles) => {
+          bulkCreateTasks(
+            { projectId: project.id, tasks: titles.map((title) => ({ title })) },
+            {
+              onSuccess: () => {
+                setShowBulkAddModal(false);
+              },
+            }
+          );
+        }}
+        isLoading={isBulkCreating}
       />
 
       {/* Delete Stakeholder Modal */}

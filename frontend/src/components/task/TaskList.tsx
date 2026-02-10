@@ -7,6 +7,7 @@ import {
   Clock,
   AlertCircle,
   Plus,
+  ListPlus,
 } from 'lucide-react';
 import type { Task, TaskStatus, Priority } from '@/types';
 import { getUserDisplayName } from '@/types';
@@ -18,6 +19,7 @@ interface TaskListProps {
   onTaskStatusChange?: (taskId: string, status: TaskStatus) => void;
   onTaskClick?: (task: Task) => void;
   onAddTask?: () => void;
+  onBulkAddTask?: () => void;
   showFilters?: boolean;
 }
 
@@ -42,6 +44,7 @@ export function TaskList({
   onTaskStatusChange,
   onTaskClick,
   onAddTask,
+  onBulkAddTask,
   showFilters = true,
 }: TaskListProps) {
   const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('');
@@ -98,11 +101,18 @@ export function TaskList({
             </div>
           )}
         </div>
-        {onAddTask && (
-          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={onAddTask}>
-            タスク追加
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {onBulkAddTask && (
+            <Button size="sm" variant="outline" leftIcon={<ListPlus className="h-4 w-4" />} onClick={onBulkAddTask}>
+              一括追加
+            </Button>
+          )}
+          {onAddTask && (
+            <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={onAddTask}>
+              タスク追加
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Task list */}

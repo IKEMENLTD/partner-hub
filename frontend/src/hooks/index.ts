@@ -25,6 +25,7 @@ export {
   useMyTasks,
   useTodayTasks,
   useCreateTask,
+  useBulkCreateTasks,
   useUpdateTask,
   useUpdateTaskStatus,
   useDeleteTask,

@@ -67,6 +67,23 @@ export function useCreateTask() {
   });
 }
 
+export function useBulkCreateTasks() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { projectId: string; tasks: { title: string }[] }) =>
+      taskService.bulkCreate(data),
+    onSuccess: (_, data) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['today-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['project', data.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks', data.projectId] });
+    },
+  });
+}
+
 export function useUpdateTask() {
   const queryClient = useQueryClient();
 

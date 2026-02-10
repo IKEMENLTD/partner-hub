@@ -24,6 +24,7 @@ import {
 import { TaskService } from './task.service';
 import {
   CreateTaskDto,
+  BulkCreateTaskDto,
   UpdateTaskDto,
   QueryTaskDto,
   UpdateTaskStatusDto,
@@ -50,6 +51,14 @@ export class TaskController {
   @ApiResponse({ status: 201, description: 'Task created successfully' })
   async create(@Body() createTaskDto: CreateTaskDto, @CurrentUser('id') userId: string) {
     return this.taskService.create(createTaskDto, userId);
+  }
+
+  @Post('bulk')
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
+  @ApiOperation({ summary: 'Bulk create tasks' })
+  @ApiResponse({ status: 201, description: 'Tasks created successfully' })
+  async bulkCreate(@Body() bulkCreateTaskDto: BulkCreateTaskDto, @CurrentUser('id') userId: string) {
+    return this.taskService.bulkCreate(bulkCreateTaskDto, userId);
   }
 
   @Get()

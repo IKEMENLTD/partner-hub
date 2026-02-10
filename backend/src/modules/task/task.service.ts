@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, LessThan, Not, In } from 'typeorm';
 import { Task } from './entities/task.entity';
-import { CreateTaskDto, UpdateTaskDto, QueryTaskDto } from './dto';
+import { CreateTaskDto, UpdateTaskDto, QueryTaskDto, BulkCreateTaskDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { TaskStatus } from './enums/task-status.enum';
 import { HealthScoreService } from '../project/services/health-score.service';
@@ -80,6 +80,26 @@ export class TaskService {
     }
 
     return this.findOne(task.id);
+  }
+
+  async bulkCreate(dto: BulkCreateTaskDto, createdById: string): Promise<Task[]> {
+    const tasks = dto.tasks.map((item) =>
+      this.taskRepository.create({
+        title: item.title,
+        projectId: dto.projectId,
+        status: TaskStatus.TODO,
+        priority: 'medium' as any,
+        createdById,
+      }),
+    );
+
+    const savedTasks = await this.taskRepository.save(tasks);
+    this.logger.log(`Bulk created ${savedTasks.length} tasks for project ${dto.projectId}`);
+
+    // Update project health score once
+    await this.healthScoreService.onTaskChanged(dto.projectId);
+
+    return savedTasks;
   }
 
   async findAll(queryDto: QueryTaskDto): Promise<PaginatedResponseDto<Task>> {
