@@ -87,21 +87,21 @@ export const stakeholderService = {
 
   // ステークホルダーを更新
   update: async (
-    projectId: string,
+    _projectId: string,
     stakeholderId: string,
     data: Partial<StakeholderInput>
   ): Promise<ProjectStakeholder> => {
     const response = await api.patch<{
       success: boolean;
       data: ProjectStakeholder;
-    }>(`/projects/${projectId}/stakeholders/${stakeholderId}`, data);
+    }>(`/stakeholders/${stakeholderId}`, data);
     return extractData(response);
   },
 
   // ステークホルダーを削除
-  delete: async (projectId: string, stakeholderId: string): Promise<void> => {
+  delete: async (_projectId: string, stakeholderId: string): Promise<void> => {
     await api.delete<void>(
-      `/projects/${projectId}/stakeholders/${stakeholderId}`
+      `/stakeholders/${stakeholderId}`
     );
   },
 };

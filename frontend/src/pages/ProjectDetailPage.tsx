@@ -575,7 +575,7 @@ export function ProjectDetailPage() {
         }}
         onSubmit={handleAddStakeholder}
         projectId={project.id}
-        existingStakeholders={stakeholders || []}
+        existingStakeholders={Array.isArray(stakeholders) ? stakeholders : (stakeholders as unknown as { data?: ProjectStakeholder[] })?.data || []}
         editingStakeholder={editingStakeholder}
         isLoading={isAddingStakeholder || isUpdatingStakeholder}
       />

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import clsx from 'clsx';
 import {
   ChevronDown,
@@ -267,6 +267,13 @@ export function StakeholderTree({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(() => {
     return new Set(getAllNodeIds(tree));
   });
+
+  // ツリーデータが非同期で読み込まれた時にexpandedNodesを同期
+  useEffect(() => {
+    if (tree.length > 0) {
+      setExpandedNodes(new Set(getAllNodeIds(tree)));
+    }
+  }, [tree, getAllNodeIds]);
 
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
