@@ -43,7 +43,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               画面の表示中に問題が発生しました。再読み込みをお試しください。
             </p>
-            {this.state.error && (
+            {this.state.error && import.meta.env.DEV && (
               <details className="text-left bg-gray-100 dark:bg-slate-700 p-3 rounded text-xs font-mono text-gray-600 dark:text-gray-400 mb-4">
                 <summary className="cursor-pointer text-sm">エラー詳細</summary>
                 <pre className="mt-2 whitespace-pre-wrap break-words">
