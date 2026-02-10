@@ -16,6 +16,13 @@ export { reportService } from './reportService';
 export { systemSettingsService } from './systemSettingsService';
 export type { SystemSettings, UpdateSystemSettingsInput } from './systemSettingsService';
 export { partnerContactSetupService } from './partnerContactSetupService';
+export { reminderService } from './reminderService';
+export { escalationService } from './escalationService';
+export type {
+  EscalationRule, EscalationLog, EscalationTriggerType, EscalationAction,
+  EscalationRuleStatus, EscalationLogStatus, CreateEscalationRuleInput,
+} from './escalationService';
+export type { Reminder, ReminderType, ReminderStatus, ReminderChannel } from './reminderService';
 export type { PreferredChannel, PartnerContactSetupInput, TokenVerifyResult, ContactSetupResult } from './partnerContactSetupService';
 export type {
   ReportPeriod,

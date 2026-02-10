@@ -659,6 +659,10 @@ export interface CustomFieldDefinition {
   required: boolean;
   order: number;
   options?: string[];
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
 }
 
 // カスタムフィールド値（案件保存用）

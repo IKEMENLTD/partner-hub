@@ -23,3 +23,5 @@ export { PartnerContactSetupPage } from './public/PartnerContactSetupPage';
 export { PartnerReportsListPage } from './PartnerReportsListPage';
 export { ReportsPage } from './ReportsPage';
 export { AdminSettingsPage } from './AdminSettingsPage';
+export { RemindersPage } from './RemindersPage';
+export { EscalationRulesPage } from './EscalationRulesPage';

@@ -10,6 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Bell,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 
@@ -19,12 +21,14 @@ const commonNavItems = [
   { icon: FolderKanban, label: '案件一覧', path: '/projects' },
   { icon: Users, label: 'パートナー', path: '/partners' },
   { icon: MessageSquare, label: 'パートナー報告', path: '/partner-reports' },
+  { icon: Bell, label: 'リマインダー', path: '/reminders' },
 ];
 
 // ADMIN のみ
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'マネージャー', path: '/manager' },
   { icon: FileText, label: '自動レポート', path: '/reports' },
+  { icon: AlertTriangle, label: 'エスカレーション', path: '/admin/escalations' },
 ];
 
 export function Sidebar() {

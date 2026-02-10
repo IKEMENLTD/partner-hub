@@ -159,6 +159,49 @@ export function CustomFieldBuilder({
                   </div>
                 </div>
 
+                {/* バリデーションルール（テキスト） */}
+                {field.type === 'text' && (
+                  <div className="flex items-center gap-3 ml-4">
+                    <Input
+                      type="number"
+                      value={field.minLength !== undefined ? String(field.minLength) : ''}
+                      onChange={(e) => handleUpdateField(field.id, { minLength: e.target.value ? Number(e.target.value) : undefined })}
+                      placeholder="最小文字数"
+                      className="w-28"
+                    />
+                    <span className="text-sm text-gray-500">〜</span>
+                    <Input
+                      type="number"
+                      value={field.maxLength !== undefined ? String(field.maxLength) : ''}
+                      onChange={(e) => handleUpdateField(field.id, { maxLength: e.target.value ? Number(e.target.value) : undefined })}
+                      placeholder="最大文字数"
+                      className="w-28"
+                    />
+                    <span className="text-xs text-gray-400">文字</span>
+                  </div>
+                )}
+
+                {/* バリデーションルール（数値） */}
+                {field.type === 'number' && (
+                  <div className="flex items-center gap-3 ml-4">
+                    <Input
+                      type="number"
+                      value={field.min !== undefined ? String(field.min) : ''}
+                      onChange={(e) => handleUpdateField(field.id, { min: e.target.value ? Number(e.target.value) : undefined })}
+                      placeholder="最小値"
+                      className="w-28"
+                    />
+                    <span className="text-sm text-gray-500">〜</span>
+                    <Input
+                      type="number"
+                      value={field.max !== undefined ? String(field.max) : ''}
+                      onChange={(e) => handleUpdateField(field.id, { max: e.target.value ? Number(e.target.value) : undefined })}
+                      placeholder="最大値"
+                      className="w-28"
+                    />
+                  </div>
+                )}
+
                 {/* 選択肢の編集（selectタイプの場合） */}
                 {field.type === 'select' && (
                   <div className="ml-4 space-y-2">
@@ -187,7 +230,12 @@ export function CustomFieldBuilder({
                           setEditingOptions(field.id);
                           setOptionInput(e.target.value);
                         }}
-                        onFocus={() => setEditingOptions(field.id)}
+                        onFocus={() => {
+                          if (editingOptions !== field.id) {
+                            setOptionInput('');
+                            setEditingOptions(field.id);
+                          }
+                        }}
                         placeholder="選択肢を追加"
                         className="flex-1"
                         onKeyDown={(e) => {

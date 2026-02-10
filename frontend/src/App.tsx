@@ -25,11 +25,13 @@ import {
   SettingsPage,
   ProfilePage,
   NotificationsPage,
+  RemindersPage,
   ProgressReportPage,
   PartnerPortalPage,
   PartnerReportsListPage,
   ReportsPage,
   AdminSettingsPage,
+  EscalationRulesPage,
   PartnerContactSetupPage,
 } from '@/pages';
 
@@ -112,6 +114,7 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/reminders" element={<RemindersPage />} />
 
             {/* All authenticated users (admin + member) */}
             <Route path="/projects" element={<ProjectListPage />} />
@@ -132,6 +135,7 @@ function App() {
             <Route path="/manager" element={<RoleGuard allowedRoles={ADMIN_ONLY}><ManagerDashboardPage /></RoleGuard>} />
             <Route path="/reports" element={<RoleGuard allowedRoles={ADMIN_ONLY}><ReportsPage /></RoleGuard>} />
             <Route path="/admin/settings" element={<RoleGuard allowedRoles={ADMIN_ONLY}><AdminSettingsPage /></RoleGuard>} />
+            <Route path="/admin/escalations" element={<RoleGuard allowedRoles={ADMIN_ONLY}><EscalationRulesPage /></RoleGuard>} />
 
             {/* Catch all - redirect to today */}
             <Route path="*" element={<Navigate to="/today" replace />} />

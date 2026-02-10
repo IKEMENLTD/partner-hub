@@ -8,6 +8,7 @@ import {
   CustomFieldRenderer,
   CustomFieldTemplateSelect,
   SaveTemplateModal,
+  validateCustomFields,
 } from '@/components/custom-fields';
 import {
   Button,
@@ -83,6 +84,7 @@ export function ProjectCreatePage() {
 
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
+  const [customFieldErrors, setCustomFieldErrors] = useState<Record<string, string>>({});
 
   // プロジェクトテンプレート関連の状態
   const [selectedProjectTemplateId, setSelectedProjectTemplateId] = useState<string>('');
@@ -212,8 +214,12 @@ export function ProjectCreatePage() {
       newErrors.budget = '予算は0以上の数値を入力してください';
     }
 
+    // カスタムフィールドのバリデーション
+    const cfErrors = validateCustomFields(customFields, customFieldValues);
+    setCustomFieldErrors(cfErrors);
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).length === 0 && Object.keys(cfErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -694,6 +700,7 @@ export function ProjectCreatePage() {
                         fields={customFields}
                         values={customFieldValues}
                         onChange={setCustomFieldValues}
+                        errors={customFieldErrors}
                       />
                     </div>
                   )}
