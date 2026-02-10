@@ -49,7 +49,7 @@ export const stakeholderService = {
 
     const treeData = extractData(response);
 
-    // tier1/tier2/tier3を結合し、ルートノードのみ取得（子は既にネスト済み）
+    // tier1/tier2/tier3を結合
     const allNodes = [
       ...(treeData.tier1 || []),
       ...(treeData.tier2 || []),
@@ -57,11 +57,38 @@ export const stakeholderService = {
     ];
 
     // parentStakeholderIdがないノード = ルートノード
-    // 子ノードは親のchildrenに既に含まれているので重複を除外
+    // 明示的な親子関係があるノードは親のchildrenに既に含まれている
     const rootNodes = allNodes.filter((node) => !node.parentStakeholderId);
+    if (rootNodes.length === 0) return [];
 
-    // ティアでソート（Tier 1が最初）
-    return rootNodes.sort((a, b) => a.tier - b.tier);
+    // Tierでグループ化
+    const byTier: Record<number, StakeholderTreeNode[]> = {};
+    for (const node of rootNodes) {
+      if (!byTier[node.tier]) byTier[node.tier] = [];
+      byTier[node.tier].push(node);
+    }
+
+    const tiers = Object.keys(byTier).map(Number).sort((a, b) => a - b);
+
+    // Tierが1種類だけならそのまま返す
+    if (tiers.length <= 1) return rootNodes;
+
+    // 自動ネスト: parentStakeholderIdが未設定の場合、
+    // 上位Tierの最初のノードの下に下位Tierの孤立ノードを配置
+    for (let i = 1; i < tiers.length; i++) {
+      const parentTier = tiers[i - 1];
+      const orphans = byTier[tiers[i]];
+      const parentCandidates = byTier[parentTier];
+      if (parentCandidates && parentCandidates.length > 0 && orphans.length > 0) {
+        parentCandidates[0].children = [
+          ...(parentCandidates[0].children || []),
+          ...orphans,
+        ];
+      }
+    }
+
+    // 最上位Tierのノードをルートとして返す
+    return byTier[tiers[0]];
   },
 
   // 単一のステークホルダーを取得
