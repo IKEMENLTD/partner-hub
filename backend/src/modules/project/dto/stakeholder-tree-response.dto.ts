@@ -4,6 +4,12 @@ export class StakeholderNodeDto {
   @ApiProperty({ description: 'Stakeholder ID' })
   id: string;
 
+  @ApiProperty({ description: 'Project ID' })
+  projectId: string;
+
+  @ApiProperty({ description: 'Partner ID', nullable: true })
+  partnerId: string | null;
+
   @ApiProperty({ description: 'Partner information', nullable: true })
   partner: {
     id: string;

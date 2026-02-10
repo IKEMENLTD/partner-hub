@@ -50,7 +50,7 @@ export function AddStakeholderModal({
   const [stakeholderType, setStakeholderType] = useState<StakeholderType>('partner');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [tier, setTier] = useState<StakeholderTier>(2);
+  const [tier, setTier] = useState<StakeholderTier>(1);
   const [parentStakeholderId, setParentStakeholderId] = useState<string>('');
   const [roleDescription, setRoleDescription] = useState<string>('');
   const [responsibilities, setResponsibilities] = useState<string>('');
@@ -117,7 +117,7 @@ export function AddStakeholderModal({
     setStakeholderType('partner');
     setSelectedPartnerId('');
     setSelectedUserId('');
-    setTier(2);
+    setTier(1);
     setParentStakeholderId('');
     setRoleDescription('');
     setResponsibilities('');

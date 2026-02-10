@@ -11,50 +11,6 @@ interface StakeholderListParams extends StakeholderFilter {
   pageSize?: number;
 }
 
-// ツリー構造を構築するヘルパー関数
-function buildStakeholderTree(
-  stakeholders: ProjectStakeholder[]
-): StakeholderTreeNode[] {
-  const stakeholderMap = new Map<string, StakeholderTreeNode>();
-
-  // まず、すべてのステークホルダーをマップに追加
-  stakeholders.forEach((stakeholder) => {
-    stakeholderMap.set(stakeholder.id, {
-      ...stakeholder,
-      children: [],
-    });
-  });
-
-  const rootNodes: StakeholderTreeNode[] = [];
-
-  // 親子関係を構築
-  stakeholders.forEach((stakeholder) => {
-    const node = stakeholderMap.get(stakeholder.id)!;
-    if (stakeholder.parentStakeholderId) {
-      const parent = stakeholderMap.get(stakeholder.parentStakeholderId);
-      if (parent) {
-        parent.children.push(node);
-      } else {
-        // 親が見つからない場合はルートに追加
-        rootNodes.push(node);
-      }
-    } else {
-      // 親がない場合はルートノード
-      rootNodes.push(node);
-    }
-  });
-
-  // ティアでソート（Tier 1が最初）
-  const sortByTier = (nodes: StakeholderTreeNode[]): StakeholderTreeNode[] => {
-    return nodes.sort((a, b) => a.tier - b.tier).map((node) => ({
-      ...node,
-      children: sortByTier(node.children),
-    }));
-  };
-
-  return sortByTier(rootNodes);
-}
-
 export const stakeholderService = {
   // プロジェクトのステークホルダー一覧を取得
   getByProjectId: async (
@@ -81,12 +37,31 @@ export const stakeholderService = {
   getTreeByProjectId: async (
     projectId: string
   ): Promise<StakeholderTreeNode[]> => {
+    // バックエンドのツリーエンドポイントを使用（tier1/tier2/tier3形式）
     const response = await api.get<{
       success: boolean;
-      data: ProjectStakeholder[];
-    }>(`/projects/${projectId}/stakeholders`);
-    const stakeholders = extractData(response);
-    return buildStakeholderTree(stakeholders);
+      data: {
+        tier1: StakeholderTreeNode[];
+        tier2: StakeholderTreeNode[];
+        tier3: StakeholderTreeNode[];
+      };
+    }>(`/projects/${projectId}/stakeholders/tree`);
+
+    const treeData = extractData(response);
+
+    // tier1/tier2/tier3を結合し、ルートノードのみ取得（子は既にネスト済み）
+    const allNodes = [
+      ...(treeData.tier1 || []),
+      ...(treeData.tier2 || []),
+      ...(treeData.tier3 || []),
+    ];
+
+    // parentStakeholderIdがないノード = ルートノード
+    // 子ノードは親のchildrenに既に含まれているので重複を除外
+    const rootNodes = allNodes.filter((node) => !node.parentStakeholderId);
+
+    // ティアでソート（Tier 1が最初）
+    return rootNodes.sort((a, b) => a.tier - b.tier);
   },
 
   // 単一のステークホルダーを取得

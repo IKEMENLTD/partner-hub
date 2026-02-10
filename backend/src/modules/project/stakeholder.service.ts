@@ -349,6 +349,8 @@ export class StakeholderService {
 
       return {
         id: stakeholder.id,
+        projectId: stakeholder.projectId,
+        partnerId: stakeholder.partnerId || null,
         partner: stakeholder.partner
           ? {
               id: stakeholder.partner.id,
