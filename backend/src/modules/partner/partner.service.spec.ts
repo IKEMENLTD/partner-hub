@@ -7,7 +7,6 @@ import { Partner } from './entities/partner.entity';
 import { Project } from '../project/entities/project.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { EmailService } from '../notification/services/email.service';
-import { PartnerInvitationService } from './services/partner-invitation.service';
 import { PartnerReportTokenService } from '../partner-report/services/partner-report-token.service';
 import { PartnerStatus, PartnerType } from './enums/partner-status.enum';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
@@ -68,14 +67,8 @@ describe('PartnerService', () => {
 
   const mockEmailService = {
     sendPartnerWelcomeEmail: jest.fn().mockResolvedValue(undefined),
-    sendPartnerInvitationEmail: jest.fn().mockResolvedValue(undefined),
     sendReportUrlEmail: jest.fn().mockResolvedValue(undefined),
     sendEmail: jest.fn().mockResolvedValue(undefined),
-  };
-
-  const mockInvitationService = {
-    createInvitation: jest.fn().mockResolvedValue({ token: 'test-token' }),
-    validateInvitation: jest.fn().mockResolvedValue(true),
   };
 
   const mockReportTokenService = {
@@ -106,10 +99,6 @@ describe('PartnerService', () => {
         {
           provide: EmailService,
           useValue: mockEmailService,
-        },
-        {
-          provide: PartnerInvitationService,
-          useValue: mockInvitationService,
         },
         {
           provide: PartnerReportTokenService,

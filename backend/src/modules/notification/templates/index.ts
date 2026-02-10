@@ -4,6 +4,5 @@ export * from './welcome.template';
 export * from './task-assignment.template';
 export * from './project-invitation.template';
 export * from './stakeholder-added.template';
-export * from './partner-invitation.template';
 export * from './report-url.template';
 export * from './contact-setup.template';

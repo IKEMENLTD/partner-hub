@@ -1,23 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Link, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, UserPlus, Mail } from 'lucide-react';
+import { useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { useRegister } from '@/hooks';
 import { Button, Input, Alert } from '@/components/common';
-import { partnerService, InvitationVerifyResponse } from '@/services/partnerService';
-import { supabase } from '@/lib/supabase';
 
 export function RegisterPage() {
-  const { isAuthenticated, error, isLoading, setSession, setError, setLoading } = useAuthStore();
+  const { isAuthenticated, error, isLoading } = useAuthStore();
   const { mutate: register } = useRegister();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const invitationToken = searchParams.get('invitation');
-
-  // Invitation state
-  const [invitationData, setInvitationData] = useState<InvitationVerifyResponse | null>(null);
-  const [invitationLoading, setInvitationLoading] = useState(!!invitationToken);
-  const [invitationError, setInvitationError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -36,66 +26,8 @@ export function RegisterPage() {
     lastName?: string;
   }>({});
 
-  // Verify invitation token on mount
-  useEffect(() => {
-    if (invitationToken) {
-      setInvitationLoading(true);
-      partnerService.verifyInvitation(invitationToken)
-        .then((data) => {
-          setInvitationData(data);
-          // Pre-fill email from invitation
-          setFormData(prev => ({
-            ...prev,
-            email: data.partner.email,
-            firstName: data.partner.name?.split(' ')[0] || '',
-            lastName: data.partner.name?.split(' ').slice(1).join(' ') || '',
-          }));
-        })
-        .catch((err) => {
-          console.error('Invitation verification failed:', err);
-          setInvitationError(
-            err.message || '招待リンクが無効または期限切れです。管理者に再送信を依頼してください。'
-          );
-        })
-        .finally(() => {
-          setInvitationLoading(false);
-        });
-    }
-  }, [invitationToken]);
-
   if (isAuthenticated) {
     return <Navigate to="/today" replace />;
-  }
-
-  // Show loading while verifying invitation
-  if (invitationLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-gray-600">招待を確認中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error if invitation is invalid
-  if (invitationToken && invitationError) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md p-8 bg-white rounded-lg shadow-lg">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h1 className="text-xl font-bold text-gray-800 mb-2">招待エラー</h1>
-          <p className="text-gray-600 mb-4">{invitationError}</p>
-          <Link
-            to="/login"
-            className="inline-block px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
-          >
-            ログインページへ
-          </Link>
-        </div>
-      </div>
-    );
   }
 
   const validateForm = (): boolean => {
@@ -163,59 +95,6 @@ export function RegisterPage() {
       return;
     }
 
-    // 招待トークンがある場合は新しいAPIを使用
-    if (invitationToken && invitationData) {
-      setLoading(true);
-      setError(null);
-
-      try {
-        // バックエンドの招待登録APIを呼び出し
-        const result = await partnerService.registerWithInvitation({
-          token: invitationToken,
-          password: formData.password,
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-        });
-
-        // セッションが返された場合はSupabaseにセット
-        if (result.session) {
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: result.session.accessToken,
-            refresh_token: result.session.refreshToken,
-          });
-
-          if (sessionError) {
-            throw new Error('セッションの設定に失敗しました');
-          }
-
-          // Supabaseからセッションを取得してストアに設定
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            setSession(session);
-          }
-
-          // 登録成功 - ダッシュボードへリダイレクト
-          navigate('/today', { replace: true });
-        } else {
-          // セッションが返されなかった場合はログインページへ
-          navigate('/login', {
-            replace: true,
-            state: { message: '登録が完了しました。ログインしてください。' }
-          });
-        }
-      } catch (err) {
-        console.error('Invitation registration failed:', err);
-        const errorMessage = err instanceof Error
-          ? err.message
-          : '登録に失敗しました。再度お試しください。';
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    // 通常の登録フロー（招待なし）
     register(
       {
         email: formData.email.trim(),
@@ -294,27 +173,11 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              {invitationData ? 'パートナーアカウント作成' : '新規登録'}
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900">新規登録</h2>
             <p className="mt-2 text-sm text-gray-600">
-              {invitationData
-                ? 'Partner Hub へようこそ。パスワードを設定してアカウントを作成してください。'
-                : 'アカウント情報を入力して登録してください'}
+              アカウント情報を入力して登録してください
             </p>
           </div>
-
-          {invitationData && (
-            <div className="mt-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
-              <div className="flex items-center gap-2 text-primary-700">
-                <Mail className="h-5 w-5" />
-                <span className="font-medium">招待されています</span>
-              </div>
-              <p className="mt-1 text-sm text-primary-600">
-                {invitationData.partner.companyName || invitationData.partner.name} として登録されます
-              </p>
-            </div>
-          )}
 
           {error && (
             <Alert variant="error" className="mt-6">
@@ -359,14 +222,7 @@ export function RegisterPage() {
               placeholder="example@company.com"
               autoComplete="email"
               required
-              disabled={!!invitationData}
-              className={invitationData ? 'bg-gray-100' : ''}
             />
-            {invitationData && (
-              <p className="text-xs text-gray-500 -mt-3">
-                招待メールアドレスは変更できません
-              </p>
-            )}
 
             <Input
               label="パスワード"

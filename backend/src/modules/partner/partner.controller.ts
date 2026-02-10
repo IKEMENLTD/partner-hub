@@ -9,8 +9,6 @@ import {
   Query,
   UseGuards,
   ParseUUIDPipe,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,25 +16,19 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { PartnerService } from './partner.service';
-import { PartnerInvitationService } from './services/partner-invitation.service';
 import {
   CreatePartnerDto,
   UpdatePartnerDto,
   QueryPartnerDto,
   UpdatePartnerStatusDto,
   UpdatePartnerRatingDto,
-  AcceptInvitationDto,
-  RegisterWithInvitationDto,
-  InvitationRegisterResponseDto,
 } from './dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PartnerAccessGuard } from './guards/partner-access.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Partners')
@@ -46,7 +38,6 @@ import { UserRole } from '../auth/enums/user-role.enum';
 export class PartnerController {
   constructor(
     private readonly partnerService: PartnerService,
-    private readonly partnerInvitationService: PartnerInvitationService,
   ) {}
 
   @Post()
@@ -170,106 +161,6 @@ export class PartnerController {
     @Body() updateRatingDto: UpdatePartnerRatingDto,
   ) {
     return this.partnerService.updateRating(id, updateRatingDto.rating);
-  }
-
-  // ==================== Invitation Endpoints ====================
-
-  @Post(':id/invite')
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Send invitation email to partner' })
-  @ApiParam({ name: 'id', description: 'Partner ID' })
-  @ApiResponse({ status: 201, description: 'Invitation sent successfully' })
-  @ApiResponse({ status: 404, description: 'Partner not found' })
-  @ApiResponse({ status: 409, description: 'Partner already has a linked account' })
-  async sendInvitation(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
-    const invitation = await this.partnerInvitationService.sendInvitation(id, userId);
-    return {
-      message: '招待を送信しました',
-      expiresAt: invitation.expiresAt,
-    };
-  }
-
-  @Get('invitation/verify')
-  @Public()
-  @ApiOperation({ summary: 'Verify invitation token' })
-  @ApiQuery({ name: 'token', required: true, description: 'Invitation token' })
-  @ApiResponse({ status: 200, description: 'Token is valid' })
-  @ApiResponse({ status: 400, description: 'Token expired or already used' })
-  @ApiResponse({ status: 404, description: 'Invalid token' })
-  async verifyInvitation(@Query('token') token: string) {
-    const { partner } = await this.partnerInvitationService.verifyToken(token);
-    return {
-      valid: true,
-      partner: {
-        id: partner.id,
-        name: partner.name,
-        email: partner.email,
-        companyName: partner.companyName,
-      },
-    };
-  }
-
-  @Public()
-  @Post('invitation/accept')
-  @ApiOperation({ summary: 'Accept invitation and link partner to user account' })
-  @ApiResponse({ status: 200, description: 'Invitation accepted, partner linked' })
-  @ApiResponse({ status: 400, description: 'Token expired, already used, or email mismatch' })
-  @ApiResponse({ status: 404, description: 'Invalid token' })
-  @ApiResponse({ status: 409, description: 'Partner already linked' })
-  async acceptInvitation(@Body() acceptDto: AcceptInvitationDto) {
-    const partner = await this.partnerInvitationService.acceptInvitation(
-      acceptDto.token,
-      acceptDto.userId,
-    );
-    return {
-      message: '招待を承認しました',
-      partner: {
-        id: partner.id,
-        name: partner.name,
-        email: partner.email,
-      },
-    };
-  }
-
-  @Public()
-  @Post('invitation/register')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Register new user via invitation (skips email verification)',
-    description:
-      'Creates a new user account with email verification skipped, links to partner, and returns a login session.',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'User registered and linked to partner successfully',
-    type: InvitationRegisterResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Invalid data, token expired, or email mismatch' })
-  @ApiResponse({ status: 404, description: 'Invalid invitation token' })
-  @ApiResponse({ status: 409, description: 'Partner already linked or email already registered' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
-  async registerWithInvitation(
-    @Body() registerDto: RegisterWithInvitationDto,
-  ): Promise<InvitationRegisterResponseDto> {
-    return this.partnerInvitationService.registerWithInvitation(registerDto);
-  }
-
-  @Post(':id/resend-invitation')
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Resend invitation email to partner' })
-  @ApiParam({ name: 'id', description: 'Partner ID' })
-  @ApiResponse({ status: 201, description: 'Invitation resent successfully' })
-  @ApiResponse({ status: 404, description: 'Partner not found' })
-  @ApiResponse({ status: 409, description: 'Partner already has a linked account' })
-  async resendInvitation(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('id') userId: string,
-  ) {
-    const invitation = await this.partnerInvitationService.resendInvitation(id, userId);
-    return {
-      message: '招待を再送信しました',
-      expiresAt: invitation.expiresAt,
-    };
   }
 
   // ==================== Delete Endpoint ====================

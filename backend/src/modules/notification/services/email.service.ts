@@ -30,10 +30,6 @@ import {
   generateStakeholderAddedEmailText,
 } from '../templates/stakeholder-added.template';
 import {
-  generatePartnerInvitationEmailHtml,
-  generatePartnerInvitationEmailText,
-} from '../templates/partner-invitation.template';
-import {
   generateReportUrlEmailHtml,
   generateReportUrlEmailText,
 } from '../templates/report-url.template';
@@ -360,43 +356,6 @@ export class EmailService {
       return result;
     } catch (error) {
       this.logger.error(`Failed to send stakeholder added email to ${partner.email}`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Send partner invitation email with magic link
-   */
-  async sendPartnerInvitationEmail(
-    partner: Partner,
-    invitationUrl: string,
-    expiresAt: Date,
-    invitedBy?: string,
-  ): Promise<boolean> {
-    const html = generatePartnerInvitationEmailHtml({
-      partner,
-      invitationUrl,
-      expiresAt,
-      invitedBy,
-    });
-    const text = generatePartnerInvitationEmailText({
-      partner,
-      invitationUrl,
-      expiresAt,
-      invitedBy,
-    });
-
-    try {
-      const result = await this.sendEmail({
-        to: partner.email,
-        subject: '【Partner Hub】新規アカウント作成のご案内',
-        html,
-        text,
-      });
-      this.logger.log(`Partner invitation email sent to: ${partner.email}`);
-      return result;
-    } catch (error) {
-      this.logger.error(`Failed to send partner invitation email to ${partner.email}`, error);
       return false;
     }
   }

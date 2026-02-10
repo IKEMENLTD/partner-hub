@@ -6,7 +6,6 @@ import {
   IsArray,
   MaxLength,
   IsObject,
-  IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PartnerType, PartnerStatus } from '../enums/partner-status.enum';
@@ -73,11 +72,4 @@ export class CreatePartnerDto {
   @IsObject()
   metadata?: Record<string, any>;
 
-  @ApiPropertyOptional({
-    description: 'Send invitation email to partner immediately',
-    default: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  sendInvitation?: boolean;
 }

@@ -14,7 +14,6 @@ import { CreatePartnerDto, UpdatePartnerDto, QueryPartnerDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { PartnerStatus } from './enums/partner-status.enum';
 import { EmailService } from '../notification/services/email.service';
-import { PartnerInvitationService } from './services/partner-invitation.service';
 import { PartnerReportTokenService } from '../partner-report/services/partner-report-token.service';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { UserRole } from '../auth/enums/user-role.enum';
@@ -47,8 +46,6 @@ export class PartnerService {
     @InjectRepository(UserProfile)
     private userProfileRepository: Repository<UserProfile>,
     private emailService: EmailService,
-    @Inject(forwardRef(() => PartnerInvitationService))
-    private partnerInvitationService: PartnerInvitationService,
     @Inject(forwardRef(() => PartnerReportTokenService))
     private partnerReportTokenService: PartnerReportTokenService,
     private configService: ConfigService,
@@ -83,10 +80,8 @@ export class PartnerService {
     });
     const organizationId = creator?.organizationId;
 
-    const { sendInvitation = false, ...partnerData } = createPartnerDto;
-
     const partner = this.partnerRepository.create({
-      ...partnerData,
+      ...createPartnerDto,
       createdById,
       organizationId,
     });
@@ -94,22 +89,10 @@ export class PartnerService {
     await this.partnerRepository.save(partner);
     this.logger.log(`Partner created: ${partner.name} (${partner.id})`);
 
-    // 報告用トークンを生成し、報告用URLメールを送信（デフォルト動作）
-    // sendInvitation=true の場合はログイン招待（複数案件を持つパートナー向け）
-    if (sendInvitation) {
-      // ログイン招待メール（マジックリンク）を送信
-      // これは案件が複数になった場合など、明示的にログインが必要な場合のみ
-      partner.loginEnabled = true;
-      await this.partnerRepository.save(partner);
-      this.partnerInvitationService.sendInvitation(partner.id, createdById).catch((error) => {
-        this.logger.error(`Failed to send login invitation to ${partner.email}`, error);
-      });
-    } else {
-      // 報告用トークンを生成してメール送信（ログイン不要）
-      this.generateReportTokenAndSendEmail(partner).catch((error) => {
-        this.logger.error(`Failed to send report URL email to ${partner.email}`, error);
-      });
-    }
+    // 報告用トークンを生成してメール送信（ログイン不要）
+    this.generateReportTokenAndSendEmail(partner).catch((error) => {
+      this.logger.error(`Failed to send report URL email to ${partner.email}`, error);
+    });
 
     return partner;
   }

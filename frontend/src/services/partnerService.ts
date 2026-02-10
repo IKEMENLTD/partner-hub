@@ -1,36 +1,6 @@
 import { api, PaginatedResponse, transformPaginatedResponse, extractData } from './api';
 import type { Partner, PartnerInput, PartnerFilter, Project } from '@/types';
 
-// Invitation verification response
-export interface InvitationVerifyResponse {
-  invitation: {
-    id: string;
-    email: string;
-    expiresAt: string;
-  };
-  partner: Partner;
-}
-
-// Invitation registration request/response
-export interface RegisterWithInvitationRequest {
-  token: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
-
-export interface RegisterWithInvitationResponse {
-  message: string;
-  user: { id: string; email: string; firstName: string; lastName: string };
-  partner: { id: string; name: string; email: string };
-  session?: {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-    expiresAt: number;
-  };
-}
-
 interface PartnerListParams extends PartnerFilter {
   page?: number;
   pageSize?: number;
@@ -97,24 +67,6 @@ export const partnerService = {
     return response.data.projects;
   },
 
-  // Invitation methods (public - no auth required)
-  verifyInvitation: async (token: string): Promise<InvitationVerifyResponse> => {
-    const response = await api.get<{ success: boolean; data: InvitationVerifyResponse }>(
-      `/partners/invitation/verify?token=${token}`,
-      true // skipAuth
-    );
-    return extractData(response);
-  },
-
-  acceptInvitation: async (token: string, userId: string): Promise<Partner> => {
-    const response = await api.post<{ success: boolean; data: Partner }>(
-      '/partners/invitation/accept',
-      { token, userId },
-      true // skipAuth - this endpoint is public
-    );
-    return extractData(response);
-  },
-
   getDeleted: async (): Promise<Partner[]> => {
     const response = await api.get<{ success: boolean; data: Partner[] }>('/partners/deleted');
     return extractData(response);
@@ -122,18 +74,6 @@ export const partnerService = {
 
   restore: async (id: string): Promise<Partner> => {
     const response = await api.patch<{ success: boolean; data: Partner }>(`/partners/${id}/restore`);
-    return extractData(response);
-  },
-
-  // Register with invitation (new user registration via invitation)
-  registerWithInvitation: async (
-    request: RegisterWithInvitationRequest
-  ): Promise<RegisterWithInvitationResponse> => {
-    const response = await api.post<{ success: boolean; data: RegisterWithInvitationResponse }>(
-      '/partners/invitation/register',
-      request,
-      true // skipAuth - this endpoint is public
-    );
     return extractData(response);
   },
 };

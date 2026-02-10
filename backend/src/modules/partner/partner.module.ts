@@ -6,10 +6,9 @@ import { PartnerEvaluationController } from './partner-evaluation.controller';
 import { PartnerContactSetupController } from './controllers/partner-contact-setup.controller';
 import { PartnerService } from './partner.service';
 import { PartnerEvaluationService } from './services/partner-evaluation.service';
-import { PartnerInvitationService } from './services/partner-invitation.service';
 import { PartnerContactSetupService } from './services/partner-contact-setup.service';
 import { PartnerAccessGuard } from './guards/partner-access.guard';
-import { Partner, PartnerEvaluation, PartnerInvitation } from './entities';
+import { Partner, PartnerEvaluation } from './entities';
 import { Project } from '../project/entities/project.entity';
 import { Task } from '../task/entities/task.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
@@ -21,7 +20,6 @@ import { PartnerReportModule } from '../partner-report/partner-report.module';
     TypeOrmModule.forFeature([
       Partner,
       PartnerEvaluation,
-      PartnerInvitation,
       Project,
       Task,
       UserProfile,
@@ -34,14 +32,12 @@ import { PartnerReportModule } from '../partner-report/partner-report.module';
   providers: [
     PartnerService,
     PartnerEvaluationService,
-    PartnerInvitationService,
     PartnerContactSetupService,
     PartnerAccessGuard,
   ],
   exports: [
     PartnerService,
     PartnerEvaluationService,
-    PartnerInvitationService,
     PartnerContactSetupService,
     PartnerAccessGuard,
   ],
