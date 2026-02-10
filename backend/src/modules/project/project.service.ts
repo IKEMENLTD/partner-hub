@@ -9,6 +9,7 @@ import { BusinessException, AuthorizationException } from '../../common/exceptio
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Project } from './entities/project.entity';
+import { ProjectStakeholder } from './entities/project-stakeholder.entity';
 import { Partner } from '../partner/entities/partner.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
 import { CreateProjectDto, UpdateProjectDto, QueryProjectDto } from './dto';
@@ -40,6 +41,8 @@ export class ProjectService {
   constructor(
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
+    @InjectRepository(ProjectStakeholder)
+    private stakeholderRepository: Repository<ProjectStakeholder>,
     @InjectRepository(Partner)
     private partnerRepository: Repository<Partner>,
     @InjectRepository(UserProfile)
@@ -50,7 +53,7 @@ export class ProjectService {
   ) {}
 
   async create(createProjectDto: CreateProjectDto, createdById: string): Promise<Project> {
-    const { partnerIds, tags, ...projectData } = createProjectDto;
+    const { partnerIds, stakeholders, tags, ...projectData } = createProjectDto;
 
     // Get creator's organization
     const creator = await this.userProfileRepository.findOne({
@@ -64,6 +67,14 @@ export class ProjectService {
         ? tags.filter((t) => t && typeof t === 'string' && t.trim() !== '')
         : undefined;
 
+    // Collect all partner IDs to validate and add to project_partners
+    const allPartnerIds: string[] = [];
+    if (stakeholders && stakeholders.length > 0) {
+      allPartnerIds.push(...stakeholders.map((s) => s.partnerId));
+    } else if (partnerIds && partnerIds.length > 0) {
+      allPartnerIds.push(...partnerIds);
+    }
+
     const project = this.projectRepository.create({
       ...projectData,
       tags: sanitizedTags,
@@ -73,12 +84,13 @@ export class ProjectService {
       ownerId: projectData.ownerId || createdById,
     });
 
-    // Handle partner associations
-    if (partnerIds && partnerIds.length > 0) {
+    // Handle partner associations (project_partners join table)
+    if (allPartnerIds.length > 0) {
+      const uniquePartnerIds = [...new Set(allPartnerIds)];
       const partners = await this.partnerRepository.findBy({
-        id: In(partnerIds),
+        id: In(uniquePartnerIds),
       });
-      if (partners.length !== partnerIds.length) {
+      if (partners.length !== uniquePartnerIds.length) {
         throw new BusinessException('PARTNER_001', {
           message: '無効なパートナーIDが含まれています',
           userMessage: '一部のパートナーIDが無効です',
@@ -88,6 +100,34 @@ export class ProjectService {
     }
 
     await this.projectRepository.save(project);
+
+    // Create project_stakeholders entries
+    if (stakeholders && stakeholders.length > 0) {
+      const stakeholderEntities = stakeholders.map((s) =>
+        this.stakeholderRepository.create({
+          projectId: project.id,
+          partnerId: s.partnerId,
+          tier: s.tier ?? 1,
+          roleDescription: s.roleDescription,
+          isPrimary: s.isPrimary ?? false,
+        }),
+      );
+      await this.stakeholderRepository.save(stakeholderEntities);
+      this.logger.log(`Created ${stakeholderEntities.length} stakeholders for project ${project.id}`);
+    } else if (partnerIds && partnerIds.length > 0) {
+      // Backward compat: partnerIds → stakeholders with tier 1
+      const stakeholderEntities = partnerIds.map((pid) =>
+        this.stakeholderRepository.create({
+          projectId: project.id,
+          partnerId: pid,
+          tier: 1,
+          isPrimary: false,
+        }),
+      );
+      await this.stakeholderRepository.save(stakeholderEntities);
+      this.logger.log(`Created ${stakeholderEntities.length} stakeholders (from partnerIds) for project ${project.id}`);
+    }
+
     this.logger.log(`Project created: ${project.name} (${project.id})`);
 
     return this.findOne(project.id);
@@ -279,7 +319,7 @@ export class ProjectService {
 
   async update(id: string, updateProjectDto: UpdateProjectDto): Promise<Project> {
     const project = await this.findOne(id);
-    const { partnerIds, tags, ...updateData } = updateProjectDto;
+    const { partnerIds, stakeholders, tags, ...updateData } = updateProjectDto;
 
     // Handle tags - now using native PostgreSQL array, empty arrays are supported
     if (tags !== undefined) {
@@ -288,8 +328,44 @@ export class ProjectService {
 
     Object.assign(project, updateData);
 
-    // Handle partner associations if provided
-    if (partnerIds !== undefined) {
+    // Handle stakeholders if provided (takes priority over partnerIds)
+    if (stakeholders !== undefined) {
+      // Validate all partner IDs
+      const partnerIdsFromStakeholders = stakeholders.map((s) => s.partnerId);
+      if (partnerIdsFromStakeholders.length > 0) {
+        const uniqueIds = [...new Set(partnerIdsFromStakeholders)];
+        const partners = await this.partnerRepository.findBy({
+          id: In(uniqueIds),
+        });
+        if (partners.length !== uniqueIds.length) {
+          throw new BusinessException('PARTNER_001', {
+            message: '無効なパートナーIDが含まれています',
+            userMessage: '一部のパートナーIDが無効です',
+          });
+        }
+        // Update project_partners join table
+        project.partners = partners;
+      } else {
+        project.partners = [];
+      }
+
+      // Replace stakeholders: delete existing, create new
+      await this.stakeholderRepository.delete({ projectId: id });
+      if (stakeholders.length > 0) {
+        const stakeholderEntities = stakeholders.map((s) =>
+          this.stakeholderRepository.create({
+            projectId: id,
+            partnerId: s.partnerId,
+            tier: s.tier ?? 1,
+            roleDescription: s.roleDescription,
+            isPrimary: s.isPrimary ?? false,
+          }),
+        );
+        await this.stakeholderRepository.save(stakeholderEntities);
+        this.logger.log(`Replaced stakeholders for project ${id}: ${stakeholderEntities.length} entries`);
+      }
+    } else if (partnerIds !== undefined) {
+      // Backward compat: handle partnerIds
       if (partnerIds.length > 0) {
         const partners = await this.partnerRepository.findBy({
           id: In(partnerIds),

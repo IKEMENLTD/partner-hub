@@ -40,8 +40,10 @@ export function useCreateProject() {
 
   return useMutation({
     mutationFn: (data: ProjectInput) => projectService.create(data),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['project-stakeholders', result.id] });
+      queryClient.invalidateQueries({ queryKey: ['stakeholder-tree', result.id] });
     },
   });
 }
@@ -55,6 +57,8 @@ export function useUpdateProject() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project', id] });
+      queryClient.invalidateQueries({ queryKey: ['project-stakeholders', id] });
+      queryClient.invalidateQueries({ queryKey: ['stakeholder-tree', id] });
     },
   });
 }

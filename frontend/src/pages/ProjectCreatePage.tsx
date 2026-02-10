@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, X, Plus } from 'lucide-react';
-import { useCreateProject, useUpdateProject, useProject, usePartners, useIncrementTemplateUsage } from '@/hooks';
-import type { ProjectInput, ProjectStatus, Priority, CustomFieldDefinition, CustomFieldValue, CustomFieldTemplate } from '@/types';
+import { ArrowLeft, Save, X, Plus, Building2, Trash2 } from 'lucide-react';
+import { useCreateProject, useUpdateProject, useProject, usePartners, useProjectStakeholders, useIncrementTemplateUsage } from '@/hooks';
+import type { ProjectInput, ProjectStatus, Priority, StakeholderTier, ProjectStakeholderInput, CustomFieldDefinition, CustomFieldValue, CustomFieldTemplate } from '@/types';
 import {
   CustomFieldBuilder,
   CustomFieldRenderer,
@@ -35,6 +35,12 @@ const PRIORITY_OPTIONS = [
   { value: 'urgent', label: '緊急' },
 ];
 
+const TIER_OPTIONS = [
+  { value: '1', label: 'Tier 1 - 主要関係者' },
+  { value: '2', label: 'Tier 2 - 重要関係者' },
+  { value: '3', label: 'Tier 3 - 一般関係者' },
+];
+
 interface FormErrors {
   name?: string;
   description?: string;
@@ -52,6 +58,7 @@ export function ProjectCreatePage() {
   const { mutate: createProject, isPending: isCreating, error: createError } = useCreateProject();
   const { mutate: updateProject, isPending: isUpdating, error: updateError } = useUpdateProject();
   const { data: partnersData } = usePartners({ pageSize: 100 });
+  const { data: existingStakeholders } = useProjectStakeholders(id);
 
   const isPending = isCreating || isUpdating;
   const error = createError || updateError;
@@ -65,8 +72,13 @@ export function ProjectCreatePage() {
     endDate: undefined,
     budget: undefined,
     partnerIds: [],
+    stakeholders: [],
     tags: [],
   });
+
+  // パートナー+Tier 選択用の状態
+  const [selectedPartnerId, setSelectedPartnerId] = useState('');
+  const [selectedTier, setSelectedTier] = useState<StakeholderTier>(1);
 
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
@@ -84,6 +96,19 @@ export function ProjectCreatePage() {
   // Load existing project data when editing
   useEffect(() => {
     if (isEditMode && projectData) {
+      // 既存のstakeholdersからProjectStakeholderInput[]を構築
+      const stakeholderInputs: ProjectStakeholderInput[] = existingStakeholders
+        ? existingStakeholders.map((s: { partnerId?: string; tier: number; roleDescription?: string; isPrimary: boolean }) => ({
+            partnerId: s.partnerId || '',
+            tier: (s.tier as StakeholderTier) || 1,
+            roleDescription: s.roleDescription,
+            isPrimary: s.isPrimary,
+          })).filter((s: ProjectStakeholderInput) => s.partnerId)
+        : projectData.partners?.map((p: { id: string }) => ({
+            partnerId: p.id,
+            tier: 1 as StakeholderTier,
+          })) || [];
+
       setFormData({
         name: projectData.name,
         description: projectData.description || '',
@@ -97,6 +122,7 @@ export function ProjectCreatePage() {
         ownerId: projectData.ownerId,
         managerId: projectData.managerId,
         partnerIds: projectData.partners?.map((p: { id: string }) => p.id) || [],
+        stakeholders: stakeholderInputs,
         tags: Array.isArray(projectData.tags) ? projectData.tags : [],
       });
 
@@ -121,13 +147,48 @@ export function ProjectCreatePage() {
         setSelectedTemplateId(metadata.customFieldTemplateId);
       }
     }
-  }, [isEditMode, projectData]);
+  }, [isEditMode, projectData, existingStakeholders]);
 
   const partners = partnersData?.data || [];
-  const partnerOptions = [
-    { value: '', label: '選択なし' },
-    ...partners.map((p) => ({ value: p.id, label: p.companyName || p.name })),
+  // 既にstakeholdersに追加されているパートナーを除外
+  const selectedPartnerIdsInStakeholders = (formData.stakeholders || []).map((s) => s.partnerId);
+  const availablePartnerOptions = [
+    { value: '', label: 'パートナーを選択...' },
+    ...partners
+      .filter((p) => !selectedPartnerIdsInStakeholders.includes(p.id))
+      .map((p) => ({ value: p.id, label: p.companyName || p.name })),
   ];
+
+  const handleAddStakeholder = () => {
+    if (!selectedPartnerId) return;
+    const newStakeholder: ProjectStakeholderInput = {
+      partnerId: selectedPartnerId,
+      tier: selectedTier,
+    };
+    setFormData((prev) => ({
+      ...prev,
+      stakeholders: [...(prev.stakeholders || []), newStakeholder],
+    }));
+    setSelectedPartnerId('');
+    setSelectedTier(1);
+  };
+
+  const handleRemoveStakeholder = (partnerId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      stakeholders: (prev.stakeholders || []).filter((s) => s.partnerId !== partnerId),
+    }));
+  };
+
+  const getPartnerName = (partnerId: string) => {
+    const partner = partners.find((p) => p.id === partnerId);
+    return partner ? (partner.companyName || partner.name) : partnerId;
+  };
+
+  const getTierLabel = (tier: StakeholderTier) => {
+    const option = TIER_OPTIONS.find((o) => o.value === String(tier));
+    return option?.label || `Tier ${tier}`;
+  };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -168,8 +229,11 @@ export function ProjectCreatePage() {
       metadata.customFieldTemplateId = selectedTemplateId;
     }
 
+    // stakeholders がある場合は partnerIds を送らない（stakeholders が優先）
+    const { partnerIds: _unused, ...formDataWithoutPartnerIds } = formData;
     const submitData: ProjectInput = {
-      ...formData,
+      ...formDataWithoutPartnerIds,
+      stakeholders: formData.stakeholders,
       metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
     };
 
@@ -372,18 +436,70 @@ export function ProjectCreatePage() {
               helperText="円単位"
             />
 
-            {/* Partner */}
-            <Select
-              label="パートナー"
-              name="partnerIds"
-              value={formData.partnerIds?.[0] || ''}
-              onChange={(e) => setFormData(prev => ({
-                ...prev,
-                partnerIds: e.target.value ? [e.target.value] : []
-              }))}
-              options={partnerOptions}
-              helperText="案件を担当するパートナーを選択"
-            />
+            {/* パートナー（ステークホルダー） */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                パートナー
+              </label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select
+                    name="stakeholder-partner"
+                    value={selectedPartnerId}
+                    onChange={(e) => setSelectedPartnerId(e.target.value)}
+                    options={availablePartnerOptions}
+                  />
+                </div>
+                <div className="w-48">
+                  <Select
+                    name="stakeholder-tier"
+                    value={String(selectedTier)}
+                    onChange={(e) => setSelectedTier(Number(e.target.value) as StakeholderTier)}
+                    options={TIER_OPTIONS}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddStakeholder}
+                  disabled={!selectedPartnerId}
+                  leftIcon={<Plus className="h-4 w-4" />}
+                >
+                  追加
+                </Button>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">案件に関わるパートナーとTierを選択して追加</p>
+
+              {/* 選択済みパートナー一覧 */}
+              {(formData.stakeholders?.length ?? 0) > 0 && (
+                <div className="mt-3 space-y-2">
+                  {(formData.stakeholders || []).map((s) => (
+                    <div
+                      key={s.partnerId}
+                      className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-900">
+                          {getPartnerName(s.partnerId)}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                          {getTierLabel(s.tier)}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveStakeholder(s.partnerId)}
+                        className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-500"
+                        aria-label={`${getPartnerName(s.partnerId)}を削除`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Tags */}
             <div>

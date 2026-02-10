@@ -365,6 +365,13 @@ export interface LoginInput {
   password: string;
 }
 
+export interface ProjectStakeholderInput {
+  partnerId: string;
+  tier: StakeholderTier;
+  roleDescription?: string;
+  isPrimary?: boolean;
+}
+
 export interface ProjectInput {
   name: string;
   description?: string;
@@ -378,6 +385,7 @@ export interface ProjectInput {
   ownerId?: string;
   managerId?: string;
   partnerIds?: string[];
+  stakeholders?: ProjectStakeholderInput[];
   tags?: string[];
   metadata?: Record<string, unknown>;
 }
