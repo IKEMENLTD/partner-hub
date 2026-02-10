@@ -3,8 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProjectService } from './project.service';
 import { Project } from './entities/project.entity';
+import { ProjectTemplate } from './entities/project-template.entity';
+import { ProjectStakeholder } from './entities/project-stakeholder.entity';
 import { Partner } from '../partner/entities/partner.entity';
 import { UserProfile } from '../auth/entities/user-profile.entity';
+import { Task } from '../task/entities/task.entity';
 import { EmailService } from '../notification/services/email.service';
 import { ProjectStatisticsService } from './services/project-statistics.service';
 import { ProjectStatus, ProjectPriority } from './enums/project-status.enum';
@@ -66,6 +69,19 @@ describe('ProjectService', () => {
     })),
   };
 
+  const mockProjectTemplateRepository = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+  };
+
+  const mockProjectStakeholderRepository = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+  };
+
   const mockPartnerRepository = {
     findOne: jest.fn(),
     findBy: jest.fn(),
@@ -73,6 +89,19 @@ describe('ProjectService', () => {
 
   const mockUserProfileRepository = {
     findOne: jest.fn(),
+  };
+
+  const mockTaskRepository = {
+    find: jest.fn(),
+    count: jest.fn(),
+    createQueryBuilder: jest.fn(() => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+      getCount: jest.fn().mockResolvedValue(0),
+    })),
   };
 
   const mockEmailService = {
@@ -103,12 +132,24 @@ describe('ProjectService', () => {
           useValue: mockProjectRepository,
         },
         {
+          provide: getRepositoryToken(ProjectTemplate),
+          useValue: mockProjectTemplateRepository,
+        },
+        {
+          provide: getRepositoryToken(ProjectStakeholder),
+          useValue: mockProjectStakeholderRepository,
+        },
+        {
           provide: getRepositoryToken(Partner),
           useValue: mockPartnerRepository,
         },
         {
           provide: getRepositoryToken(UserProfile),
           useValue: mockUserProfileRepository,
+        },
+        {
+          provide: getRepositoryToken(Task),
+          useValue: mockTaskRepository,
         },
         {
           provide: EmailService,

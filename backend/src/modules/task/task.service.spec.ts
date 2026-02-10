@@ -3,6 +3,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskService } from './task.service';
 import { Task } from './entities/task.entity';
+import { Subtask } from './entities/subtask.entity';
+import { TaskComment } from './entities/task-comment.entity';
 import { Partner } from '../partner/entities/partner.entity';
 import { HealthScoreService } from '../project/services/health-score.service';
 import { EmailService } from '../notification/services/email.service';
@@ -54,6 +56,22 @@ describe('TaskService', () => {
     })),
   };
 
+  const mockSubtaskRepository = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+  };
+
+  const mockTaskCommentRepository = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+  };
+
   const mockPartnerRepository = {
     findOne: jest.fn(),
     find: jest.fn(),
@@ -76,6 +94,14 @@ describe('TaskService', () => {
         {
           provide: getRepositoryToken(Task),
           useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(Subtask),
+          useValue: mockSubtaskRepository,
+        },
+        {
+          provide: getRepositoryToken(TaskComment),
+          useValue: mockTaskCommentRepository,
         },
         {
           provide: getRepositoryToken(Partner),
