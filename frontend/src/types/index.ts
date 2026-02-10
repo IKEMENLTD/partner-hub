@@ -203,6 +203,7 @@ export interface Task {
   dueDate?: string;
   estimatedHours?: number;
   actualHours?: number;
+  progress?: number;
   tags: string[];
   subtasks: Subtask[];
   comments: Comment[];

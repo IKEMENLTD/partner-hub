@@ -106,6 +106,11 @@ export const taskService = {
     await api.patch<{ success: boolean; data: null }>(`/tasks/${taskId}/subtasks/${subtaskId}/toggle`);
   },
 
+  updateProgress: async (id: string, progress: number): Promise<Task> => {
+    const response = await api.patch<{ success: boolean; data: Task }>(`/tasks/${id}/progress`, { progress });
+    return extractData(response);
+  },
+
   getDeleted: async (): Promise<Task[]> => {
     const response = await api.get<{ success: boolean; data: Task[] }>('/tasks/deleted');
     return extractData(response);

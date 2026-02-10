@@ -7,6 +7,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, LessThan, Not, In } from 'typeorm';
 import { Task } from './entities/task.entity';
+import { Subtask } from './entities/subtask.entity';
+import { TaskComment } from './entities/task-comment.entity';
 import { CreateTaskDto, UpdateTaskDto, QueryTaskDto, BulkCreateTaskDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { TaskStatus } from './enums/task-status.enum';
@@ -38,6 +40,10 @@ export class TaskService {
   constructor(
     @InjectRepository(Task)
     private taskRepository: Repository<Task>,
+    @InjectRepository(Subtask)
+    private subtaskRepository: Repository<Subtask>,
+    @InjectRepository(TaskComment)
+    private commentRepository: Repository<TaskComment>,
     @InjectRepository(Partner)
     private partnerRepository: Repository<Partner>,
     @Inject(forwardRef(() => HealthScoreService))
@@ -128,7 +134,7 @@ export class TaskService {
       .leftJoinAndSelect('task.assignee', 'assignee')
       .leftJoinAndSelect('task.partner', 'partner')
       .leftJoinAndSelect('task.createdBy', 'createdBy')
-      .leftJoinAndSelect('task.subtasks', 'subtasks');
+      .leftJoinAndSelect('task.childTasks', 'childTasks');
 
     // Apply filters
     if (status) {
@@ -201,7 +207,7 @@ export class TaskService {
   async findOne(id: string): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ['project', 'assignee', 'partner', 'parentTask', 'subtasks', 'createdBy'],
+      relations: ['project', 'assignee', 'partner', 'parentTask', 'childTasks', 'subtasks', 'comments', 'comments.author', 'createdBy'],
     });
 
     if (!task) {
@@ -392,7 +398,7 @@ export class TaskService {
   async getTasksByProject(projectId: string): Promise<Task[]> {
     return this.taskRepository.find({
       where: { projectId },
-      relations: ['assignee', 'partner', 'subtasks'],
+      relations: ['assignee', 'partner', 'childTasks'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -449,6 +455,48 @@ export class TaskService {
       relations: ['assignee', 'partner'],
       order: { createdAt: 'ASC' },
     });
+  }
+
+  async addSubtask(taskId: string, title: string): Promise<Subtask> {
+    // Verify parent task exists
+    await this.findOne(taskId);
+
+    const subtask = this.subtaskRepository.create({ taskId, title });
+    await this.subtaskRepository.save(subtask);
+    this.logger.log(`Subtask added to task ${taskId}: ${title}`);
+    return subtask;
+  }
+
+  async toggleSubtask(taskId: string, subtaskId: string): Promise<Subtask> {
+    const subtask = await this.subtaskRepository.findOne({
+      where: { id: subtaskId, taskId },
+    });
+    if (!subtask) {
+      throw new ResourceNotFoundException('TASK_011', {
+        resourceType: 'Subtask',
+        resourceId: subtaskId,
+        userMessage: 'サブタスクが見つかりません',
+      });
+    }
+    subtask.completed = !subtask.completed;
+    await this.subtaskRepository.save(subtask);
+    this.logger.log(`Subtask toggled: ${subtask.title} -> ${subtask.completed}`);
+    return subtask;
+  }
+
+  async addComment(taskId: string, content: string, authorId: string): Promise<TaskComment> {
+    // Verify task exists
+    await this.findOne(taskId);
+
+    const comment = this.commentRepository.create({ taskId, content, authorId });
+    await this.commentRepository.save(comment);
+
+    // Reload with author relation
+    const saved = await this.commentRepository.findOne({
+      where: { id: comment.id },
+      relations: ['author'],
+    });
+    return saved!;
   }
 
   async getTaskStatistics(projectId?: string): Promise<{

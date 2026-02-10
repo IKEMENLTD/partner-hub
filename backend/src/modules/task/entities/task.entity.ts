@@ -14,6 +14,8 @@ import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { Project } from '../../project/entities/project.entity';
 import { Partner } from '../../partner/entities/partner.entity';
 import { ReminderConfig } from '../interfaces/reminder-config.interface';
+import { Subtask } from './subtask.entity';
+import { TaskComment } from './task-comment.entity';
 
 @Entity('tasks')
 export class Task {
@@ -71,12 +73,18 @@ export class Task {
   @Column({ name: 'parent_task_id', nullable: true })
   parentTaskId: string;
 
-  @ManyToOne(() => Task, (task) => task.subtasks, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Task, (task) => task.childTasks, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'parent_task_id' })
   parentTask: Task;
 
   @OneToMany(() => Task, (task) => task.parentTask)
-  subtasks: Task[];
+  childTasks: Task[];
+
+  @OneToMany(() => Subtask, (subtask) => subtask.task)
+  subtasks: Subtask[];
+
+  @OneToMany(() => TaskComment, (comment) => comment.task)
+  comments: TaskComment[];
 
   @Column({ name: 'due_date', type: 'date', nullable: true })
   dueDate: Date;

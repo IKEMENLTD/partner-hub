@@ -183,6 +183,11 @@ export const ErrorCodes = {
     message: 'タスクに循環参照が検出されました',
     httpStatus: 400,
   },
+  TASK_011: {
+    code: 'TASK_011',
+    message: 'サブタスクが見つかりません',
+    httpStatus: 404,
+  },
 
   // ============================================
   // パートナー関連 (PARTNER_001 - PARTNER_099)

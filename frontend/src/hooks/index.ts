@@ -34,6 +34,7 @@ export {
   useAddComment,
   useAddSubtask,
   useToggleSubtask,
+  useUpdateProgress,
   useDeletedTasks,
   useRestoreTask,
   useProjectTasks,

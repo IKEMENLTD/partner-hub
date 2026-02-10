@@ -217,6 +217,23 @@ export function useToggleSubtask() {
   });
 }
 
+export function useUpdateProgress() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, progress }: { id: string; progress: number }) =>
+      taskService.updateProgress(id, progress),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['today-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+    },
+  });
+}
+
 export function useDeletedTasks() {
   return useQuery({
     queryKey: ['deleted-tasks'],

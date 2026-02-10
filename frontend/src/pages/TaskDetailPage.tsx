@@ -14,7 +14,7 @@ import {
   Plus,
   Send,
 } from 'lucide-react';
-import { useTask, useUpdateTask, useDeleteTask, useAddComment, useAddSubtask, useToggleSubtask } from '@/hooks';
+import { useTask, useUpdateTask, useDeleteTask, useAddComment, useAddSubtask, useToggleSubtask, useUpdateProgress, useProject } from '@/hooks';
 import type { TaskStatus } from '@/types';
 import { getUserDisplayName } from '@/types';
 import {
@@ -64,11 +64,13 @@ export function TaskDetailPage() {
   const navigate = useNavigate();
 
   const { data, isLoading, error, refetch } = useTask(taskId);
+  const { data: projectData } = useProject(projectId);
   const { mutate: updateTask, isPending: isUpdating } = useUpdateTask();
   const { mutate: deleteTask, isPending: isDeleting } = useDeleteTask();
   const { mutate: addComment, isPending: isAddingComment } = useAddComment();
   const { mutate: addSubtask, isPending: isAddingSubtask } = useAddSubtask();
   const { mutate: toggleSubtask } = useToggleSubtask();
+  const { mutate: updateProgress, isPending: isUpdatingProgress } = useUpdateProgress();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -99,6 +101,14 @@ export function TaskDetailPage() {
 
   const handleStatusChange = (newStatus: TaskStatus) => {
     updateTask({ id: task.id, data: { status: newStatus } });
+  };
+
+  const handleAssigneeChange = (assigneeId: string) => {
+    updateTask({ id: task.id, data: { assigneeId: assigneeId || undefined } });
+  };
+
+  const handleProgressChange = (progress: number) => {
+    updateProgress({ id: task.id, progress });
   };
 
   const handleDelete = () => {
@@ -144,6 +154,16 @@ export function TaskDetailPage() {
   const completedSubtasks = task.subtasks?.filter((s) => s.completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
   const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+
+  // Build assignee options from project members
+  const project = projectData;
+  const memberOptions = [
+    { value: '', label: '未割当' },
+    ...(project?.manager ? [{ value: project.managerId || '', label: getUserDisplayName(project.manager) }] : []),
+    ...(project?.owner && project.ownerId !== project.managerId
+      ? [{ value: project.ownerId || '', label: getUserDisplayName(project.owner) }]
+      : []),
+  ];
 
   return (
     <div className="space-y-6">
@@ -385,12 +405,40 @@ export function TaskDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Progress Slider */}
+          <Card>
+            <CardHeader>進捗</CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">タスク進捗</span>
+                  <span className="text-sm font-bold text-gray-900">{task.progress ?? 0}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={task.progress ?? 0}
+                  onChange={(e) => handleProgressChange(Number(e.target.value))}
+                  disabled={isUpdatingProgress}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                />
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Assignee */}
-          {task.assignee && (
-            <Card>
-              <CardHeader>担当者</CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
+          <Card>
+            <CardHeader>担当者</CardHeader>
+            <CardContent>
+              {task.assignee && (
+                <div className="flex items-center gap-3 mb-3">
                   <Avatar
                     name={getUserDisplayName(task.assignee)}
                     src={task.assignee.avatarUrl}
@@ -405,9 +453,15 @@ export function TaskDetailPage() {
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+              <Select
+                options={memberOptions}
+                value={task.assigneeId || ''}
+                onChange={(e) => handleAssigneeChange(e.target.value)}
+                disabled={isUpdating}
+              />
+            </CardContent>
+          </Card>
 
           {/* Tags */}
           {Array.isArray(task.tags) && task.tags.length > 0 && (

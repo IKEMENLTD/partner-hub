@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, User, Building, Star } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type {
   ProjectStakeholder,
   StakeholderInput,
@@ -12,7 +12,6 @@ import {
   Button,
   Input,
   Select,
-  TextArea,
   Avatar,
   Badge,
 } from '@/components/common';
@@ -28,8 +27,6 @@ interface AddStakeholderModalProps {
   editingStakeholder?: ProjectStakeholder | null;
   isLoading?: boolean;
 }
-
-type StakeholderType = 'partner' | 'user';
 
 const tierOptions = [
   { value: '1', label: 'Tier 1 - 主要関係者' },
@@ -47,19 +44,12 @@ export function AddStakeholderModal({
   isLoading = false,
 }: AddStakeholderModalProps) {
   // フォーム状態
-  const [stakeholderType, setStakeholderType] = useState<StakeholderType>('partner');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [tier, setTier] = useState<StakeholderTier>(1);
   const [parentStakeholderId, setParentStakeholderId] = useState<string>('');
   const [roleDescription, setRoleDescription] = useState<string>('');
-  const [responsibilities, setResponsibilities] = useState<string>('');
   const [contractAmount, setContractAmount] = useState<string>('');
   const [isPrimary, setIsPrimary] = useState<boolean>(false);
-  const [isKeyPerson, setIsKeyPerson] = useState<boolean>(false);
-  const [email, setEmail] = useState<string>('');
-  const [phone, setPhone] = useState<string>('');
-  const [notes, setNotes] = useState<string>('');
 
   // 検索状態
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -87,46 +77,28 @@ export function AddStakeholderModal({
   // 編集モードの場合、初期値を設定
   useEffect(() => {
     if (editingStakeholder) {
-      if (editingStakeholder.partnerId) {
-        setStakeholderType('partner');
-        setSelectedPartnerId(editingStakeholder.partnerId);
-      } else if (editingStakeholder.userId) {
-        setStakeholderType('user');
-        setSelectedUserId(editingStakeholder.userId);
-      }
+      setSelectedPartnerId(editingStakeholder.partnerId || '');
       setTier(editingStakeholder.tier);
       setParentStakeholderId(editingStakeholder.parentStakeholderId || '');
       setRoleDescription(editingStakeholder.roleDescription || '');
-      setResponsibilities(editingStakeholder.responsibilities || '');
       setContractAmount(
         editingStakeholder.contractAmount
           ? String(editingStakeholder.contractAmount)
           : ''
       );
       setIsPrimary(editingStakeholder.isPrimary);
-      setIsKeyPerson(editingStakeholder.isKeyPerson || false);
-      setEmail(editingStakeholder.contactInfo?.email || '');
-      setPhone(editingStakeholder.contactInfo?.phone || '');
-      setNotes(editingStakeholder.notes || '');
     } else {
       resetForm();
     }
   }, [editingStakeholder, isOpen]);
 
   const resetForm = () => {
-    setStakeholderType('partner');
     setSelectedPartnerId('');
-    setSelectedUserId('');
     setTier(1);
     setParentStakeholderId('');
     setRoleDescription('');
-    setResponsibilities('');
     setContractAmount('');
     setIsPrimary(false);
-    setIsKeyPerson(false);
-    setEmail('');
-    setPhone('');
-    setNotes('');
     setSearchQuery('');
   };
 
@@ -140,13 +112,10 @@ export function AddStakeholderModal({
       projectId,
       tier,
       isPrimary,
-      isKeyPerson,
     };
 
-    if (stakeholderType === 'partner' && selectedPartnerId) {
+    if (selectedPartnerId) {
       data.partnerId = selectedPartnerId;
-    } else if (stakeholderType === 'user' && selectedUserId) {
-      data.userId = selectedUserId;
     }
 
     if (parentStakeholderId) {
@@ -157,34 +126,14 @@ export function AddStakeholderModal({
       data.roleDescription = roleDescription.trim();
     }
 
-    if (responsibilities.trim()) {
-      data.responsibilities = responsibilities.trim();
-    }
-
     if (contractAmount) {
       data.contractAmount = parseInt(contractAmount, 10);
-    }
-
-    if (email || phone) {
-      data.contactInfo = {};
-      if (email.trim()) {
-        data.contactInfo.email = email.trim();
-      }
-      if (phone.trim()) {
-        data.contactInfo.phone = phone.trim();
-      }
-    }
-
-    if (notes.trim()) {
-      data.notes = notes.trim();
     }
 
     onSubmit(data);
   };
 
-  const isValid =
-    (stakeholderType === 'partner' && selectedPartnerId) ||
-    (stakeholderType === 'user' && selectedUserId);
+  const isValid = editingStakeholder ? true : !!selectedPartnerId;
 
   // 親ステークホルダーの選択肢
   const parentOptions = safeStakeholders
@@ -213,45 +162,10 @@ export function AddStakeholderModal({
       size="lg"
     >
       <div className="space-y-6">
-        {/* ステークホルダータイプ選択 */}
-        {!editingStakeholder && (
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              関係者タイプ
-            </label>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setStakeholderType('partner')}
-                className={clsx(
-                  'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all',
-                  stakeholderType === 'partner'
-                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                    : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
-                )}
-              >
-                <Building className="h-5 w-5" />
-                <span className="font-medium">パートナー</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setStakeholderType('user')}
-                className={clsx(
-                  'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all',
-                  stakeholderType === 'user'
-                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                    : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
-                )}
-              >
-                <User className="h-5 w-5" />
-                <span className="font-medium">ユーザー</span>
-              </button>
-            </div>
-          </div>
-        )}
+        {/* パートナー選択ラベル（パートナーのみサポート） */}
 
         {/* パートナー選択 */}
-        {stakeholderType === 'partner' && !editingStakeholder && (
+        {!editingStakeholder && (
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               パートナーを選択 <span className="text-red-500">*</span>
@@ -366,15 +280,6 @@ export function AddStakeholderModal({
           onChange={(e) => setRoleDescription(e.target.value)}
         />
 
-        {/* 責任範囲 */}
-        <TextArea
-          label="責任範囲"
-          placeholder="この関係者の責任範囲を記述してください"
-          value={responsibilities}
-          onChange={(e) => setResponsibilities(e.target.value)}
-          rows={3}
-        />
-
         {/* フラグ */}
         <div className="flex flex-wrap gap-4">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -386,61 +291,19 @@ export function AddStakeholderModal({
             />
             <span className="text-sm text-gray-700 dark:text-gray-300">主担当</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isKeyPerson}
-              onChange={(e) => setIsKeyPerson(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-            />
-            <Star
-              className={clsx(
-                'h-4 w-4',
-                isKeyPerson ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'
-              )}
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">キーパーソン</span>
-          </label>
         </div>
 
-        {/* 契約金額 (パートナーの場合のみ) */}
-        {stakeholderType === 'partner' && (
-          <Input
-            label="契約金額 (オプション)"
-            type="number"
-            placeholder="0"
-            value={contractAmount}
-            onChange={(e) => setContractAmount(e.target.value)}
-            helperText="円単位で入力してください"
-          />
-        )}
-
-        {/* 連絡先情報 */}
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="メールアドレス (オプション)"
-            type="email"
-            placeholder="example@company.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Input
-            label="電話番号 (オプション)"
-            type="tel"
-            placeholder="03-1234-5678"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </div>
-
-        {/* メモ */}
-        <TextArea
-          label="メモ (オプション)"
-          placeholder="その他の備考"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={2}
+        {/* 契約金額 */}
+        <Input
+          label="契約金額 (オプション)"
+          type="number"
+          placeholder="0"
+          value={contractAmount}
+          onChange={(e) => setContractAmount(e.target.value)}
+          helperText="円単位で入力してください"
         />
+
+        {/* 契約金額の後ろ - 連絡先はパートナーマスタから参照 */}
       </div>
 
       <ModalFooter>

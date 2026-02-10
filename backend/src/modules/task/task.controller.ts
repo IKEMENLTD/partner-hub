@@ -150,6 +150,47 @@ export class TaskController {
     return this.taskService.getSubtasks(id);
   }
 
+  @Post(':id/subtasks')
+  @UseGuards(TaskAccessGuard)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
+  @ApiOperation({ summary: 'Add a subtask to a task' })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiResponse({ status: 201, description: 'Subtask created' })
+  async addSubtask(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('title') title: string,
+  ) {
+    return this.taskService.addSubtask(id, title);
+  }
+
+  @Patch(':id/subtasks/:subtaskId/toggle')
+  @UseGuards(TaskAccessGuard)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
+  @ApiOperation({ summary: 'Toggle subtask completion' })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiParam({ name: 'subtaskId', description: 'Subtask ID' })
+  @ApiResponse({ status: 200, description: 'Subtask toggled' })
+  async toggleSubtask(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('subtaskId', ParseUUIDPipe) subtaskId: string,
+  ) {
+    return this.taskService.toggleSubtask(id, subtaskId);
+  }
+
+  @Post(':id/comments')
+  @UseGuards(TaskAccessGuard)
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
+  @ApiOperation({ summary: 'Add a comment to a task' })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiResponse({ status: 201, description: 'Comment added' })
+  async addComment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('content') content: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.taskService.addComment(id, content, userId);
+  }
+
   @Get(':id')
   @UseGuards(TaskAccessGuard)
   @ApiOperation({ summary: 'Get task by ID' })
