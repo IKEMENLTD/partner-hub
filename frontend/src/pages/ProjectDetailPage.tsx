@@ -33,7 +33,7 @@ import {
   useGetDownloadUrl,
   useProjectTasks,
 } from '@/hooks';
-import type { ProjectDetailTab, TaskStatus, ProjectStakeholder, StakeholderInput } from '@/types';
+import type { ProjectDetailTab, TaskStatus, ProjectStakeholder, StakeholderInput, CustomFieldValue } from '@/types';
 import { getUserDisplayName } from '@/types';
 import {
   Button,
@@ -466,6 +466,30 @@ export function ProjectDetailPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Custom Fields */}
+              {(() => {
+                const metadata = project.metadata as { customFields?: CustomFieldValue[] } | undefined;
+                const fields = metadata?.customFields;
+                if (!fields || fields.length === 0) return null;
+                return (
+                  <Card>
+                    <CardHeader>カスタムフィールド</CardHeader>
+                    <CardContent>
+                      <dl className="space-y-3">
+                        {fields.map((field) => (
+                          <div key={field.fieldId}>
+                            <dt className="text-xs text-gray-500">{field.name}</dt>
+                            <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {field.value !== null && field.value !== '' ? String(field.value) : '—'}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
             </div>
           </div>
         </TabPanel>
