@@ -556,8 +556,12 @@ export class DashboardService {
     // Build results using pre-fetched data
     return projects.map((p) => {
       const overdueTaskCount = overdueTaskMap.get(p.id) || 0;
-      const daysRemaining = Math.floor(
-        (new Date(p.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+      const endDate = new Date(p.endDate);
+      endDate.setHours(0, 0, 0, 0);
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0, 0, 0, 0);
+      const daysRemaining = Math.round(
+        (endDate.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24),
       );
 
       let riskLevel = 'medium';
@@ -625,9 +629,13 @@ export class DashboardService {
       dueDate: t.dueDate,
       status: t.status,
       priority: t.priority,
-      daysRemaining: Math.floor(
-        (new Date(t.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-      ),
+      daysRemaining: (() => {
+        const due = new Date(t.dueDate);
+        due.setHours(0, 0, 0, 0);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        return Math.round((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      })(),
     }));
   }
 
