@@ -137,19 +137,24 @@ export function ProjectCreatePage() {
       });
 
       // カスタムフィールドデータを読み込み
-      const metadata = projectData.metadata as { customFields?: CustomFieldValue[]; customFieldTemplateId?: string } | undefined;
+      const metadata = projectData.metadata as { customFields?: CustomFieldValue[]; customFieldDefinitions?: CustomFieldDefinition[]; customFieldTemplateId?: string } | undefined;
       if (metadata?.customFields) {
         setCustomFieldValues(metadata.customFields);
-        // 値からフィールド定義を再構築
-        const fieldsFromValues: CustomFieldDefinition[] = metadata.customFields.map((v, i) => ({
-          id: v.fieldId,
-          name: v.name,
-          type: v.type,
-          required: false,
-          order: i,
-        }));
-        setCustomFields(fieldsFromValues);
-        if (fieldsFromValues.length > 0) {
+        // 保存済みのフィールド定義があればそれを使う（バリデーション設定を維持）
+        if (metadata.customFieldDefinitions && metadata.customFieldDefinitions.length > 0) {
+          setCustomFields(metadata.customFieldDefinitions);
+        } else {
+          // フォールバック: 値からフィールド定義を再構築
+          const fieldsFromValues: CustomFieldDefinition[] = metadata.customFields.map((v, i) => ({
+            id: v.fieldId,
+            name: v.name,
+            type: v.type,
+            required: false,
+            order: i,
+          }));
+          setCustomFields(fieldsFromValues);
+        }
+        if (metadata.customFields.length > 0) {
           setShowCustomFieldBuilder(true);
         }
       }
@@ -247,6 +252,7 @@ export function ProjectCreatePage() {
     // カスタムフィールドがあれば保存（値が空でもフィールド定義を維持）
     if (customFields.length > 0) {
       metadata.customFields = customFieldValues;
+      metadata.customFieldDefinitions = customFields;
     }
     if (selectedTemplateId) {
       metadata.customFieldTemplateId = selectedTemplateId;
