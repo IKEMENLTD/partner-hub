@@ -17,7 +17,9 @@ import {
   MessageCircle,
   FileText,
   Lock,
+  Building2,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '@/store';
 import { getUserDisplayName } from '@/types';
 import type { DigestTime, NotificationSettingsInput } from '@/types';
@@ -521,6 +523,27 @@ export function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Organization Settings (ADMIN only) */}
+          {user?.role === 'admin' && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-gray-500" />
+                  <span>管理者メニュー</span>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm">
+                <Link
+                  to="/admin/settings"
+                  className="flex items-center gap-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                >
+                  <Settings className="h-4 w-4" />
+                  組織設定（Slack / LINE / SMS連携）
+                </Link>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Help */}
           <Card>
