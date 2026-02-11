@@ -45,16 +45,16 @@ export const partnerContactSetupService = {
 
   /**
    * 連絡先設定を完了
+   * ※ レスポンスDTOにsuccessフィールドがあるため、TransformInterceptorがラップしない
    */
   async completeSetup(
     token: string,
     input: PartnerContactSetupInput
   ): Promise<ContactSetupResult> {
-    const response = await api.post<{ success: boolean; data: ContactSetupResult }>(
+    return api.post<ContactSetupResult>(
       `/partner-contact-setup/complete/${token}`,
       input,
       true // skipAuth - 公開エンドポイント
     );
-    return extractData(response);
   },
 };

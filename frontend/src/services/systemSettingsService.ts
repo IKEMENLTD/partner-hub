@@ -59,9 +59,9 @@ export const systemSettingsService = {
 
   /**
    * Slack Webhook URLをテスト
+   * ※ レスポンスにsuccessフィールドがあるため、TransformInterceptorがラップしない
    */
   async testSlackWebhook(webhookUrl: string): Promise<SlackTestResult> {
-    const response = await api.post<BackendResponse<SlackTestResult>>('/system-settings/test-slack', { webhookUrl });
-    return extractData(response);
+    return api.post<SlackTestResult>('/system-settings/test-slack', { webhookUrl });
   },
 };
