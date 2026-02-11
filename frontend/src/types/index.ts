@@ -18,7 +18,7 @@ export function getUserDisplayName(user: User | null | undefined): string {
   return `${user.lastName} ${user.firstName}`.trim();
 }
 
-export type UserRole = 'admin' | 'member';
+export type UserRole = 'admin' | 'manager' | 'member' | 'partner';
 
 export interface AuthState {
   user: User | null;
@@ -99,16 +99,15 @@ export type ProjectStatus =
   | 'draft'
   | 'planning'
   | 'in_progress'
-  | 'review'
   | 'completed'
   | 'on_hold'
   | 'cancelled';
 
-export type ProjectType = 'subsidy' | 'asp' | 'development' | 'service' | 'other';
+export type ProjectType = 'subsidy' | 'asp' | 'development' | 'service' | 'maintenance' | 'support' | 'other' | 'joint_development' | 'sales_partnership' | 'technology_license' | 'reseller_agreement' | 'consulting';
 
-export type CompanyRole = 'orderer' | 'prime_contractor' | 'sales_lead' | 'service_provider';
+export type CompanyRole = 'orderer' | 'prime_contractor' | 'sales_lead' | 'service_provider' | 'prime' | 'subcontractor' | 'partner' | 'client';
 
-export type Priority = 'low' | 'medium' | 'high' | 'urgent';
+export type Priority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
 
 export interface ProjectMember {
   id: string;
@@ -215,7 +214,7 @@ export interface Task {
   updatedAt: string;
 }
 
-export type TaskStatus = 'todo' | 'in_progress' | 'in_review' | 'completed' | 'blocked' | 'cancelled';
+export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'waiting' | 'completed' | 'cancelled';
 
 export interface Subtask {
   id: string;
@@ -523,7 +522,7 @@ export interface PartnerEvaluationFilter {
 }
 
 // ファイル関連の型定義
-export type FileCategory = 'document' | 'image' | 'other';
+export type FileCategory = 'document' | 'image' | 'spreadsheet' | 'presentation' | 'archive' | 'other';
 
 export interface ProjectFile {
   id: string;
@@ -561,10 +560,11 @@ export interface SignedUrlResponse {
 
 // 通知の種別
 export type NotificationType =
-  | 'deadline'        // 期限通知
-  | 'assignee_change' // 担当者変更通知
-  | 'mention'         // メンション通知
-  | 'status_change';  // ステータス変更通知
+  | 'reminder'        // リマインダー通知
+  | 'escalation'      // エスカレーション通知
+  | 'task_update'     // タスク更新通知
+  | 'project_update'  // プロジェクト更新通知
+  | 'system';         // システム通知
 
 // ダイジェスト配信時間の選択肢（24時間対応）
 export type DigestTime =

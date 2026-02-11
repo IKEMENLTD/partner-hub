@@ -37,6 +37,9 @@ interface FileListProps {
 const categoryConfig: Record<FileCategory, { label: string; variant: 'default' | 'info' | 'primary' }> = {
   document: { label: 'ドキュメント', variant: 'info' },
   image: { label: '画像', variant: 'primary' },
+  spreadsheet: { label: 'スプレッドシート', variant: 'info' },
+  presentation: { label: 'プレゼンテーション', variant: 'info' },
+  archive: { label: 'アーカイブ', variant: 'default' },
   other: { label: 'その他', variant: 'default' },
 };
 

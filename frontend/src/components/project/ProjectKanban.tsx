@@ -11,7 +11,6 @@ interface ProjectKanbanProps {
 const columns: { status: ProjectStatus; label: string; color: string }[] = [
   { status: 'planning', label: '計画中', color: 'bg-blue-500' },
   { status: 'in_progress', label: '進行中', color: 'bg-primary-500' },
-  { status: 'review', label: 'レビュー', color: 'bg-yellow-500' },
   { status: 'completed', label: '完了', color: 'bg-green-500' },
 ];
 
@@ -21,7 +20,6 @@ export function ProjectKanban({ projects, onProjectClick }: ProjectKanbanProps) 
       draft: [],
       planning: [],
       in_progress: [],
-      review: [],
       completed: [],
       on_hold: [],
       cancelled: [],

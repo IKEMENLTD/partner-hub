@@ -656,7 +656,7 @@ describe('EscalationExecutorService', () => {
       expect(reminderService.create).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: 'mgr-override',
-          channel: ReminderChannel.BOTH,
+          channel: ReminderChannel.EMAIL,
           metadata: expect.objectContaining({
             escalation: true,
             ruleId: rule.id,
@@ -964,7 +964,7 @@ describe('EscalationExecutorService', () => {
       expect(reminderService.create).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'ESCALATION: Test Rule',
-          channel: ReminderChannel.BOTH,
+          channel: ReminderChannel.EMAIL,
           metadata: {
             escalation: true,
             ruleId: 'rule-xyz',
@@ -1036,7 +1036,7 @@ describe('EscalationExecutorService', () => {
         title: 'Fix Critical Bug',
         dueDate: new Date('2026-01-01'),
         progress: 10,
-        status: TaskStatus.BLOCKED,
+        status: TaskStatus.WAITING,
       });
 
       await service.executeEscalation(rule, task);

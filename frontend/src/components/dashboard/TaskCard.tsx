@@ -16,9 +16,9 @@ interface TaskCardProps {
 const statusConfig = {
   todo: { label: '未着手', variant: 'default' as const, icon: Circle },
   in_progress: { label: '進行中', variant: 'primary' as const, icon: Clock },
-  in_review: { label: 'レビュー', variant: 'warning' as const, icon: AlertCircle },
+  review: { label: 'レビュー', variant: 'warning' as const, icon: AlertCircle },
   completed: { label: '完了', variant: 'success' as const, icon: CheckCircle2 },
-  blocked: { label: 'ブロック', variant: 'danger' as const, icon: AlertCircle },
+  waiting: { label: '待機', variant: 'danger' as const, icon: AlertCircle },
   cancelled: { label: 'キャンセル', variant: 'default' as const, icon: Circle },
 };
 
@@ -27,6 +27,7 @@ const priorityConfig = {
   medium: { label: '中', variant: 'info' as const },
   high: { label: '高', variant: 'warning' as const },
   urgent: { label: '緊急', variant: 'danger' as const },
+  critical: { label: '最重要', variant: 'danger' as const },
 };
 
 export function TaskCard({ task, onStatusChange, compact = false }: TaskCardProps) {

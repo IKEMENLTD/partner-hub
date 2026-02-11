@@ -31,7 +31,6 @@ const STATUS_OPTIONS = [
   { value: 'draft', label: '下書き' },
   { value: 'planning', label: '計画中' },
   { value: 'in_progress', label: '進行中' },
-  { value: 'review', label: 'レビュー' },
   { value: 'completed', label: '完了' },
   { value: 'on_hold', label: '保留' },
 ];
@@ -41,7 +40,7 @@ const PRIORITY_OPTIONS = [
   { value: 'low', label: '低' },
   { value: 'medium', label: '中' },
   { value: 'high', label: '高' },
-  { value: 'urgent', label: '緊急' },
+  { value: 'critical', label: '最重要' },
 ];
 
 const VIEW_OPTIONS: { value: ViewType; icon: typeof List; label: string }[] = [

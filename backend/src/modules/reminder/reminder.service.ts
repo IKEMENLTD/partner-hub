@@ -439,8 +439,8 @@ export class ReminderService {
         case ReminderChannel.IN_APP:
           this.logger.log(`In-app reminder processed for user: ${reminder.userId}`);
           break;
-        case ReminderChannel.BOTH:
-          this.logger.log(`Both email and in-app reminder for user: ${reminder.userId}`);
+        case ReminderChannel.SLACK:
+          this.logger.log(`Slack reminder would be sent to user: ${reminder.userId}`);
           break;
       }
     }

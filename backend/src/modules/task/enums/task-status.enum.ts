@@ -1,8 +1,8 @@
 export enum TaskStatus {
   TODO = 'todo',
   IN_PROGRESS = 'in_progress',
-  IN_REVIEW = 'in_review',
-  BLOCKED = 'blocked',
+  REVIEW = 'review',
+  WAITING = 'waiting',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
@@ -12,6 +12,7 @@ export enum TaskPriority {
   MEDIUM = 'medium',
   HIGH = 'high',
   URGENT = 'urgent',
+  CRITICAL = 'critical',
 }
 
 export enum TaskType {

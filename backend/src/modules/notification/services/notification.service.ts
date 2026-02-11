@@ -50,19 +50,16 @@ export class NotificationService {
           return await this.sendInAppNotification(options);
 
         case ReminderChannel.SLACK:
-          // Slack削除済み → IN_APPにフォールバック
+          // Slack未実装 → IN_APPにフォールバック
           return await this.sendInAppNotification(options);
 
-        case ReminderChannel.BOTH:
-          const emailResult = await this.sendEmailNotification(options);
-          const inAppResult = await this.sendInAppNotification(options);
-          return emailResult && inAppResult;
+        case ReminderChannel.TEAMS:
+          // Teams未実装 → IN_APPにフォールバック
+          return await this.sendInAppNotification(options);
 
-        case ReminderChannel.ALL:
-          // Slack削除済み → BOTH（EMAIL + IN_APP）と同じ処理
-          const allEmailResult = await this.sendEmailNotification(options);
-          const allInAppResult = await this.sendInAppNotification(options);
-          return allEmailResult && allInAppResult;
+        case ReminderChannel.WEBHOOK:
+          // Webhook未実装 → IN_APPにフォールバック
+          return await this.sendInAppNotification(options);
 
         default:
           this.logger.warn(`Unknown notification channel: ${options.channel}`);
@@ -284,7 +281,7 @@ export class NotificationService {
     }
 
     return this.sendNotification({
-      channel: ReminderChannel.BOTH,
+      channel: ReminderChannel.EMAIL,
       project,
       recipients,
       escalationReason,

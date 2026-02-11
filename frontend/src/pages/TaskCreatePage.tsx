@@ -20,9 +20,9 @@ import {
 const STATUS_OPTIONS = [
   { value: 'todo', label: '未着手' },
   { value: 'in_progress', label: '進行中' },
-  { value: 'in_review', label: 'レビュー' },
+  { value: 'review', label: 'レビュー' },
   { value: 'completed', label: '完了' },
-  { value: 'blocked', label: 'ブロック' },
+  { value: 'waiting', label: '待機' },
   { value: 'cancelled', label: 'キャンセル' },
 ];
 

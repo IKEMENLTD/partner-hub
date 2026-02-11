@@ -538,9 +538,9 @@ export function ManagerDashboardPage() {
                           ? 'primary'
                           : deadline.status === 'todo'
                           ? 'default'
-                          : deadline.status === 'in_review'
+                          : deadline.status === 'review'
                           ? 'warning'
-                          : deadline.status === 'blocked'
+                          : deadline.status === 'waiting'
                           ? 'danger'
                           : 'default'
                       }
@@ -549,10 +549,10 @@ export function ManagerDashboardPage() {
                         ? '進行中'
                         : deadline.status === 'todo'
                         ? '未着手'
-                        : deadline.status === 'in_review'
+                        : deadline.status === 'review'
                         ? 'レビュー中'
-                        : deadline.status === 'blocked'
-                        ? 'ブロック中'
+                        : deadline.status === 'waiting'
+                        ? '待機中'
                         : deadline.status}
                     </Badge>
                     <div className="flex items-center gap-1 text-sm">

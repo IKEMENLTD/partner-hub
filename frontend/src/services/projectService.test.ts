@@ -132,9 +132,9 @@ describe('projectService', () => {
 
       vi.mocked(api.get).mockResolvedValueOnce(mockResponse);
 
-      await projectService.getAll({ priority: ['high', 'urgent'] });
+      await projectService.getAll({ priority: ['high', 'critical'] });
 
-      expect(api.get).toHaveBeenCalledWith('/projects?priority=high&priority=urgent');
+      expect(api.get).toHaveBeenCalledWith('/projects?priority=high&priority=critical');
     });
 
     it('should handle search query', async () => {

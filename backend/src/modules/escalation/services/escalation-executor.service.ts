@@ -300,7 +300,7 @@ export class EscalationExecutorService {
         title: `【緊急】エスカレーション: ${rule.name}`,
         message: this.buildNotificationMessage(rule, task, true),
         type: ReminderType.TASK_OVERDUE,
-        channel: ReminderChannel.BOTH,
+        channel: ReminderChannel.EMAIL,
         userId: managerId,
         taskId: task.id,
         projectId: task.projectId,

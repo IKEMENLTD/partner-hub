@@ -12,6 +12,7 @@ export enum ReminderType {
 export enum ReminderStatus {
   PENDING = 'pending',
   SENT = 'sent',
+  DELIVERED = 'delivered',
   FAILED = 'failed',
   CANCELLED = 'cancelled',
 }
@@ -20,6 +21,6 @@ export enum ReminderChannel {
   EMAIL = 'email',
   IN_APP = 'in_app',
   SLACK = 'slack',
-  BOTH = 'both',
-  ALL = 'all',
+  TEAMS = 'teams',
+  WEBHOOK = 'webhook',
 }

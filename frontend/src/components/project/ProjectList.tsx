@@ -26,7 +26,6 @@ const statusConfig = {
   draft: { label: '下書き', variant: 'default' as const },
   planning: { label: '計画中', variant: 'info' as const },
   in_progress: { label: '進行中', variant: 'primary' as const },
-  review: { label: 'レビュー', variant: 'warning' as const },
   completed: { label: '完了', variant: 'success' as const },
   on_hold: { label: '保留', variant: 'default' as const },
   cancelled: { label: 'キャンセル', variant: 'danger' as const },
@@ -37,6 +36,7 @@ const priorityConfig = {
   medium: { label: '中', variant: 'info' as const },
   high: { label: '高', variant: 'warning' as const },
   urgent: { label: '緊急', variant: 'danger' as const },
+  critical: { label: '最重要', variant: 'danger' as const },
 };
 
 export function ProjectList({

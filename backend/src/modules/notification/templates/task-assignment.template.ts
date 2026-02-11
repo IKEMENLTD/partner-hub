@@ -24,6 +24,7 @@ export function generateTaskAssignmentEmailHtml(data: TaskAssignmentEmailData): 
       medium: '中',
       high: '高',
       urgent: '緊急',
+      critical: '最重要',
     }[task.priority] || task.priority;
 
   const priorityColor =
@@ -32,6 +33,7 @@ export function generateTaskAssignmentEmailHtml(data: TaskAssignmentEmailData): 
       medium: '#ffc107',
       high: '#fd7e14',
       urgent: '#dc3545',
+      critical: '#dc3545',
     }[task.priority] || '#6c757d';
 
   return `
@@ -131,6 +133,7 @@ export function generateTaskAssignmentEmailText(data: TaskAssignmentEmailData): 
       medium: '中',
       high: '高',
       urgent: '緊急',
+      critical: '最重要',
     }[task.priority] || task.priority;
 
   return `

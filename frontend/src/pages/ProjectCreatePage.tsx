@@ -33,7 +33,7 @@ const PRIORITY_OPTIONS = [
   { value: 'low', label: '低' },
   { value: 'medium', label: '中' },
   { value: 'high', label: '高' },
-  { value: 'urgent', label: '緊急' },
+  { value: 'critical', label: '最重要' },
 ];
 
 const TIER_OPTIONS = [

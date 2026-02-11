@@ -37,9 +37,9 @@ import clsx from 'clsx';
 const statusConfig = {
   todo: { label: '未着手', variant: 'default' as const },
   in_progress: { label: '進行中', variant: 'primary' as const },
-  in_review: { label: 'レビュー', variant: 'warning' as const },
+  review: { label: 'レビュー', variant: 'warning' as const },
   completed: { label: '完了', variant: 'success' as const },
-  blocked: { label: 'ブロック', variant: 'danger' as const },
+  waiting: { label: '待機', variant: 'danger' as const },
   cancelled: { label: 'キャンセル', variant: 'default' as const },
 };
 
@@ -48,14 +48,15 @@ const priorityConfig = {
   medium: { label: '中', variant: 'info' as const },
   high: { label: '高', variant: 'warning' as const },
   urgent: { label: '緊急', variant: 'danger' as const },
+  critical: { label: '最重要', variant: 'danger' as const },
 };
 
 const STATUS_OPTIONS = [
   { value: 'todo', label: '未着手' },
   { value: 'in_progress', label: '進行中' },
-  { value: 'in_review', label: 'レビュー' },
+  { value: 'review', label: 'レビュー' },
   { value: 'completed', label: '完了' },
-  { value: 'blocked', label: 'ブロック' },
+  { value: 'waiting', label: '待機' },
   { value: 'cancelled', label: 'キャンセル' },
 ];
 

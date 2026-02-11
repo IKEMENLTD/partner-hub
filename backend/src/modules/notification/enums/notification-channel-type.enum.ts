@@ -1,8 +1,11 @@
 export enum NotificationChannelType {
   EMAIL = 'email',
   SLACK = 'slack',
-  IN_APP = 'in_app',
+  TEAMS = 'teams',
+  LINE = 'line',
+  SMS = 'sms',
   WEBHOOK = 'webhook',
+  IN_APP = 'in_app',
 }
 
 export enum NotificationStatus {

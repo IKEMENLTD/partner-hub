@@ -26,9 +26,9 @@ interface TaskListProps {
 const statusConfig: Record<TaskStatus, { label: string; icon: typeof Circle; color: string }> = {
   todo: { label: '未着手', icon: Circle, color: 'text-gray-400' },
   in_progress: { label: '進行中', icon: Clock, color: 'text-blue-500' },
-  in_review: { label: 'レビュー', icon: AlertCircle, color: 'text-yellow-500' },
+  review: { label: 'レビュー', icon: AlertCircle, color: 'text-yellow-500' },
   completed: { label: '完了', icon: CheckCircle2, color: 'text-green-500' },
-  blocked: { label: 'ブロック', icon: AlertCircle, color: 'text-red-500' },
+  waiting: { label: '待機', icon: AlertCircle, color: 'text-red-500' },
   cancelled: { label: 'キャンセル', icon: Circle, color: 'text-gray-400' },
 };
 
@@ -37,6 +37,7 @@ const priorityConfig: Record<Priority, { label: string; variant: 'default' | 'in
   medium: { label: '中', variant: 'info' },
   high: { label: '高', variant: 'warning' },
   urgent: { label: '緊急', variant: 'danger' },
+  critical: { label: '最重要', variant: 'danger' },
 };
 
 export function TaskList({
@@ -78,9 +79,9 @@ export function TaskList({
                   { value: '', label: 'すべて' },
                   { value: 'todo', label: '未着手' },
                   { value: 'in_progress', label: '進行中' },
-                  { value: 'in_review', label: 'レビュー' },
+                  { value: 'review', label: 'レビュー' },
                   { value: 'completed', label: '完了' },
-                  { value: 'blocked', label: 'ブロック' },
+                  { value: 'waiting', label: '待機' },
                 ]}
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as TaskStatus | '')}
