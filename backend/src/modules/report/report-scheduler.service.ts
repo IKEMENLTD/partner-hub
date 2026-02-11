@@ -399,19 +399,28 @@ ${p.partnerName}
     start: Date;
     end: Date;
   } {
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    // レポート期間は JST ベースで計算する
+    const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+    const nowJST = new Date(Date.now() + JST_OFFSET_MS);
 
-    const start = new Date(end);
+    // JST での今日の終わり
+    const endJST = new Date(nowJST);
+    endJST.setUTCHours(23, 59, 59, 999);
+
+    const startJST = new Date(endJST);
 
     if (period === ReportPeriod.MONTHLY) {
-      start.setMonth(start.getMonth() - 1);
+      startJST.setUTCMonth(startJST.getUTCMonth() - 1);
     } else {
-      start.setDate(start.getDate() - 7);
+      startJST.setUTCDate(startJST.getUTCDate() - 7);
     }
 
-    start.setHours(0, 0, 0, 0);
+    startJST.setUTCHours(0, 0, 0, 0);
 
-    return { start, end };
+    // JST → UTC に変換して返す
+    return {
+      start: new Date(startJST.getTime() - JST_OFFSET_MS),
+      end: new Date(endJST.getTime() - JST_OFFSET_MS),
+    };
   }
 }

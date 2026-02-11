@@ -150,31 +150,38 @@ export class ReportConfigService {
   }
 
   calculateNextRunTime(config: Partial<ReportConfig>): Date {
-    const now = new Date();
+    // sendTime はユーザーが JST (UTC+9) で入力した時刻
+    const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+    const nowUTC = new Date();
+    // JST での「現在時刻」を仮想的に作成（UTC メソッドで操作するため）
+    const nowJST = new Date(nowUTC.getTime() + JST_OFFSET_MS);
+
     const [hour, minute] = (config.sendTime || '09:00').split(':').map(Number);
 
-    const nextRun = new Date(now);
-    nextRun.setHours(hour, minute, 0, 0);
+    // JST フレームで次回実行時刻を計算
+    const nextRunJST = new Date(nowJST);
+    nextRunJST.setUTCHours(hour, minute, 0, 0);
 
     if (config.period === ReportPeriod.MONTHLY) {
       // Monthly
-      nextRun.setDate(config.dayOfMonth || 1);
-      if (nextRun <= now) {
-        nextRun.setMonth(nextRun.getMonth() + 1);
+      nextRunJST.setUTCDate(config.dayOfMonth || 1);
+      if (nextRunJST <= nowJST) {
+        nextRunJST.setUTCMonth(nextRunJST.getUTCMonth() + 1);
       }
     } else {
       // Weekly
       const targetDay = config.dayOfWeek || 1;
-      const currentDay = now.getDay();
+      const currentDay = nowJST.getUTCDay();
       let daysToAdd = targetDay - currentDay;
 
-      if (daysToAdd < 0 || (daysToAdd === 0 && nextRun <= now)) {
+      if (daysToAdd < 0 || (daysToAdd === 0 && nextRunJST <= nowJST)) {
         daysToAdd += 7;
       }
 
-      nextRun.setDate(now.getDate() + daysToAdd);
+      nextRunJST.setUTCDate(nowJST.getUTCDate() + daysToAdd);
     }
 
-    return nextRun;
+    // JST → UTC に変換して返す
+    return new Date(nextRunJST.getTime() - JST_OFFSET_MS);
   }
 }
