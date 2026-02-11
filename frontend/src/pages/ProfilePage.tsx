@@ -64,26 +64,30 @@ export function ProfilePage() {
 
     setIsUploadingAvatar(true);
     try {
-      const ext = file.name.split('.').pop() || 'png';
-      const filePath = `avatars/${user.id}.${ext}`;
+      const formData = new FormData();
+      formData.append('file', file);
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const baseUrl = import.meta.env.VITE_API_URL || '/api/v1';
+      const res = await fetch(`${baseUrl}/auth/me/avatar`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
 
-      if (uploadError) throw uploadError;
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'アップロードに失敗しました');
+      }
 
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-      const response = await authService.updateProfile({ avatarUrl });
-      updateUser(response.data);
+      const result = await res.json();
+      const userData = result.data || result;
+      updateUser(userData);
       addToast({ type: 'success', title: 'アバターを更新しました' });
     } catch (error) {
       console.error('Avatar upload failed:', error);
-      addToast({ type: 'error', title: 'エラー', message: 'アバターのアップロードに失敗しました' });
+      const msg = error instanceof Error ? error.message : 'アバターのアップロードに失敗しました';
+      addToast({ type: 'error', title: 'エラー', message: msg });
     } finally {
       setIsUploadingAvatar(false);
       if (avatarInputRef.current) avatarInputRef.current.value = '';
@@ -255,13 +259,11 @@ export function ProfilePage() {
                           label="姓"
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
-                          required
                         />
                         <Input
                           label="名"
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
-                          required
                         />
                       </div>
                       <Input

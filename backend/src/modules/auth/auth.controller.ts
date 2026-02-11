@@ -7,11 +7,15 @@ import {
   Delete,
   Body,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserProfile } from './entities/user-profile.entity';
@@ -19,6 +23,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from './enums/user-role.enum';
+import { SupabaseService } from '../supabase/supabase.service';
 
 /**
  * Auth Controller - Supabase Edition
@@ -33,7 +38,10 @@ import { UserRole } from './enums/user-role.enum';
 @Controller('auth')
 @ApiBearerAuth()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   // ===== User Profile Endpoints =====
 
@@ -55,6 +63,56 @@ export class AuthController {
     delete updateProfileDto.role;
     delete updateProfileDto.isActive;
     const profile = await this.authService.updateProfile(userId, updateProfileDto);
+    return this.authService.mapProfileToResponse(profile);
+  }
+
+  @Post('me/avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload avatar image' })
+  @ApiResponse({ status: 200, description: 'Avatar uploaded successfully' })
+  async uploadAvatar(
+    @CurrentUser('id') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('ファイルが選択されていません');
+    }
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException('画像ファイル（PNG, JPEG, GIF, WebP）のみアップロードできます');
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      throw new BadRequestException('ファイルサイズは2MB以下にしてください');
+    }
+
+    const supabaseAdmin = this.supabaseService.admin;
+    if (!supabaseAdmin) {
+      throw new BadRequestException('ストレージサービスが利用できません');
+    }
+
+    const ext = file.originalname.split('.').pop() || 'png';
+    const storagePath = `avatars/${userId}.${ext}`;
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('project-files')
+      .upload(storagePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      throw new BadRequestException('アバターのアップロードに失敗しました');
+    }
+
+    const { data: urlData } = supabaseAdmin.storage
+      .from('project-files')
+      .getPublicUrl(storagePath);
+
+    const avatarUrl = urlData.publicUrl;
+    const profile = await this.authService.updateProfile(userId, { avatarUrl });
     return this.authService.mapProfileToResponse(profile);
   }
 
