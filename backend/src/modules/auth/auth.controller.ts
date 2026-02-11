@@ -104,7 +104,8 @@ export class AuthController {
       });
 
     if (uploadError) {
-      throw new BadRequestException('アバターのアップロードに失敗しました');
+      console.error('Avatar upload error:', JSON.stringify(uploadError));
+      throw new BadRequestException(`アバターのアップロードに失敗しました: ${uploadError.message}`);
     }
 
     const { data: urlData } = supabaseAdmin.storage
