@@ -155,11 +155,32 @@ export class ReminderController {
   @ApiOperation({ summary: 'リマインダー自動生成を手動実行（テスト用）' })
   @ApiResponse({ status: 200, description: '生成結果' })
   async triggerGenerate() {
-    await this.reminderService.createTaskDueReminders();
-    await this.reminderService.createOverdueTaskReminders();
-    await this.reminderService.createProjectDeadlineReminders();
-    await this.reminderService.createStagnantProjectReminders();
-    return { message: 'リマインダー自動生成を実行しました' };
+    const results: Record<string, string> = {};
+    try {
+      await this.reminderService.createTaskDueReminders();
+      results.taskDue = 'OK';
+    } catch (e) {
+      results.taskDue = `ERROR: ${e.message}`;
+    }
+    try {
+      await this.reminderService.createOverdueTaskReminders();
+      results.taskOverdue = 'OK';
+    } catch (e) {
+      results.taskOverdue = `ERROR: ${e.message}`;
+    }
+    try {
+      await this.reminderService.createProjectDeadlineReminders();
+      results.projectDeadline = 'OK';
+    } catch (e) {
+      results.projectDeadline = `ERROR: ${e.message}`;
+    }
+    try {
+      await this.reminderService.createStagnantProjectReminders();
+      results.projectStagnant = 'OK';
+    } catch (e) {
+      results.projectStagnant = `ERROR: ${e.message}`;
+    }
+    return { message: 'リマインダー自動生成を実行しました', results };
   }
 
   @Post('trigger/process')
