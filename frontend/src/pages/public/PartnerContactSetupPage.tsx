@@ -108,7 +108,8 @@ export function PartnerContactSetupPage() {
         setError(result.message || '設定の保存に失敗しました');
       }
     } catch (err) {
-      setError('設定の保存に失敗しました');
+      const message = err instanceof Error ? err.message : '設定の保存に失敗しました';
+      setError(message);
       console.error(err);
     } finally {
       setIsSubmitting(false);

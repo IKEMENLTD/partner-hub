@@ -112,9 +112,9 @@ async function request<T>(
         const errorData = await retryResponse.json().catch(() => ({}));
         throw new ApiError(
           retryResponse.status,
-          errorData.userMessage || errorData.message || `HTTP error! status: ${retryResponse.status}`,
-          errorData.errorCode,
-          errorData.details
+          errorData.error?.message || errorData.userMessage || errorData.message || `HTTP error! status: ${retryResponse.status}`,
+          errorData.error?.code || errorData.errorCode,
+          errorData.error?.details || errorData.details
         );
       }
 
@@ -126,9 +126,9 @@ async function request<T>(
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
         response.status,
-        errorData.userMessage || errorData.message || getDefaultErrorMessage(response.status),
-        errorData.errorCode,
-        errorData.details
+        errorData.error?.message || errorData.userMessage || errorData.message || getDefaultErrorMessage(response.status),
+        errorData.error?.code || errorData.errorCode,
+        errorData.error?.details || errorData.details
       );
     }
 
