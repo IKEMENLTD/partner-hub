@@ -78,7 +78,7 @@ function extractData<T>(response: BackendResponse<T>): T {
 export const escalationService = {
   async getRules(params?: { status?: EscalationRuleStatus }): Promise<PaginatedData<EscalationRule>> {
     const queryParams = new URLSearchParams();
-    queryParams.set('pageSize', '100');
+    queryParams.set('limit', '100');
     if (params?.status) queryParams.set('status', params.status);
     const response = await api.get<BackendResponse<PaginatedData<EscalationRule>>>(`/escalations/rules?${queryParams}`);
     return extractData(response);
@@ -105,7 +105,7 @@ export const escalationService = {
 
   async getLogs(params?: { pageSize?: number }): Promise<PaginatedData<EscalationLog>> {
     const queryParams = new URLSearchParams();
-    queryParams.set('pageSize', String(params?.pageSize || 50));
+    queryParams.set('limit', String(params?.pageSize || 50));
     const response = await api.get<BackendResponse<PaginatedData<EscalationLog>>>(`/escalations/logs?${queryParams}`);
     return extractData(response);
   },
