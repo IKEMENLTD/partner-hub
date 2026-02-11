@@ -29,6 +29,7 @@ import {
   useDeleteStakeholder,
   useProjectFiles,
   useUploadFile,
+  useDeleteFile,
   useGetDownloadUrl,
   useProjectTasks,
 } from '@/hooks';
@@ -96,6 +97,7 @@ export function ProjectDetailPage() {
   // ファイル関連
   const { data: filesData, isLoading: isLoadingFiles } = useProjectFiles(id);
   const { mutate: uploadFile, isPending: isUploading } = useUploadFile();
+  const { mutate: deleteFile, isPending: isDeletingFile } = useDeleteFile();
   const { mutate: getDownloadUrl } = useGetDownloadUrl();
 
   // タスク関連
@@ -213,6 +215,11 @@ export function ProjectDetailPage() {
         },
       }
     );
+  };
+
+  // ファイル削除ハンドラー
+  const handleFileDelete = (fileId: string) => {
+    deleteFile({ fileId, projectId: project.id });
   };
 
   // ファイルダウンロードハンドラー
@@ -556,7 +563,9 @@ export function ProjectDetailPage() {
                 <FileList
                   files={filesData || []}
                   isLoading={isLoadingFiles}
+                  onDelete={handleFileDelete}
                   onDownload={handleFileDownload}
+                  isDeleting={isDeletingFile}
                 />
               </CardContent>
             </Card>
