@@ -90,7 +90,8 @@ export function AdminSettingsPage() {
       const result = await systemSettingsService.testSms(testPhoneNumber.trim());
       setTestResult(result);
     } catch (err) {
-      setTestResult({ success: false, message: 'テスト送信に失敗しました' });
+      const message = err instanceof Error ? err.message : 'テスト送信に失敗しました';
+      setTestResult({ success: false, message });
       console.error(err);
     } finally {
       setIsTesting(false);
