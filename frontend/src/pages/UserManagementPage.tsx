@@ -23,13 +23,11 @@ import {
 
 const ROLE_OPTIONS = [
   { value: 'admin', label: '管理者' },
-  { value: 'manager', label: 'マネージャー' },
   { value: 'member', label: 'メンバー' },
 ];
 
-const roleBadgeConfig: Record<string, { variant: 'danger' | 'warning' | 'primary'; label: string }> = {
+const roleBadgeConfig: Record<string, { variant: 'danger' | 'primary'; label: string }> = {
   admin: { variant: 'danger', label: '管理者' },
-  manager: { variant: 'warning', label: 'マネージャー' },
   member: { variant: 'primary', label: 'メンバー' },
 };
 
