@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, FindOptionsWhere } from 'typeorm';
+import { Repository, Between, FindOptionsWhere, ILike } from 'typeorm';
 import { AuditLog, AuditAction } from './entities/audit-log.entity';
 
 export interface CreateAuditLogDto {
@@ -28,6 +28,7 @@ export interface FindAllOptions {
   page?: number;
   limit?: number;
   userId?: string;
+  userEmail?: string;
   action?: AuditAction;
   entityName?: string;
   startDate?: Date;
@@ -64,13 +65,17 @@ export class AuditService {
    * Find all audit logs with pagination and filtering
    */
   async findAll(options: FindAllOptions = {}): Promise<PaginatedResult<AuditLog>> {
-    const { page = 1, limit = 20, userId, action, entityName, startDate, endDate } = options;
+    const { page = 1, limit = 20, userId, userEmail, action, entityName, startDate, endDate } = options;
     const skip = (page - 1) * limit;
 
     const where: FindOptionsWhere<AuditLog> = {};
 
     if (userId) {
       where.userId = userId;
+    }
+
+    if (userEmail) {
+      where.userEmail = ILike(`%${userEmail}%`);
     }
 
     if (action) {

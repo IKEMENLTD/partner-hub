@@ -36,6 +36,7 @@ export class AuditController {
     description: 'Items per page (default: 20)',
   })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by user ID' })
+  @ApiQuery({ name: 'userEmail', required: false, type: String, description: 'Filter by user email (partial match)' })
   @ApiQuery({
     name: 'action',
     required: false,
@@ -66,6 +67,7 @@ export class AuditController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('userId') userId?: string,
+    @Query('userEmail') userEmail?: string,
     @Query('action') action?: AuditAction,
     @Query('entityName') entityName?: string,
     @Query('startDate') startDate?: string,
@@ -75,6 +77,7 @@ export class AuditController {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       userId,
+      userEmail,
       action,
       entityName,
       startDate: startDate ? new Date(startDate) : undefined,

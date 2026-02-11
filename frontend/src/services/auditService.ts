@@ -27,6 +27,7 @@ export interface AuditFilter {
   entityName?: string;
   action?: string;
   userId?: string;
+  userEmail?: string;
   startDate?: string;
   endDate?: string;
   page?: number;

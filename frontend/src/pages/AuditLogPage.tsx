@@ -95,7 +95,7 @@ export function AuditLogPage() {
   // Filter state
   const [entityName, setEntityName] = useState('');
   const [action, setAction] = useState('');
-  const [userId, setUserId] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -108,11 +108,11 @@ export function AuditLogPage() {
     };
     if (entityName) params.entityName = entityName;
     if (action) params.action = action;
-    if (userId.trim()) params.userId = userId.trim();
+    if (userEmail.trim()) params.userEmail = userEmail.trim();
     if (startDate) params.startDate = new Date(startDate).toISOString();
     if (endDate) params.endDate = new Date(endDate + 'T23:59:59').toISOString();
     return params;
-  }, [entityName, action, userId, startDate, endDate, currentPage]);
+  }, [entityName, action, userEmail, startDate, endDate, currentPage]);
 
   // Queries
   const {
@@ -122,7 +122,7 @@ export function AuditLogPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['audit-logs', entityName, action, userId, startDate, endDate, currentPage],
+    queryKey: ['audit-logs', entityName, action, userEmail, startDate, endDate, currentPage],
     queryFn: () => auditService.getAll(buildFilterParams()),
   });
 
@@ -142,13 +142,13 @@ export function AuditLogPage() {
   const handleClearFilters = () => {
     setEntityName('');
     setAction('');
-    setUserId('');
+    setUserEmail('');
     setStartDate('');
     setEndDate('');
     setCurrentPage(1);
   };
 
-  const hasFilters = entityName || action || userId.trim() || startDate || endDate;
+  const hasFilters = entityName || action || userEmail.trim() || startDate || endDate;
 
   const handleLoadMore = () => {
     setCurrentPage((prev) => prev + 1);
@@ -261,14 +261,14 @@ export function AuditLogPage() {
               options={ACTION_OPTIONS}
             />
             <Input
-              label="ユーザーID"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
+              label="メールアドレス"
+              value={userEmail}
+              onChange={(e) => setUserEmail(e.target.value)}
               onBlur={handleApplyFilter}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleApplyFilter();
               }}
-              placeholder="UUID を入力"
+              placeholder="メールアドレスで検索"
             />
             <Input
               label="開始日"
