@@ -152,13 +152,143 @@ export function AdminSettingsPage() {
         </div>
       )}
 
+      {/* セットアップガイド（全幅で上部に配置） */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Info className="h-5 w-5 text-blue-500" />
+            <span>SMS連携セットアップガイド</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 mb-4">
+            タスク期限超過時、パートナーの登録電話番号にSMSで緊急連絡します。
+            SMS送信には
+            <a
+              href="https://www.twilio.com/ja-jp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:text-primary-700 underline inline-flex items-center gap-0.5 mx-1"
+            >
+              Twilio
+              <ExternalLink className="h-3 w-3" />
+            </a>
+            のアカウントが必要です。
+          </p>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* ステップ1〜3: アカウント準備 */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-gray-900">アカウント準備</h4>
+
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">1</span>
+                <div className="text-sm text-gray-700">
+                  <a
+                    href="https://www.twilio.com/try-twilio"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-600 hover:text-primary-700 underline inline-flex items-center gap-0.5 font-medium"
+                  >
+                    Twilioアカウントを作成
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <p className="text-gray-500 mt-0.5">
+                    メールアドレスで無料登録。トライアルクレジット付きですぐに試せます。
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">2</span>
+                <div className="text-sm text-gray-700">
+                  <span className="font-medium">Account SID と Auth Token を確認</span>
+                  <p className="text-gray-500 mt-0.5">
+                    <a
+                      href="https://console.twilio.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-600 hover:text-primary-700 underline inline-flex items-center gap-0.5"
+                    >
+                      Twilioコンソール
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                    にログイン →「Account Info」セクションに表示されています。
+                    Auth Tokenは目のアイコンをクリックで表示されます。
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">3</span>
+                <div className="text-sm text-gray-700">
+                  <span className="font-medium">送信元電話番号を取得</span>
+                  <p className="text-gray-500 mt-0.5">
+                    コンソール → 「Phone Numbers」→「Buy a Number」。
+                    日本番号は法人の規制バンドル申請（登記簿等）が必要なため、
+                    まずは<strong>米国番号（+1）</strong>が手軽です。
+                    米国番号から日本宛SMSの送信が可能です（$0.084/通）。
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ステップ4〜5: 設定 & テスト */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-gray-900">設定 & 確認</h4>
+
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">4</span>
+                <div className="text-sm text-gray-700">
+                  <span className="font-medium">下のフォームに3つの値を入力</span>
+                  <p className="text-gray-500 mt-0.5">
+                    Account SID、Auth Token、購入した電話番号を入力して「保存」をクリック。
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">5</span>
+                <div className="text-sm text-gray-700">
+                  <span className="font-medium">テスト送信で動作確認</span>
+                  <p className="text-gray-500 mt-0.5">
+                    下部の「テスト送信」から自分の番号を入れてSMSが届くか確認してください。
+                  </p>
+                </div>
+              </div>
+
+              {/* 注意事項 */}
+              <div className="mt-2 space-y-2">
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                  <p className="text-xs font-medium text-amber-800 mb-1">無料トライアルの制限</p>
+                  <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
+                    <li>事前に「Verified Caller IDs」に登録した番号にのみ送信可能</li>
+                    <li>送信メッセージの先頭に「Sent from your Twilio trial account」が付きます</li>
+                    <li>本番利用にはアカウントのアップグレード（従量課金）が必要</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
+                  <p className="text-xs font-medium text-gray-700 mb-1">料金目安</p>
+                  <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                    <li>米国番号: 月額 $1.15 + 日本宛SMS $0.084/通</li>
+                    <li>日本番号（050）: 月額 $4.50 + SMS $0.12/通（別途規制バンドル申請が必要）</li>
+                    <li>SMSは160文字/セグメント。日本語はUCS-2エンコードのため約70文字/セグメント</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* SMS設定 */}
+        {/* SMS設定フォーム */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Phone className="h-5 w-5 text-gray-500" />
-              <span>SMS連携（Twilio）</span>
+              <span>Twilio認証情報</span>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -175,7 +305,7 @@ export function AdminSettingsPage() {
                 placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               />
               <p className="mt-1 text-xs text-gray-500">
-                「AC」で始まる34文字の文字列です
+                「AC」で始まる34文字の文字列（コンソールのAccount Infoに表示）
               </p>
             </div>
 
@@ -191,6 +321,9 @@ export function AdminSettingsPage() {
                 }
                 placeholder="32文字の英数字"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                コンソールで目のアイコンをクリックして表示（パスワードと同様に管理してください）
+              </p>
             </div>
 
             <div>
@@ -203,144 +336,110 @@ export function AdminSettingsPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, twilioPhoneNumber: e.target.value })
                 }
-                placeholder="+815012345678"
+                placeholder="+12025551234（米国番号の例）"
               />
               <p className="mt-1 text-xs text-gray-500">
-                Twilioで購入した電話番号を「+81...」形式で入力
+                Twilioで購入した電話番号をE.164形式（+国番号...）で入力
               </p>
             </div>
 
-            <div className="rounded-lg bg-amber-50 p-3">
-              <p className="text-xs text-amber-700">
-                SMS送信はコストが発生するため、エスカレーション（タスク期限超過）の緊急連絡としてパートナーに送信されます。
+            <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+              <p className="text-xs text-blue-700">
+                この設定が完了すると、タスク期限超過のエスカレーション発生時に、
+                パートナーの登録電話番号へ自動的にSMSが送信されます。
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* セットアップガイド + テスト */}
-        <div className="space-y-6">
-          {/* セットアップガイド */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-gray-500" />
-                <span>セットアップ手順</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ol className="space-y-3 text-sm text-gray-700">
-                <li className="flex gap-2">
-                  <span className="flex-shrink-0 font-bold text-primary-600">1.</span>
-                  <span>
-                    <a
-                      href="https://www.twilio.com/try-twilio"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700 underline inline-flex items-center gap-1"
-                    >
-                      Twilioアカウントを作成
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                    （無料トライアルあり）
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="flex-shrink-0 font-bold text-primary-600">2.</span>
-                  <span>
-                    <a
-                      href="https://console.twilio.com/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700 underline inline-flex items-center gap-1"
-                    >
-                      Twilioコンソール
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                    のトップページに表示される「Account SID」と「Auth Token」をコピー
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="flex-shrink-0 font-bold text-primary-600">3.</span>
-                  <span>
-                    コンソールの「Phone Numbers」→「Buy a Number」から日本の電話番号を購入（SMS対応のもの）
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="flex-shrink-0 font-bold text-primary-600">4.</span>
-                  <span>左側のフォームに3つの値を入力して「保存」をクリック</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="flex-shrink-0 font-bold text-primary-600">5.</span>
-                  <span>下のテスト送信で動作確認</span>
-                </li>
-              </ol>
+        {/* テスト送信 */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-gray-500" />
+              <span>テスト送信</span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              設定を保存したあと、テストSMSを送信して正しく届くか確認できます。
+            </p>
 
-              <div className="mt-4 rounded-lg bg-blue-50 p-3">
-                <p className="text-xs text-blue-700">
-                  無料トライアルでは、事前に認証した電話番号にのみSMSを送信できます。
-                  本番利用にはアカウントのアップグレードが必要です。
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* テスト送信 */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Send className="h-5 w-5 text-gray-500" />
-                <span>テスト送信</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-gray-600">
-                設定を保存したあと、テストSMSを送信して動作を確認できます。
-              </p>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  送信先電話番号
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    type="tel"
-                    value={testPhoneNumber}
-                    onChange={(e) => setTestPhoneNumber(e.target.value)}
-                    placeholder="09012345678"
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="secondary"
-                    onClick={handleTestSms}
-                    disabled={isTesting}
-                  >
-                    {isTesting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              {testResult && (
-                <div
-                  className={`flex items-start gap-2 p-3 rounded-lg text-sm ${
-                    testResult.success
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-red-50 text-red-700'
-                  }`}
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <p className="text-xs text-amber-700">
+                <strong>トライアルアカウントの場合: </strong>
+                送信先を事前にTwilioコンソールの
+                <a
+                  href="https://console.twilio.com/us1/develop/phone-numbers/manage/verified"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline font-medium inline-flex items-center gap-0.5"
                 >
-                  {testResult.success ? (
-                    <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  Verified Caller IDs
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                に登録してください。未登録の番号には送信できません。
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                送信先電話番号
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  type="tel"
+                  value={testPhoneNumber}
+                  onChange={(e) => setTestPhoneNumber(e.target.value)}
+                  placeholder="09012345678"
+                  className="flex-1"
+                />
+                <Button
+                  variant="secondary"
+                  onClick={handleTestSms}
+                  disabled={isTesting}
+                >
+                  {isTesting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                    <>
+                      <Send className="h-4 w-4 mr-1" />
+                      送信
+                    </>
                   )}
-                  <span>{testResult.message}</span>
+                </Button>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                国内番号（09012345678）でも国際形式（+819012345678）でもOK
+              </p>
+            </div>
+
+            {testResult && (
+              <div
+                className={`flex items-start gap-2 p-3 rounded-lg text-sm ${
+                  testResult.success
+                    ? 'bg-green-50 border border-green-200 text-green-700'
+                    : 'bg-red-50 border border-red-200 text-red-700'
+                }`}
+              >
+                {testResult.success ? (
+                  <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <p>{testResult.message}</p>
+                  {!testResult.success && (
+                    <p className="mt-1 text-xs opacity-80">
+                      よくある原因: Account SID/Auth Tokenの入力ミス、未認証の送信先番号（トライアル）、
+                      送信元番号のSMS未対応
+                    </p>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
