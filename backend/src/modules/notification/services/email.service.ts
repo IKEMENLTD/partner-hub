@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -56,7 +56,7 @@ export class EmailService {
 
   constructor(
     private configService: ConfigService,
-    @InjectQueue('email') private readonly emailQueue: Queue,
+    @Optional() @InjectQueue('email') private readonly emailQueue: Queue | null,
   ) {
     this.isEnabled = this.configService.get<boolean>('email.enabled', false);
     this.fromAddress = this.configService.get<string>('email.from', 'noreply@example.com');
@@ -98,6 +98,11 @@ export class EmailService {
   async sendEmail(options: SendEmailOptions): Promise<boolean> {
     const { to, subject, html, text } = options;
     const recipients = Array.isArray(to) ? to : [to];
+
+    // No queue available — send directly
+    if (!this.emailQueue) {
+      return this.sendEmailDirect(options);
+    }
 
     try {
       // Enqueue each recipient as a separate job

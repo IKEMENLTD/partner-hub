@@ -25,7 +25,7 @@ import { Reminder } from '../reminder/entities/reminder.entity';
 @Module({
   imports: [
     ConfigModule,
-    QueueModule,
+    QueueModule.register(),
     TypeOrmModule.forFeature([
       UserProfile,
       NotificationChannel,

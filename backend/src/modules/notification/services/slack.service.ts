@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -31,7 +31,7 @@ export class SlackService {
 
   constructor(
     private readonly configService: ConfigService,
-    @InjectQueue('slack') private readonly slackQueue: Queue,
+    @Optional() @InjectQueue('slack') private readonly slackQueue: Queue | null,
   ) {
     const botToken = this.configService.get<string>('slack.botToken');
     this.isDevelopment = this.configService.get<boolean>('slack.isDevelopment', true);
@@ -65,6 +65,11 @@ export class SlackService {
    */
   async sendMessageWithOptions(options: SlackMessageOptions): Promise<SlackMessageResult> {
     const { channelId, text, blocks, threadTs } = options;
+
+    // No queue available — send directly
+    if (!this.slackQueue) {
+      return this.sendMessageDirect(options);
+    }
 
     try {
       await this.slackQueue.add('send', {
