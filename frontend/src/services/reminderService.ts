@@ -33,7 +33,7 @@ export type ReminderType =
 
 export type ReminderStatus = 'pending' | 'sent' | 'failed' | 'cancelled';
 
-export type ReminderChannel = 'email' | 'in_app' | 'slack' | 'both' | 'all';
+export type ReminderChannel = 'email' | 'in_app' | 'both' | 'all';
 
 interface BackendResponse<T> {
   success: boolean;

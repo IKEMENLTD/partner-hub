@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { BusinessException } from '../../common/exceptions/business.exception';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { SystemSettingsService } from './system-settings.service';
@@ -46,30 +46,5 @@ export class SystemSettingsController {
       });
     }
     return this.systemSettingsService.updateSettings(user.organizationId, dto);
-  }
-
-  @Post('test-slack')
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Slack Webhook URLをテスト' })
-  @ApiResponse({ status: 200, description: 'テスト結果' })
-  async testSlackWebhook(
-    @CurrentUser() user: UserProfile,
-    @Body('webhookUrl') webhookUrl: string,
-  ): Promise<{ success: boolean; message: string }> {
-    if (!webhookUrl) {
-      throw new BusinessException('VALIDATION_001', {
-        message: 'Webhook URLは必須です',
-        userMessage: 'Webhook URLを指定してください',
-      });
-    }
-
-    const success = await this.systemSettingsService.testSlackWebhook(webhookUrl);
-
-    return {
-      success,
-      message: success
-        ? 'テスト送信が成功しました'
-        : 'テスト送信に失敗しました。URLを確認してください',
-    };
   }
 }

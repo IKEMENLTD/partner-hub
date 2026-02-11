@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmailService } from './email.service';
-import { SlackService } from './slack.service';
 import { InAppNotificationService } from './in-app-notification.service';
 import { NotificationGateway } from '../gateways/notification.gateway';
 import { Reminder } from '../../reminder/entities/reminder.entity';
@@ -11,7 +10,6 @@ import { Project } from '../../project/entities/project.entity';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { ReminderChannel } from '../../reminder/enums/reminder-type.enum';
 import { NotificationChannel } from '../entities/notification-channel.entity';
-import { NotificationChannelType } from '../enums/notification-channel-type.enum';
 import { InAppNotificationType } from '../entities/in-app-notification.entity';
 
 export interface SendNotificationOptions {
@@ -23,7 +21,6 @@ export interface SendNotificationOptions {
   escalationReason?: string;
   escalationLevel?: string;
   additionalInfo?: string;
-  slackChannelId?: string;
 }
 
 @Injectable()
@@ -32,7 +29,6 @@ export class NotificationService {
 
   constructor(
     private emailService: EmailService,
-    private slackService: SlackService,
     private inAppNotificationService: InAppNotificationService,
     private notificationGateway: NotificationGateway,
     @InjectRepository(UserProfile)
@@ -45,20 +41,8 @@ export class NotificationService {
    * Send notification based on channel type
    */
   async sendNotification(options: SendNotificationOptions): Promise<boolean> {
-    const {
-      channel,
-      reminder,
-      task,
-      project,
-      recipients,
-      escalationReason,
-      escalationLevel,
-      additionalInfo,
-      slackChannelId,
-    } = options;
-
     try {
-      switch (channel) {
+      switch (options.channel) {
         case ReminderChannel.EMAIL:
           return await this.sendEmailNotification(options);
 
@@ -66,7 +50,8 @@ export class NotificationService {
           return await this.sendInAppNotification(options);
 
         case ReminderChannel.SLACK:
-          return await this.sendSlackNotification(options);
+          // Slack削除済み → IN_APPにフォールバック
+          return await this.sendInAppNotification(options);
 
         case ReminderChannel.BOTH:
           const emailResult = await this.sendEmailNotification(options);
@@ -74,13 +59,13 @@ export class NotificationService {
           return emailResult && inAppResult;
 
         case ReminderChannel.ALL:
+          // Slack削除済み → BOTH（EMAIL + IN_APP）と同じ処理
           const allEmailResult = await this.sendEmailNotification(options);
           const allInAppResult = await this.sendInAppNotification(options);
-          const allSlackResult = await this.sendSlackNotification(options);
-          return allEmailResult && allInAppResult && allSlackResult;
+          return allEmailResult && allInAppResult;
 
         default:
-          this.logger.warn(`Unknown notification channel: ${channel}`);
+          this.logger.warn(`Unknown notification channel: ${options.channel}`);
           return false;
       }
     } catch (error) {
@@ -147,7 +132,7 @@ export class NotificationService {
    * Send in-app notification: persist to DB and push via WebSocket
    */
   private async sendInAppNotification(options: SendNotificationOptions): Promise<boolean> {
-    const { reminder, task, project, recipients, escalationReason, escalationLevel } = options;
+    const { task, project, recipients } = options;
 
     if (recipients.length === 0) {
       this.logger.warn('No recipients specified for in-app notification');
@@ -198,7 +183,7 @@ export class NotificationService {
     type: InAppNotificationType;
     linkUrl?: string;
   } {
-    const { reminder, task, project, escalationReason, escalationLevel } = options;
+    const { reminder, task, project, escalationReason } = options;
 
     // Escalation notification
     if (escalationReason && project) {
@@ -238,127 +223,6 @@ export class NotificationService {
   }
 
   /**
-   * Send Slack notification
-   */
-  private async sendSlackNotification(options: SendNotificationOptions): Promise<boolean> {
-    const {
-      reminder,
-      task,
-      project,
-      escalationReason,
-      escalationLevel,
-      slackChannelId,
-      additionalInfo,
-    } = options;
-
-    // Find Slack channel ID from options or from project configuration
-    let targetChannelId = slackChannelId;
-
-    if (!targetChannelId && project) {
-      // Try to find a Slack channel configured for this project
-      const projectChannel = await this.notificationChannelRepository.findOne({
-        where: {
-          projectId: project.id,
-          type: NotificationChannelType.SLACK,
-          isActive: true,
-        },
-      });
-      targetChannelId = projectChannel?.channelId;
-    }
-
-    if (!targetChannelId && task?.projectId) {
-      // Try to find a Slack channel configured for the task's project
-      const taskProjectChannel = await this.notificationChannelRepository.findOne({
-        where: {
-          projectId: task.projectId,
-          type: NotificationChannelType.SLACK,
-          isActive: true,
-        },
-      });
-      targetChannelId = taskProjectChannel?.channelId;
-    }
-
-    if (!targetChannelId) {
-      this.logger.warn('No Slack channel ID available for notification');
-      return false;
-    }
-
-    try {
-      // If it's an escalation notification
-      if (escalationReason && escalationLevel && project) {
-        const level = this.getEscalationLevelNumber(escalationLevel);
-        const result = await this.slackService.sendEscalationNotification(
-          {
-            title: `エスカレーション: ${escalationReason}`,
-            message: additionalInfo || escalationReason,
-            level,
-          },
-          project,
-          targetChannelId,
-        );
-        if (result.success) {
-          this.logger.log(`Escalation Slack notification sent to channel ${targetChannelId}`);
-        } else {
-          this.logger.error(`Failed to send escalation Slack notification: ${result.error}`);
-        }
-        return result.success;
-      }
-
-      // If it's a reminder notification with a task
-      if (reminder && task) {
-        const result = await this.slackService.sendReminderNotification(
-          reminder,
-          task,
-          targetChannelId,
-        );
-        if (result.success) {
-          this.logger.log(`Reminder Slack notification sent to channel ${targetChannelId}`);
-        } else {
-          this.logger.error(`Failed to send reminder Slack notification: ${result.error}`);
-        }
-        return result.success;
-      }
-
-      // If it's a simple reminder notification
-      if (reminder) {
-        const result = await this.slackService.sendSimpleNotification(
-          targetChannelId,
-          reminder.title,
-          reminder.message || '',
-          'info',
-        );
-        if (result.success) {
-          this.logger.log(`Simple Slack notification sent to channel ${targetChannelId}`);
-        } else {
-          this.logger.error(`Failed to send simple Slack notification: ${result.error}`);
-        }
-        return result.success;
-      }
-
-      this.logger.warn('No valid notification data provided for Slack');
-      return false;
-    } catch (error) {
-      this.logger.error(`Slack notification failed: ${error.message}`);
-      return false;
-    }
-  }
-
-  /**
-   * Convert escalation level string to number
-   */
-  private getEscalationLevelNumber(level: string): number {
-    const levelMap: Record<string, number> = {
-      low: 1,
-      normal: 1,
-      medium: 2,
-      high: 2,
-      critical: 3,
-      urgent: 3,
-    };
-    return levelMap[level.toLowerCase()] || 1;
-  }
-
-  /**
    * Get recipients by user IDs
    */
   async getRecipientsByIds(userIds: string[]): Promise<UserProfile[]> {
@@ -375,7 +239,6 @@ export class NotificationService {
   async sendReminderNotification(
     reminder: Reminder,
     task?: Task,
-    slackChannelId?: string,
   ): Promise<boolean> {
     // Get recipients
     const recipients: UserProfile[] = [];
@@ -391,7 +254,7 @@ export class NotificationService {
       }
     }
 
-    if (recipients.length === 0 && reminder.channel !== ReminderChannel.SLACK) {
+    if (recipients.length === 0) {
       this.logger.warn(`No recipients found for reminder: ${reminder.id}`);
       return false;
     }
@@ -401,7 +264,6 @@ export class NotificationService {
       reminder,
       task,
       recipients,
-      slackChannelId,
     });
   }
 
@@ -414,72 +276,21 @@ export class NotificationService {
     project: Project,
     recipientIds: string[],
     additionalInfo?: string,
-    slackChannelId?: string,
   ): Promise<boolean> {
     const recipients = await this.getRecipientsByIds(recipientIds);
 
     if (recipients.length === 0) {
       this.logger.warn(`No recipients found for escalation on project: ${project.id}`);
-      // Still try to send Slack notification even without recipients
     }
 
     return this.sendNotification({
-      channel: ReminderChannel.ALL,
+      channel: ReminderChannel.BOTH,
       project,
       recipients,
       escalationReason,
       escalationLevel,
       additionalInfo,
-      slackChannelId,
     });
-  }
-
-  /**
-   * Send Slack notification directly to a channel
-   */
-  async sendSlackMessage(
-    channelId: string,
-    title: string,
-    message: string,
-    type: 'info' | 'warning' | 'error' | 'success' = 'info',
-  ): Promise<boolean> {
-    const result = await this.slackService.sendSimpleNotification(channelId, title, message, type);
-    return result.success;
-  }
-
-  /**
-   * Get Slack channels for a project
-   */
-  async getProjectSlackChannels(projectId: string): Promise<NotificationChannel[]> {
-    return this.notificationChannelRepository.find({
-      where: {
-        projectId,
-        type: NotificationChannelType.SLACK,
-        isActive: true,
-      },
-    });
-  }
-
-  /**
-   * Create a Slack notification channel for a project
-   */
-  async createSlackChannel(
-    projectId: string,
-    slackChannelId: string,
-    name: string,
-    createdById?: string,
-    config?: Record<string, any>,
-  ): Promise<NotificationChannel> {
-    const channel = this.notificationChannelRepository.create({
-      name,
-      type: NotificationChannelType.SLACK,
-      channelId: slackChannelId,
-      projectId,
-      createdById,
-      config,
-      isActive: true,
-    });
-    return this.notificationChannelRepository.save(channel);
   }
 
   /**

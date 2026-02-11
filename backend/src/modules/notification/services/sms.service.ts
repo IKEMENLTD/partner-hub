@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import Twilio from 'twilio';
 
 export interface SmsSendOptions {
   to: string;
@@ -12,66 +12,40 @@ export interface SmsSendResult {
   error?: string;
 }
 
-/**
- * SMS送信サービス（Twilio - 将来実装用スタブ）
- *
- * 実装時に必要なもの:
- * 1. Twilio アカウント作成
- * 2. 電話番号を取得
- * 3. 環境変数: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
- *
- * 注意: SMSは最終手段（コストが高い）
- * エスカレーションルールで7日以上超過の場合のみ使用を推奨
- */
+export interface TwilioCredentials {
+  accountSid: string;
+  authToken: string;
+  phoneNumber: string;
+}
+
 @Injectable()
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
-  private readonly accountSid: string | null;
-  private readonly authToken: string | null;
-  private readonly phoneNumber: string | null;
-  private readonly isEnabled: boolean;
-
-  constructor(private readonly configService: ConfigService) {
-    this.accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID') || null;
-    this.authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN') || null;
-    this.phoneNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER') || null;
-    this.isEnabled = !!(this.accountSid && this.authToken && this.phoneNumber);
-
-    if (this.isEnabled) {
-      this.logger.log('SMS service (Twilio) initialized');
-    } else {
-      this.logger.warn(
-        'SMS service is not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER to enable.',
-      );
-    }
-  }
 
   /**
    * SMS を送信
    */
-  async sendSms(options: SmsSendOptions): Promise<SmsSendResult> {
-    const { to, message } = options;
+  async sendSms(
+    credentials: TwilioCredentials,
+    options: SmsSendOptions,
+  ): Promise<SmsSendResult> {
+    const formattedNumber = this.formatPhoneNumber(options.to);
 
-    // 電話番号のフォーマット
-    const formattedNumber = this.formatPhoneNumber(to);
-
-    if (!this.isEnabled) {
-      this.logger.warn('SMS service is not enabled. Message not sent.');
-      this.logger.log(`[DEV MODE] SMS would be sent to ${formattedNumber}: ${message}`);
-      return { success: true, messageId: `dev-${Date.now()}` };
+    if (!this.isValidPhoneNumber(formattedNumber)) {
+      this.logger.warn(`Invalid phone number: ${options.to}`);
+      return { success: false, error: '無効な電話番号です' };
     }
 
     try {
-      // TODO: Twilio API の実装
-      // const client = require('twilio')(this.accountSid, this.authToken);
-      // const twilioMessage = await client.messages.create({
-      //   body: message,
-      //   from: this.phoneNumber,
-      //   to: formattedNumber,
-      // });
+      const client = Twilio(credentials.accountSid, credentials.authToken);
+      const message = await client.messages.create({
+        body: options.message,
+        from: credentials.phoneNumber,
+        to: formattedNumber,
+      });
 
-      this.logger.log(`SMS sent to ${formattedNumber}`);
-      return { success: true, messageId: `placeholder-${Date.now()}` };
+      this.logger.log(`SMS sent to ${formattedNumber}, SID: ${message.sid}`);
+      return { success: true, messageId: message.sid };
     } catch (error) {
       this.logger.error(`Failed to send SMS: ${error.message}`);
       return { success: false, error: error.message };
@@ -79,32 +53,16 @@ export class SmsService {
   }
 
   /**
-   * リマインダーSMSを送信
-   */
-  async sendReminder(to: string, taskName: string, dueDate: string): Promise<SmsSendResult> {
-    const message = `【Partner Hub】タスク「${taskName}」の期限が${dueDate}です。ご確認ください。`;
-
-    return this.sendSms({ to, message });
-  }
-
-  /**
    * エスカレーションSMSを送信（最終手段）
    */
   async sendEscalation(
+    credentials: TwilioCredentials,
     to: string,
     taskName: string,
     daysOverdue: number,
-    contactUrl?: string,
   ): Promise<SmsSendResult> {
-    let message = `【緊急】Partner Hub: タスク「${taskName}」が${daysOverdue}日超過しています。`;
-
-    if (contactUrl) {
-      message += ` 詳細: ${contactUrl}`;
-    } else {
-      message += ' 至急ご対応ください。';
-    }
-
-    return this.sendSms({ to, message });
+    const message = `【緊急】Partner Hub: タスク「${taskName}」が${daysOverdue}日超過しています。至急ご対応ください。`;
+    return this.sendSms(credentials, { to, message });
   }
 
   /**
@@ -129,17 +87,9 @@ export class SmsService {
   }
 
   /**
-   * サービスが有効かどうか
-   */
-  isServiceEnabled(): boolean {
-    return this.isEnabled;
-  }
-
-  /**
    * 電話番号が有効な形式かチェック
    */
   isValidPhoneNumber(phone: string): boolean {
-    // 基本的な電話番号パターン（日本・国際）
     const pattern = /^[\d\s\-+()]+$/;
 
     if (!pattern.test(phone)) {

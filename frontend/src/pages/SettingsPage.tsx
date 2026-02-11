@@ -539,7 +539,7 @@ export function SettingsPage() {
                   className="flex items-center gap-2 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                 >
                   <Settings className="h-4 w-4" />
-                  組織設定（Slack / LINE / SMS連携）
+                  組織設定（SMS連携）
                 </Link>
               </CardContent>
             </Card>

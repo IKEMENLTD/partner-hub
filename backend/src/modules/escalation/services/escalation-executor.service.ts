@@ -6,7 +6,10 @@ import { EscalationLog } from '../entities/escalation-log.entity';
 import { Task } from '../../task/entities/task.entity';
 import { Project } from '../../project/entities/project.entity';
 import { ProjectStakeholder } from '../../project/entities/project-stakeholder.entity';
+import { Partner } from '../../partner/entities/partner.entity';
 import { ReminderService } from '../../reminder/reminder.service';
+import { SmsService } from '../../notification/services/sms.service';
+import { SystemSettingsService } from '../../system-settings/system-settings.service';
 import {
   EscalationAction,
   EscalationTriggerType,
@@ -27,8 +30,12 @@ export class EscalationExecutorService {
     private projectRepository: Repository<Project>,
     @InjectRepository(ProjectStakeholder)
     private stakeholderRepository: Repository<ProjectStakeholder>,
+    @InjectRepository(Partner)
+    private partnerRepository: Repository<Partner>,
     private reminderService: ReminderService,
     private ruleService: EscalationRuleService,
+    private smsService: SmsService,
+    private systemSettingsService: SystemSettingsService,
   ) {}
 
   async checkAndTriggerEscalation(task: Task): Promise<EscalationLog[]> {
@@ -127,10 +134,65 @@ export class EscalationExecutorService {
     }
 
     const savedLog = await this.escalationLogRepository.save(log);
+
+    // SMS送信（パートナーへの緊急連絡）
+    await this.sendPartnerSms(task, rule).catch((err) => {
+      this.logger.error(`SMS送信エラー: ${err.message}`);
+    });
+
     return this.escalationLogRepository.findOne({
       where: { id: savedLog.id },
       relations: ['rule', 'task', 'project', 'escalatedToUser'],
     }) as Promise<EscalationLog>;
+  }
+
+  /**
+   * パートナーにSMS送信（期限超過時のみ）
+   */
+  private async sendPartnerSms(task: Task, rule: EscalationRule): Promise<void> {
+    if (!task.partnerId) return;
+
+    const partner = await this.partnerRepository.findOne({
+      where: { id: task.partnerId },
+    });
+    if (!partner?.smsPhoneNumber) return;
+
+    // Twilio設定を取得（organizationIdはprojectから）
+    const project = await this.projectRepository.findOne({
+      where: { id: task.projectId },
+    });
+    if (!project?.organizationId) return;
+
+    const twilioSettings = await this.systemSettingsService.getTwilioSettings(
+      project.organizationId,
+    );
+    if (!twilioSettings.accountSid || !twilioSettings.authToken || !twilioSettings.phoneNumber) {
+      return; // Twilio未設定 → スキップ
+    }
+
+    // 超過日数を計算
+    const today = new Date();
+    const dueDate = new Date(task.dueDate);
+    const daysOverdue = Math.floor(
+      (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (daysOverdue <= 0) return; // 期限前はSMS不要
+
+    await this.smsService.sendEscalation(
+      {
+        accountSid: twilioSettings.accountSid,
+        authToken: twilioSettings.authToken,
+        phoneNumber: twilioSettings.phoneNumber,
+      },
+      partner.smsPhoneNumber,
+      task.title,
+      daysOverdue,
+    );
+
+    this.logger.log(
+      `SMS sent to partner ${partner.name} for task ${task.title}`,
+    );
   }
 
   private async notifyOwner(task: Task, rule: EscalationRule, log: EscalationLog): Promise<void> {

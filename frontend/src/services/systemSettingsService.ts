@@ -3,11 +3,6 @@ import { api, extractData } from './api';
 export interface SystemSettings {
   id: string;
   organizationId: string;
-  slackWebhookUrl: string | null;
-  slackChannelName: string | null;
-  slackNotifyEscalation: boolean;
-  slackNotifyDailySummary: boolean;
-  slackNotifyAllReminders: boolean;
   twilioAccountSid: string | null;
   twilioAuthToken: string | null;
   twilioPhoneNumber: string | null;
@@ -16,19 +11,9 @@ export interface SystemSettings {
 }
 
 export interface UpdateSystemSettingsInput {
-  slackWebhookUrl?: string;
-  slackChannelName?: string;
-  slackNotifyEscalation?: boolean;
-  slackNotifyDailySummary?: boolean;
-  slackNotifyAllReminders?: boolean;
   twilioAccountSid?: string;
   twilioAuthToken?: string;
   twilioPhoneNumber?: string;
-}
-
-export interface SlackTestResult {
-  success: boolean;
-  message: string;
 }
 
 interface BackendResponse<T> {
@@ -51,13 +36,5 @@ export const systemSettingsService = {
   async updateSettings(input: UpdateSystemSettingsInput): Promise<SystemSettings> {
     const response = await api.put<BackendResponse<SystemSettings>>('/system-settings', input);
     return extractData(response);
-  },
-
-  /**
-   * Slack Webhook URLをテスト
-   * ※ レスポンスにsuccessフィールドがあるため、TransformInterceptorがラップしない
-   */
-  async testSlackWebhook(webhookUrl: string): Promise<SlackTestResult> {
-    return api.post<SlackTestResult>('/system-settings/test-slack', { webhookUrl });
   },
 };
