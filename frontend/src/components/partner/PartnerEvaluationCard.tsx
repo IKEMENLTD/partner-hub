@@ -254,9 +254,15 @@ function EvaluationFormModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const submitData = {
+        ...formData,
+        comment: formData.comment || undefined,
+        evaluationPeriodStart: formData.evaluationPeriodStart || undefined,
+        evaluationPeriodEnd: formData.evaluationPeriodEnd || undefined,
+      };
       await createEvaluation.mutateAsync({
         partnerId,
-        data: formData,
+        data: submitData,
       });
       onSuccess?.();
       onClose();
