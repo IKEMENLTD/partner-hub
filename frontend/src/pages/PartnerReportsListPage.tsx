@@ -285,10 +285,16 @@ export function PartnerReportsListPage() {
                           </p>
                         )}
 
-                        {/* Content Preview */}
-                        <p className="text-sm text-gray-600 line-clamp-2">
+                        {/* Content */}
+                        <p className="text-sm text-gray-600 whitespace-pre-wrap">
                           {report.weeklyAccomplishments || report.content || '（内容なし）'}
                         </p>
+                        {report.nextWeekPlan && (
+                          <p className="text-sm text-gray-600 whitespace-pre-wrap mt-1">
+                            <span className="font-medium text-gray-700">来週の予定: </span>
+                            {report.nextWeekPlan}
+                          </p>
+                        )}
 
                         {/* Time */}
                         <p className="text-xs text-gray-400 mt-2">
