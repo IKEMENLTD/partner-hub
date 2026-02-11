@@ -273,8 +273,8 @@ export class ReminderService {
 
     // Batch insert: Create all reminders at once
     const remindersToCreate = tasksNeedingReminders.map((task) => ({
-      title: `Task Due Tomorrow: ${task.title}`,
-      message: `Your task "${task.title}" is due tomorrow.`,
+      title: `期限間近: ${task.title}`,
+      message: `タスク「${task.title}」の期限が明日です。`,
       type: ReminderType.TASK_DUE,
       channel: ReminderChannel.IN_APP,
       userId: task.assigneeId,
@@ -335,8 +335,8 @@ export class ReminderService {
 
     // Batch insert: Create all reminders at once
     const remindersToCreate = tasksNeedingReminders.map((task) => ({
-      title: `Task Overdue: ${task.title}`,
-      message: `Your task "${task.title}" is overdue. Please update its status.`,
+      title: `期限超過: ${task.title}`,
+      message: `タスク「${task.title}」が期限を過ぎています。状況を更新してください。`,
       type: ReminderType.TASK_OVERDUE,
       channel: ReminderChannel.IN_APP,
       userId: task.assigneeId,
@@ -403,8 +403,8 @@ export class ReminderService {
       );
 
       return {
-        title: `Project Deadline Approaching: ${project.name}`,
-        message: `Project "${project.name}" deadline is in ${daysUntilDeadline} days.`,
+        title: `案件期限間近: ${project.name}`,
+        message: `案件「${project.name}」の期限まであと${daysUntilDeadline}日です。`,
         type: ReminderType.PROJECT_DEADLINE,
         channel: ReminderChannel.IN_APP,
         userId: project.managerId,
