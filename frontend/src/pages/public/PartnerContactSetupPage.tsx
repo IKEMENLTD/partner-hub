@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   Mail,
   MessageCircle,
@@ -20,7 +20,6 @@ import type {
 
 export function PartnerContactSetupPage() {
   const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,11 +154,13 @@ export function PartnerContactSetupPage() {
           <CardContent className="text-center py-8">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">設定完了</h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               連絡先の設定が完了しました。<br />
               今後の通知は設定いただいた方法でお届けします。
             </p>
-            <Button onClick={() => navigate('/login')}>ログイン画面へ</Button>
+            <p className="text-sm text-gray-500">
+              このページは閉じていただいて構いません。
+            </p>
           </CardContent>
         </Card>
       </div>

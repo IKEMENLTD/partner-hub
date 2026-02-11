@@ -18,6 +18,7 @@ import {
   Smile,
   AlertTriangle,
   XCircle,
+  MessageCircle,
 } from 'lucide-react';
 import { usePartner, usePartnerProjects, useDeletePartner, usePartnerReports, getProgressStatusLabel } from '@/hooks';
 import { api } from '@/services/api';
@@ -310,29 +311,79 @@ export function PartnerDetailPage() {
           {/* パートナー評価 */}
           <PartnerEvaluationCard partnerId={partner.id} />
 
-          {/* 連絡先設定リンク送信 */}
+          {/* 連絡先設定 */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Mail className="h-5 w-5 text-primary-500" />
                 <span>連絡先設定</span>
+                {partner.contactSetupCompleted && (
+                  <Badge variant="success">設定済み</Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 mb-3">
-                パートナーに連絡先設定用のリンクをメールで送信します
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSendContactSetup}
-                isLoading={isSendingSetup}
-                leftIcon={<Mail className="h-4 w-4" />}
-              >
-                設定リンクを送信
-              </Button>
-              {setupSent && (
-                <p className="text-sm text-green-600 mt-2">送信しました</p>
+              {partner.contactSetupCompleted ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    {partner.preferredChannel === 'line' ? (
+                      <MessageCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    )}
+                    <div>
+                      <p className="text-xs text-gray-500">通常連絡方法</p>
+                      <p className="text-sm text-gray-900">
+                        {partner.preferredChannel === 'line' ? 'LINE' : 'メール'}
+                      </p>
+                    </div>
+                  </div>
+                  {partner.smsPhoneNumber && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500">緊急連絡先（SMS）</p>
+                        <p className="text-sm text-gray-900 font-mono">
+                          {partner.smsPhoneNumber.length >= 7
+                            ? partner.smsPhoneNumber.slice(0, 3) + '****' + partner.smsPhoneNumber.slice(-4)
+                            : '****'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSendContactSetup}
+                      isLoading={isSendingSetup}
+                      leftIcon={<Mail className="h-4 w-4" />}
+                    >
+                      設定リンクを再送信
+                    </Button>
+                    {setupSent && (
+                      <p className="text-sm text-green-600 mt-2">送信しました</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm text-gray-500 mb-3">
+                    パートナーに連絡先設定用のリンクをメールで送信します
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSendContactSetup}
+                    isLoading={isSendingSetup}
+                    leftIcon={<Mail className="h-4 w-4" />}
+                  >
+                    設定リンクを送信
+                  </Button>
+                  {setupSent && (
+                    <p className="text-sm text-green-600 mt-2">送信しました</p>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>

@@ -48,6 +48,9 @@ export interface Partner {
   metadata?: Record<string, unknown>;
   userId?: string;
   createdById?: string;
+  preferredChannel?: 'email' | 'line';
+  smsPhoneNumber?: string;
+  contactSetupCompleted?: boolean;
   createdAt: string;
   updatedAt: string;
 }
