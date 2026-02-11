@@ -283,15 +283,12 @@ export function AdminSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* LINE設定（将来用） */}
+        {/* LINE設定 */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-green-500" />
               <span>LINE連携</span>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                準備中
-              </span>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -322,25 +319,15 @@ export function AdminSettingsPage() {
                 placeholder="LINE Developersで取得"
               />
             </div>
-
-            <div className="rounded-lg bg-blue-50 p-3">
-              <p className="text-xs text-blue-700">
-                LINE連携は今後のアップデートで利用可能になります。
-                設定を事前に保存しておくことができます。
-              </p>
-            </div>
           </CardContent>
         </Card>
 
-        {/* SMS設定（将来用） */}
+        {/* SMS設定 */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Phone className="h-5 w-5 text-gray-500" />
               <span>SMS連携（Twilio）</span>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                準備中
-              </span>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">

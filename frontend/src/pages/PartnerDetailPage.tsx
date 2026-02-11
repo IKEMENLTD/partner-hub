@@ -10,7 +10,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Star,
   FolderKanban,
   FileText,
   Link as LinkIcon,
@@ -36,6 +35,7 @@ import {
   Alert,
 } from '@/components/common';
 import { ProjectCard } from '@/components/project';
+import { PartnerEvaluationCard } from '@/components/partner';
 
 const statusConfig = {
   active: { label: 'アクティブ', variant: 'success' as const },
@@ -307,6 +307,9 @@ export function PartnerDetailPage() {
             </CardContent>
           </Card>
 
+          {/* パートナー評価 */}
+          <PartnerEvaluationCard partnerId={partner.id} />
+
           {/* 連絡先設定リンク送信 */}
           <Card>
             <CardHeader>
@@ -517,32 +520,6 @@ export function PartnerDetailPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Rating */}
-          {partner.rating !== undefined && (
-            <Card>
-              <CardHeader>評価</CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`h-6 w-6 ${
-                          star <= Number(partner.rating!)
-                            ? 'text-yellow-400 fill-yellow-400'
-                            : 'text-gray-200'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {Number(partner.rating).toFixed(1)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Metadata */}
           <Card>

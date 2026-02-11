@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import {
@@ -9,6 +9,7 @@ import {
   Edit,
   Key,
   Save,
+  Camera,
 } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { getUserDisplayName } from '@/types';
@@ -34,6 +35,8 @@ export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Edit form state
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -44,6 +47,48 @@ export function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      addToast({ type: 'error', title: 'エラー', message: '画像ファイル（PNG, JPEG, GIF, WebP）のみアップロードできます' });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      addToast({ type: 'error', title: 'エラー', message: 'ファイルサイズは2MB以下にしてください' });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const filePath = `avatars/${user.id}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      const response = await authService.updateProfile({ avatarUrl });
+      updateUser(response.data);
+      addToast({ type: 'success', title: 'アバターを更新しました' });
+    } catch (error) {
+      console.error('Avatar upload failed:', error);
+      addToast({ type: 'error', title: 'エラー', message: 'アバターのアップロードに失敗しました' });
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
 
   const handleEditStart = () => {
     setFirstName(user?.firstName || '');
@@ -176,11 +221,32 @@ export function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-start gap-6">
-                <Avatar
-                  src={user?.avatarUrl}
-                  name={getUserDisplayName(user) || 'User'}
-                  size="xl"
-                />
+                <div className="relative group">
+                  <Avatar
+                    src={user?.avatarUrl}
+                    name={getUserDisplayName(user) || 'User'}
+                    size="xl"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    {isUploadingAvatar ? (
+                      <span className="text-white text-xs">...</span>
+                    ) : (
+                      <Camera className="h-5 w-5 text-white" />
+                    )}
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/gif,image/webp"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </div>
                 <div className="flex-1 space-y-4">
                   {isEditing ? (
                     <>
