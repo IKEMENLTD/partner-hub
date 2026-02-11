@@ -50,10 +50,10 @@ export class PartnerContactSetupService {
       throw ResourceNotFoundException.forPartner(partnerId);
     }
 
-    // 既にセットアップ済みの場合はスキップ
+    // 既にセットアップ済みの場合はリセット（管理者が再送信を要求した場合）
     if (partner.contactSetupCompleted) {
-      this.logger.log(`Partner ${partner.email} already completed contact setup`);
-      return;
+      this.logger.log(`Partner ${partner.email} already completed contact setup, resetting for re-setup`);
+      partner.contactSetupCompleted = false;
     }
 
     // トークン生成と有効期限設定
