@@ -14,6 +14,7 @@ import {
   useCustomFieldTemplates,
   useCreateCustomFieldTemplate,
   useDeleteCustomFieldTemplate,
+  useActivateCustomFieldTemplate,
   useDeactivateCustomFieldTemplate,
 } from '@/hooks/useCustomFieldTemplates';
 import type { CustomFieldType, CustomFieldTemplate } from '@/types';
@@ -81,6 +82,7 @@ export function CustomFieldTemplatePage() {
   const { data: templatesData, isLoading, error, refetch } = useCustomFieldTemplates();
   const { mutate: createTemplate, isPending: isCreating } = useCreateCustomFieldTemplate();
   const { mutate: deleteTemplate } = useDeleteCustomFieldTemplate();
+  const { mutate: activateTemplate } = useActivateCustomFieldTemplate();
   const { mutate: deactivateTemplate } = useDeactivateCustomFieldTemplate();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -262,17 +264,18 @@ export function CustomFieldTemplatePage() {
                       <button
                         onClick={() => setDeactivateConfirmId(template.id)}
                         className="rounded p-1.5 text-green-500 hover:bg-gray-100 dark:hover:bg-slate-700"
-                        title="無効化"
+                        title="無効化する"
                       >
-                        <ToggleRight className="h-4 w-4" />
+                        <ToggleRight className="h-6 w-6" />
                       </button>
                     ) : (
-                      <span
-                        className="rounded p-1.5 text-gray-400"
-                        title="無効"
+                      <button
+                        onClick={() => activateTemplate(template.id)}
+                        className="rounded p-1.5 text-gray-400 hover:text-green-500 hover:bg-gray-100 dark:hover:bg-slate-700"
+                        title="有効化する"
                       >
-                        <ToggleLeft className="h-4 w-4" />
-                      </span>
+                        <ToggleLeft className="h-6 w-6" />
+                      </button>
                     )}
                     <button
                       onClick={() => setDeleteConfirmId(template.id)}

@@ -41,6 +41,17 @@ export function useDeleteCustomFieldTemplate() {
   });
 }
 
+export function useActivateCustomFieldTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => customFieldTemplateService.activate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['custom-field-templates'] });
+    },
+  });
+}
+
 export function useDeactivateCustomFieldTemplate() {
   const queryClient = useQueryClient();
 

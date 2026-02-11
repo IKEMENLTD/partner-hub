@@ -72,6 +72,16 @@ export class CustomFieldTemplateController {
     return this.templateService.incrementUsageCount(id);
   }
 
+  @Post(':id/activate')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'テンプレートをアクティブ化' })
+  @ApiParam({ name: 'id', description: 'テンプレートID' })
+  @ApiResponse({ status: 200, description: 'テンプレートがアクティブ化されました' })
+  @ApiResponse({ status: 404, description: 'テンプレートが見つかりません' })
+  async activate(@Param('id', ParseUUIDPipe) id: string) {
+    return this.templateService.activate(id);
+  }
+
   @Post(':id/deactivate')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'テンプレートを非アクティブ化' })

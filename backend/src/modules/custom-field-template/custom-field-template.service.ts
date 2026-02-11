@@ -131,6 +131,14 @@ export class CustomFieldTemplateService {
     return template;
   }
 
+  async activate(id: string): Promise<CustomFieldTemplate> {
+    const template = await this.findOne(id);
+    template.isActive = true;
+    await this.templateRepository.save(template);
+    this.logger.log(`Custom field template activated: ${template.name}`);
+    return template;
+  }
+
   async deactivate(id: string): Promise<CustomFieldTemplate> {
     const template = await this.findOne(id);
     template.isActive = false;
