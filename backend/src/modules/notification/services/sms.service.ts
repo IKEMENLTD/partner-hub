@@ -48,7 +48,7 @@ export class SmsService {
       return { success: true, messageId: message.sid };
     } catch (error) {
       this.logger.error(`Failed to send SMS: ${error.message}`);
-      return { success: false, error: error.message };
+      return { success: false, error: this.translateError(error) };
     }
   }
 
@@ -84,6 +84,49 @@ export class SmsService {
     }
 
     return cleaned;
+  }
+
+  /**
+   * Twilioエラーを日本語に変換
+   */
+  private translateError(error: any): string {
+    const code = error.code;
+    const errorMap: Record<number, string> = {
+      20003: '認証エラー: Account SIDまたはAuth Tokenが正しくありません',
+      20404: '無効なAccount SIDです',
+      21211: '送信先の電話番号が無効です',
+      21212: '送信元の電話番号が無効です',
+      21214: '送信先と送信元に同じ番号は使用できません',
+      21606: '送信元番号がSMS送信に対応していません',
+      21608: '送信元番号はTwilioで購入した番号ではありません。Twilioコンソールで番号を購入してください',
+      21610: '送信先がSMS受信を拒否しています',
+      21614: '送信先が有効な携帯電話番号ではありません',
+      21408: 'この地域へのSMS送信が許可されていません。TwilioコンソールのGeo Permissionsを確認してください',
+      21612: '送信先と送信元に同じ番号は使用できません',
+      21219: '送信元番号がSMS送信に対応していません',
+      14101: 'トライアルアカウントでは、Verified Caller IDsに登録された番号にのみ送信できます',
+    };
+
+    if (code && errorMap[code]) {
+      return errorMap[code];
+    }
+
+    // コードなしの場合、メッセージから判定
+    const msg = error.message || '';
+    if (msg.includes('cannot be the same')) {
+      return '送信先と送信元に同じ番号は使用できません';
+    }
+    if (msg.includes('is not a Twilio phone number')) {
+      return '送信元番号はTwilioで購入した番号ではありません。Twilioコンソールで番号を購入してください';
+    }
+    if (msg.includes('authenticate')) {
+      return '認証エラー: Account SIDまたはAuth Tokenが正しくありません';
+    }
+    if (msg.includes('unverified')) {
+      return 'トライアルアカウントでは、Verified Caller IDsに登録された番号にのみ送信できます';
+    }
+
+    return `SMS送信エラー: ${msg}`;
   }
 
   /**
