@@ -34,10 +34,10 @@ export class ReminderService {
     private notificationService?: NotificationService,
   ) {}
 
-  async create(createReminderDto: CreateReminderDto, createdById: string): Promise<Reminder> {
+  async create(createReminderDto: CreateReminderDto, createdById: string | null): Promise<Reminder> {
     const reminder = this.reminderRepository.create({
       ...createReminderDto,
-      createdById,
+      ...(createdById ? { createdById } : {}),
     });
 
     await this.reminderRepository.save(reminder);

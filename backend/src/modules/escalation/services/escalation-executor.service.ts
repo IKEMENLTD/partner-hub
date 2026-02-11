@@ -149,7 +149,7 @@ export class EscalationExecutorService {
         projectId: task.projectId,
         scheduledAt: new Date().toISOString(),
       },
-      'system',
+      null,
     );
 
     log.notifiedUsers = [task.assigneeId];
@@ -189,7 +189,7 @@ export class EscalationExecutorService {
           projectId: task.projectId,
           scheduledAt: new Date().toISOString(),
         },
-        'system',
+        null,
       );
       notifiedUsers.push(project.ownerId);
     }
@@ -206,7 +206,7 @@ export class EscalationExecutorService {
           projectId: task.projectId,
           scheduledAt: new Date().toISOString(),
         },
-        'system',
+        null,
       );
       notifiedUsers.push(project.managerId);
     }
@@ -249,7 +249,7 @@ export class EscalationExecutorService {
           priority: 'high',
         },
       },
-      'system',
+      null,
     );
 
     log.escalatedToUserId = managerId;
