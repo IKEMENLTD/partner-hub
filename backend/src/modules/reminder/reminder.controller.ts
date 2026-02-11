@@ -149,4 +149,25 @@ export class ReminderController {
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.reminderService.remove(id);
   }
+
+  @Post('trigger/generate')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'リマインダー自動生成を手動実行（テスト用）' })
+  @ApiResponse({ status: 200, description: '生成結果' })
+  async triggerGenerate() {
+    await this.reminderService.createTaskDueReminders();
+    await this.reminderService.createOverdueTaskReminders();
+    await this.reminderService.createProjectDeadlineReminders();
+    await this.reminderService.createStagnantProjectReminders();
+    return { message: 'リマインダー自動生成を実行しました' };
+  }
+
+  @Post('trigger/process')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: '未送信リマインダーを手動処理（テスト用）' })
+  @ApiResponse({ status: 200, description: '処理結果' })
+  async triggerProcess() {
+    await this.reminderService.processReminders();
+    return { message: 'リマインダー処理を実行しました' };
+  }
 }
