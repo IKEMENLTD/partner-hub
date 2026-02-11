@@ -111,8 +111,7 @@ export function PartnerContactSetupPage() {
       console.error('Contact setup error:', err);
       // ApiErrorの場合はバックエンドのメッセージを使用、それ以外は日本語フォールバック
       if (err && typeof err === 'object' && 'status' in err) {
-        const apiErr = err as { message: string };
-        setError(apiErr.message || '設定の保存に失敗しました');
+        setError((err as unknown as { message: string }).message || '設定の保存に失敗しました');
       } else {
         setError('設定の保存に失敗しました。もう一度お試しください。');
       }
