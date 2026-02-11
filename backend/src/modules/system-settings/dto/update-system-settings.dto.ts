@@ -1,9 +1,10 @@
-import { IsOptional, IsString, IsBoolean, IsUrl, MaxLength } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsUrl, MaxLength, ValidateIf } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateSystemSettingsDto {
   @ApiPropertyOptional({ description: 'Slack Webhook URL' })
   @IsOptional()
+  @ValidateIf((o) => o.slackWebhookUrl !== '' && o.slackWebhookUrl != null)
   @IsUrl({}, { message: '有効なURLを入力してください' })
   slackWebhookUrl?: string;
 

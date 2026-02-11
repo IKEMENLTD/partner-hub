@@ -85,7 +85,8 @@ export function AdminSettingsPage() {
           twilioPhoneNumber: data.twilioPhoneNumber || '',
         });
       } catch (err) {
-        setError('設定の取得に失敗しました');
+        const message = err instanceof Error ? err.message : '設定の取得に失敗しました';
+        setError(message);
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -101,10 +102,24 @@ export function AdminSettingsPage() {
       setIsSaving(true);
       setError(null);
       setSuccess(null);
-      await systemSettingsService.updateSettings(formData);
+      // 空文字をundefinedに変換（バリデーションエラー回避）
+      const payload: UpdateSystemSettingsInput = {
+        slackNotifyEscalation: formData.slackNotifyEscalation,
+        slackNotifyDailySummary: formData.slackNotifyDailySummary,
+        slackNotifyAllReminders: formData.slackNotifyAllReminders,
+      };
+      if (formData.slackWebhookUrl?.trim()) payload.slackWebhookUrl = formData.slackWebhookUrl.trim();
+      if (formData.slackChannelName?.trim()) payload.slackChannelName = formData.slackChannelName.trim();
+      if (formData.lineChannelAccessToken?.trim()) payload.lineChannelAccessToken = formData.lineChannelAccessToken.trim();
+      if (formData.lineChannelSecret?.trim()) payload.lineChannelSecret = formData.lineChannelSecret.trim();
+      if (formData.twilioAccountSid?.trim()) payload.twilioAccountSid = formData.twilioAccountSid.trim();
+      if (formData.twilioAuthToken?.trim()) payload.twilioAuthToken = formData.twilioAuthToken.trim();
+      if (formData.twilioPhoneNumber?.trim()) payload.twilioPhoneNumber = formData.twilioPhoneNumber.trim();
+      await systemSettingsService.updateSettings(payload);
       setSuccess('設定を保存しました');
     } catch (err) {
-      setError('設定の保存に失敗しました');
+      const message = err instanceof Error ? err.message : '設定の保存に失敗しました';
+      setError(message);
       console.error(err);
     } finally {
       setIsSaving(false);
