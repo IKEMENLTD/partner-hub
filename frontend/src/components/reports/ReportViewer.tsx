@@ -1,5 +1,5 @@
-import { Mail, Calendar, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
-import { Modal, Badge, Card } from '@/components/common';
+import { Mail, Calendar, TrendingUp, AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import { Modal, Badge, Card, Button } from '@/components/common';
 import type { GeneratedReport } from '@/services/reportService';
 import { getPeriodLabel, getStatusLabel, getStatusColor } from '@/hooks/useReports';
 
@@ -22,6 +22,80 @@ export function ReportViewer({ isOpen, onClose, report }: ReportViewerProps) {
     });
   };
 
+  const handleDownloadCsv = () => {
+    const bom = '\uFEFF';
+    const lines: string[] = [];
+
+    // Header
+    lines.push(`レポート,${report.title}`);
+    lines.push(`期間,${reportData.dateRange.start} 〜 ${reportData.dateRange.end}`);
+    lines.push('');
+
+    // Project Summary
+    lines.push('【案件サマリー】');
+    lines.push('総案件数,進行中,完了,遅延');
+    lines.push(`${reportData.projectSummary.total},${reportData.projectSummary.active},${reportData.projectSummary.completed},${reportData.projectSummary.delayed}`);
+    lines.push('');
+
+    // Task Summary
+    lines.push('【タスクサマリー】');
+    lines.push('総タスク数,完了,進行中,期限超過,完了率');
+    lines.push(`${reportData.taskSummary.total},${reportData.taskSummary.completed},${reportData.taskSummary.inProgress},${reportData.taskSummary.overdue},${reportData.taskSummary.completionRate}%`);
+    lines.push('');
+
+    // Partner Performance
+    if (reportData.partnerPerformance.length > 0) {
+      lines.push('【パートナーパフォーマンス】');
+      lines.push('パートナー名,進行中案件,完了タスク,総タスク,納期遵守率,評価');
+      for (const p of reportData.partnerPerformance) {
+        lines.push(`${p.partnerName},${p.activeProjects},${p.tasksCompleted},${p.tasksTotal},${p.onTimeDeliveryRate}%,${p.rating.toFixed(1)}`);
+      }
+      lines.push('');
+    }
+
+    // Highlights
+    if (reportData.highlights.keyAchievements.length > 0) {
+      lines.push('【主な成果】');
+      for (const a of reportData.highlights.keyAchievements) {
+        lines.push(a);
+      }
+      lines.push('');
+    }
+
+    if (reportData.highlights.issues.length > 0) {
+      lines.push('【注意事項】');
+      for (const i of reportData.highlights.issues) {
+        lines.push(i);
+      }
+      lines.push('');
+    }
+
+    if (reportData.highlights.upcomingDeadlines.length > 0) {
+      lines.push('【今後の期限】');
+      lines.push('種類,名前,期限,残日数');
+      for (const d of reportData.highlights.upcomingDeadlines) {
+        lines.push(`${d.type === 'project' ? '案件' : 'タスク'},${d.name},${d.dueDate},${d.daysRemaining}日`);
+      }
+      lines.push('');
+    }
+
+    // Health Score
+    if (reportData.healthScoreStats) {
+      lines.push('【ヘルススコア統計】');
+      lines.push('平均スコア,リスク案件,総案件数');
+      lines.push(`${reportData.healthScoreStats.averageScore},${reportData.healthScoreStats.projectsAtRisk},${reportData.healthScoreStats.totalProjects}`);
+    }
+
+    const csv = bom + lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${report.title.replace(/[/\\?%*:|"<>]/g, '_')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={report.title} size="xl">
       <div className="space-y-6">
@@ -41,6 +115,10 @@ export function ReportViewer({ isOpen, onClose, report }: ReportViewerProps) {
               送信済み: {formatDate(report.sentAt)}
             </span>
           )}
+          <Button variant="secondary" size="sm" onClick={handleDownloadCsv} className="ml-auto">
+            <Download className="h-4 w-4 mr-1" />
+            CSV
+          </Button>
         </div>
 
         {/* Project Summary */}
