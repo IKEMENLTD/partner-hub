@@ -69,10 +69,12 @@ export class PartnerContactSetupService {
     // セットアップURLを生成
     const setupUrl = `${this.frontendUrl}/partner-setup/${token}`;
 
-    // メール送信
-    await this.emailService.sendContactSetupEmail(partner, setupUrl, expiresAt);
+    // メール送信（非同期 — レスポンスをブロックしない）
+    this.emailService.sendContactSetupEmail(partner, setupUrl, expiresAt).catch((err) => {
+      this.logger.error(`Failed to send contact setup email to ${partner.email}`, err);
+    });
 
-    this.logger.log(`Contact setup email sent to partner: ${partner.email}`);
+    this.logger.log(`Contact setup email queued for partner: ${partner.email}`);
   }
 
   /**
