@@ -401,11 +401,13 @@ export function EscalationRulesPage() {
               }
               type="number"
               value={String(formData.triggerValue)}
-              onChange={(e) => setFormData((p) => ({
-                ...p,
-                triggerValue: Math.max(1, Number(e.target.value) || 1),
-              }))}
+              onChange={(e) => {
+                const max = formData.triggerType === 'progress_below' ? 100 : Infinity;
+                const val = Math.min(max, Math.max(1, Number(e.target.value) || 1));
+                setFormData((p) => ({ ...p, triggerValue: val }));
+              }}
               min={1}
+              max={formData.triggerType === 'progress_below' ? 100 : undefined}
             />
           </div>
 

@@ -135,12 +135,12 @@ export class EscalationExecutorService {
 
   private async notifyOwner(task: Task, rule: EscalationRule, log: EscalationLog): Promise<void> {
     if (!task.assigneeId) {
-      throw new Error('Task has no assignee to notify');
+      throw new Error('タスクに担当者が設定されていません');
     }
 
     await this.reminderService.create(
       {
-        title: `Escalation: ${rule.name}`,
+        title: `エスカレーション: ${rule.name}`,
         message: this.buildNotificationMessage(rule, task),
         type: ReminderType.TASK_OVERDUE,
         channel: ReminderChannel.IN_APP,
@@ -153,7 +153,7 @@ export class EscalationExecutorService {
     );
 
     log.notifiedUsers = [task.assigneeId];
-    log.actionDetail = `Notified task owner (${task.assigneeId})`;
+    log.actionDetail = `タスク担当者に通知しました`;
   }
 
   private async notifyStakeholders(
@@ -162,7 +162,7 @@ export class EscalationExecutorService {
     log: EscalationLog,
   ): Promise<void> {
     if (!task.projectId) {
-      throw new Error('Task has no project, cannot notify stakeholders');
+      throw new Error('タスクに案件が紐づいていないため関係者に通知できません');
     }
 
     const stakeholders = await this.stakeholderRepository.find({
@@ -180,7 +180,7 @@ export class EscalationExecutorService {
     if (project?.ownerId) {
       await this.reminderService.create(
         {
-          title: `Escalation: ${rule.name}`,
+          title: `エスカレーション: ${rule.name}`,
           message: this.buildNotificationMessage(rule, task),
           type: ReminderType.TASK_OVERDUE,
           channel: ReminderChannel.IN_APP,
@@ -197,7 +197,7 @@ export class EscalationExecutorService {
     if (project?.managerId && project.managerId !== project.ownerId) {
       await this.reminderService.create(
         {
-          title: `Escalation: ${rule.name}`,
+          title: `エスカレーション: ${rule.name}`,
           message: this.buildNotificationMessage(rule, task),
           type: ReminderType.TASK_OVERDUE,
           channel: ReminderChannel.IN_APP,
@@ -212,7 +212,7 @@ export class EscalationExecutorService {
     }
 
     log.notifiedUsers = notifiedUsers;
-    log.actionDetail = `Notified ${notifiedUsers.length} stakeholder(s)`;
+    log.actionDetail = `関係者${notifiedUsers.length}名に通知しました`;
   }
 
   private async escalateToManager(
@@ -230,12 +230,12 @@ export class EscalationExecutorService {
     }
 
     if (!managerId) {
-      throw new Error('No manager found to escalate to');
+      throw new Error('エスカレーション先の管理者が見つかりません');
     }
 
     await this.reminderService.create(
       {
-        title: `ESCALATION: ${rule.name}`,
+        title: `【緊急】エスカレーション: ${rule.name}`,
         message: this.buildNotificationMessage(rule, task, true),
         type: ReminderType.TASK_OVERDUE,
         channel: ReminderChannel.BOTH,
@@ -254,7 +254,7 @@ export class EscalationExecutorService {
 
     log.escalatedToUserId = managerId;
     log.notifiedUsers = [managerId];
-    log.actionDetail = `Escalated to manager (${managerId})`;
+    log.actionDetail = `管理者にエスカレーションしました`;
   }
 
   private buildNotificationMessage(
@@ -262,17 +262,17 @@ export class EscalationExecutorService {
     task: Task,
     isEscalation: boolean = false,
   ): string {
-    const prefix = isEscalation ? '[ESCALATION] ' : '';
+    const prefix = isEscalation ? '【エスカレーション】' : '';
     const dueInfo = task.dueDate
-      ? `Due: ${new Date(task.dueDate).toLocaleDateString()}`
-      : 'No due date';
+      ? `期限: ${new Date(task.dueDate).toLocaleDateString('ja-JP')}`
+      : '期限未設定';
 
     return (
-      `${prefix}Task "${task.title}" requires attention.\n\n` +
-      `Rule: ${rule.name}\n` +
+      `${prefix}タスク「${task.title}」に対応が必要です。\n\n` +
+      `ルール: ${rule.name}\n` +
       `${dueInfo}\n` +
-      `Progress: ${task.progress}%\n` +
-      `Status: ${task.status}`
+      `進捗: ${task.progress}%\n` +
+      `ステータス: ${task.status}`
     );
   }
 
