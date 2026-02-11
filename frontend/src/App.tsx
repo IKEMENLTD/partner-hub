@@ -34,6 +34,9 @@ import {
   EscalationRulesPage,
   PartnerContactSetupPage,
   TrashPage,
+  AuditLogPage,
+  UserManagementPage,
+  CustomFieldTemplatePage,
 } from '@/pages';
 
 // 認証初期化コンポーネント
@@ -138,6 +141,9 @@ function App() {
             <Route path="/admin/settings" element={<RoleGuard allowedRoles={ADMIN_ONLY}><AdminSettingsPage /></RoleGuard>} />
             <Route path="/admin/escalations" element={<RoleGuard allowedRoles={ADMIN_ONLY}><EscalationRulesPage /></RoleGuard>} />
             <Route path="/trash" element={<RoleGuard allowedRoles={ADMIN_ONLY}><TrashPage /></RoleGuard>} />
+            <Route path="/admin/audit" element={<RoleGuard allowedRoles={ADMIN_ONLY}><AuditLogPage /></RoleGuard>} />
+            <Route path="/admin/users" element={<RoleGuard allowedRoles={ADMIN_ONLY}><UserManagementPage /></RoleGuard>} />
+            <Route path="/admin/custom-fields" element={<RoleGuard allowedRoles={ADMIN_ONLY}><CustomFieldTemplatePage /></RoleGuard>} />
 
             {/* Catch all - redirect to today */}
             <Route path="*" element={<Navigate to="/today" replace />} />

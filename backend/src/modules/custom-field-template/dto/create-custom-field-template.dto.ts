@@ -35,6 +35,26 @@ export class CustomFieldDefinitionDto {
   @IsNumber()
   order: number;
 
+  @ApiPropertyOptional({ description: '最小値（numberタイプ用）' })
+  @IsOptional()
+  @IsNumber()
+  min?: number;
+
+  @ApiPropertyOptional({ description: '最大値（numberタイプ用）' })
+  @IsOptional()
+  @IsNumber()
+  max?: number;
+
+  @ApiPropertyOptional({ description: '最小文字数（textタイプ用）' })
+  @IsOptional()
+  @IsNumber()
+  minLength?: number;
+
+  @ApiPropertyOptional({ description: '最大文字数（textタイプ用）' })
+  @IsOptional()
+  @IsNumber()
+  maxLength?: number;
+
   @ApiPropertyOptional({
     description: 'セレクトタイプの場合の選択肢',
     example: ['選択肢1', '選択肢2'],

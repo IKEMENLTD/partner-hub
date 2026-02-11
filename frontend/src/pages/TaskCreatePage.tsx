@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useCreateTask, useUpdateTask, useTask, useProject } from '@/hooks';
+import { useCreateTask, useUpdateTask, useTask, useProject, usePartners } from '@/hooks';
 import type { TaskInput, TaskStatus, Priority } from '@/types';
 import { getUserDisplayName } from '@/types';
 import {
@@ -48,6 +48,7 @@ export function TaskCreatePage() {
 
   const { data: taskData, isLoading: isLoadingTask } = useTask(taskId);
   const { data: projectData, isLoading: isLoadingProject } = useProject(projectId);
+  const { data: partnersData } = usePartners({ pageSize: 100 });
   const { mutate: createTask, isPending: isCreating, error: createError } = useCreateTask();
   const { mutate: updateTask, isPending: isUpdating, error: updateError } = useUpdateTask();
 
@@ -58,6 +59,7 @@ export function TaskCreatePage() {
     priority: 'medium',
     projectId: projectId || '',
     assigneeId: undefined,
+    partnerId: undefined,
     dueDate: undefined,
     estimatedHours: undefined,
     tags: [],
@@ -76,6 +78,7 @@ export function TaskCreatePage() {
         priority: taskData.priority,
         projectId: taskData.projectId,
         assigneeId: taskData.assigneeId,
+        partnerId: (taskData as any).partnerId,
         dueDate: taskData.dueDate?.split('T')[0],
         estimatedHours: taskData.estimatedHours,
         tags: Array.isArray(taskData.tags) ? taskData.tags : [],
@@ -91,6 +94,11 @@ export function TaskCreatePage() {
     ...(project?.owner && project.ownerId !== project.managerId
       ? [{ value: project.ownerId || '', label: getUserDisplayName(project.owner) }]
       : []),
+  ];
+
+  const partnerOptions = [
+    { value: '', label: 'パートナー未割当' },
+    ...(partnersData?.data || []).map((p: { id: string; name: string }) => ({ value: p.id, label: p.name })),
   ];
 
   const isPending = isCreating || isUpdating;
@@ -263,6 +271,16 @@ export function TaskCreatePage() {
                 onChange={(e) => handleChange('assigneeId', e.target.value || undefined)}
                 options={memberOptions}
                 helperText="案件メンバーから選択"
+              />
+
+              {/* Partner */}
+              <Select
+                label="パートナー"
+                name="partnerId"
+                value={formData.partnerId || ''}
+                onChange={(e) => handleChange('partnerId', e.target.value || undefined)}
+                options={partnerOptions}
+                helperText="担当パートナーを選択"
               />
 
               {/* Due Date */}

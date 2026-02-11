@@ -13,6 +13,9 @@ import {
   Bell,
   AlertTriangle,
   Trash2,
+  UserCog,
+  FileSearch,
+  Layers,
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 
@@ -30,6 +33,9 @@ const adminNavItems = [
   { icon: LayoutDashboard, label: 'マネージャー', path: '/manager' },
   { icon: FileText, label: '自動レポート', path: '/reports' },
   { icon: AlertTriangle, label: 'エスカレーション', path: '/admin/escalations' },
+  { icon: UserCog, label: 'ユーザー管理', path: '/admin/users' },
+  { icon: Layers, label: 'カスタムフィールド', path: '/admin/custom-fields' },
+  { icon: FileSearch, label: '監査ログ', path: '/admin/audit' },
   { icon: Trash2, label: 'ゴミ箱', path: '/trash' },
 ];
 

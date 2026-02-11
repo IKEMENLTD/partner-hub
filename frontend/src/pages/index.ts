@@ -26,3 +26,6 @@ export { AdminSettingsPage } from './AdminSettingsPage';
 export { RemindersPage } from './RemindersPage';
 export { EscalationRulesPage } from './EscalationRulesPage';
 export { TrashPage } from './TrashPage';
+export { AuditLogPage } from './AuditLogPage';
+export { UserManagementPage } from './UserManagementPage';
+export { CustomFieldTemplatePage } from './CustomFieldTemplatePage';

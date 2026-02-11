@@ -18,6 +18,8 @@ export type { SystemSettings, UpdateSystemSettingsInput } from './systemSettings
 export { partnerContactSetupService } from './partnerContactSetupService';
 export { reminderService } from './reminderService';
 export { escalationService } from './escalationService';
+export { userService } from './userService';
+export type { UserProfile } from './userService';
 export type {
   EscalationRule, EscalationLog, EscalationTriggerType, EscalationAction,
   EscalationRuleStatus, EscalationLogStatus, CreateEscalationRuleInput,

@@ -97,6 +97,7 @@ export {
   useCreateCustomFieldTemplate,
   useDeleteCustomFieldTemplate,
   useIncrementTemplateUsage,
+  useDeactivateCustomFieldTemplate,
 } from './useCustomFieldTemplates';
 export {
   useUnreadReports,

@@ -68,6 +68,9 @@ export function PartnerDetailPage() {
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [isSendingSetup, setIsSendingSetup] = useState(false);
+  const [setupSent, setSetupSent] = useState(false);
+  const [isDeactivatingToken, setIsDeactivatingToken] = useState(false);
 
   // Fetch report token
   const fetchReportToken = useCallback(async () => {
@@ -116,6 +119,35 @@ export function PartnerDetailPage() {
       navigator.clipboard.writeText(reportToken.reportUrl);
       setCopiedUrl(true);
       setTimeout(() => setCopiedUrl(false), 2000);
+    }
+  };
+
+  // Send contact setup email
+  const handleSendContactSetup = async () => {
+    if (!id) return;
+    setIsSendingSetup(true);
+    try {
+      await api.post(`/partner-contact-setup/send/${id}`, {});
+      setSetupSent(true);
+      setTimeout(() => setSetupSent(false), 3000);
+    } catch (err) {
+      console.error('Failed to send contact setup:', err);
+    } finally {
+      setIsSendingSetup(false);
+    }
+  };
+
+  // Deactivate report token
+  const handleDeactivateToken = async () => {
+    if (!id) return;
+    setIsDeactivatingToken(true);
+    try {
+      await api.post(`/partners/${id}/report-token/deactivate`, {});
+      setReportToken(null);
+    } catch (err) {
+      console.error('Failed to deactivate token:', err);
+    } finally {
+      setIsDeactivatingToken(false);
     }
   };
 
@@ -275,6 +307,33 @@ export function PartnerDetailPage() {
             </CardContent>
           </Card>
 
+          {/* 連絡先設定リンク送信 */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-primary-500" />
+                <span>連絡先設定</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">
+                パートナーに連絡先設定用のリンクをメールで送信します
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSendContactSetup}
+                isLoading={isSendingSetup}
+                leftIcon={<Mail className="h-4 w-4" />}
+              >
+                設定リンクを送信
+              </Button>
+              {setupSent && (
+                <p className="text-sm text-green-600 mt-2">送信しました</p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Report URL */}
           <Card>
             <CardHeader>
@@ -319,6 +378,14 @@ export function PartnerDetailPage() {
                     isLoading={isGeneratingToken}
                   >
                     URLを再生成
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={handleDeactivateToken}
+                    isLoading={isDeactivatingToken}
+                  >
+                    トークンを無効化
                   </Button>
                 </div>
               ) : (

@@ -423,6 +423,7 @@ export interface TaskInput {
   priority: Priority;
   projectId: string;
   assigneeId?: string;
+  partnerId?: string;
   dueDate?: string;
   estimatedHours?: number;
   tags: string[];

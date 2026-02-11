@@ -48,6 +48,10 @@ export const customFieldTemplateService = {
     await api.delete(`/custom-field-templates/${id}`);
   },
 
+  deactivate: async (id: string): Promise<void> => {
+    await api.post(`/custom-field-templates/${id}/deactivate`, {});
+  },
+
   incrementUsage: async (id: string): Promise<CustomFieldTemplate> => {
     const response = await api.post<{ success: boolean; data: CustomFieldTemplate }>(
       `/custom-field-templates/${id}/increment-usage`
