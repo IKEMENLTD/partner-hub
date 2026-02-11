@@ -102,15 +102,20 @@ export function PartnerContactSetupPage() {
 
       const result = await partnerContactSetupService.completeSetup(token, input);
 
-      if (result.success) {
+      if (result?.success) {
         setSuccess(true);
       } else {
-        setError(result.message || '設定の保存に失敗しました');
+        setError(result?.message || '設定の保存に失敗しました');
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '設定の保存に失敗しました';
-      setError(message);
-      console.error(err);
+      console.error('Contact setup error:', err);
+      // ApiErrorの場合はバックエンドのメッセージを使用、それ以外は日本語フォールバック
+      if (err && typeof err === 'object' && 'status' in err) {
+        const apiErr = err as { message: string };
+        setError(apiErr.message || '設定の保存に失敗しました');
+      } else {
+        setError('設定の保存に失敗しました。もう一度お試しください。');
+      }
     } finally {
       setIsSubmitting(false);
     }
