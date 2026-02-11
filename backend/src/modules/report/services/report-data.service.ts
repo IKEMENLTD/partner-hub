@@ -327,7 +327,7 @@ export class ReportDataService {
         type: 'project',
         id: project.id,
         name: project.name,
-        dueDate: project.endDate.toISOString().split('T')[0],
+        dueDate: new Date(project.endDate).toISOString().split('T')[0],
         daysRemaining,
       });
     }
@@ -350,7 +350,7 @@ export class ReportDataService {
         type: 'task',
         id: task.id,
         name: task.title,
-        dueDate: task.dueDate.toISOString().split('T')[0],
+        dueDate: new Date(task.dueDate).toISOString().split('T')[0],
         daysRemaining,
       });
     }

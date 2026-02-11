@@ -235,7 +235,7 @@ export function ReportConfigForm({
         {/* Recipients */}
         <Card className="p-4">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-            送信先
+            送信先 <span className="text-red-500">*</span>
           </h3>
           <div className="space-y-3">
             <div className="flex gap-2">
