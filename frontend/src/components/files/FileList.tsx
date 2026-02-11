@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import {
@@ -6,16 +5,10 @@ import {
   Image as ImageIcon,
   File,
   Download,
-  Trash2,
-  MoreVertical,
-  ExternalLink,
 } from 'lucide-react';
 import {
-  Button,
   Badge,
   EmptyState,
-  Modal,
-  ModalFooter,
   Table,
   TableHeader,
   TableBody,
@@ -29,9 +22,7 @@ import type { ProjectFile, FileCategory } from '@/types';
 interface FileListProps {
   files: ProjectFile[];
   isLoading?: boolean;
-  onDelete?: (fileId: string) => void;
   onDownload?: (fileId: string) => void;
-  isDeleting?: boolean;
 }
 
 const categoryConfig: Record<FileCategory, { label: string; variant: 'default' | 'info' | 'primary' }> = {
@@ -43,13 +34,8 @@ const categoryConfig: Record<FileCategory, { label: string; variant: 'default' |
 export function FileList({
   files,
   isLoading = false,
-  onDelete,
   onDownload,
-  isDeleting = false,
 }: FileListProps) {
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
-
   const getFileIcon = (mimeType: string, category: FileCategory) => {
     if (category === 'image' || mimeType.startsWith('image/')) {
       return <ImageIcon className="h-5 w-5 text-blue-500" />;
@@ -69,22 +55,6 @@ export function FileList({
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
-
-  const handleDelete = () => {
-    if (deleteConfirmId && onDelete) {
-      onDelete(deleteConfirmId);
-      setDeleteConfirmId(null);
-    }
-  };
-
-  const handleDownload = (fileId: string) => {
-    if (onDownload) {
-      onDownload(fileId);
-    }
-    setActionMenuId(null);
-  };
-
-  const fileToDelete = files.find((f) => f.id === deleteConfirmId);
 
   if (isLoading) {
     return (
@@ -116,7 +86,7 @@ export function FileList({
               <TableHead>サイズ</TableHead>
               <TableHead>アップロード者</TableHead>
               <TableHead>アップロード日</TableHead>
-              <TableHead className="w-10"></TableHead>
+              <TableHead className="w-10">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -149,53 +119,13 @@ export function FileList({
                     })}
                   </TableCell>
                   <TableCell>
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="min-h-[44px] min-w-[44px]"
-                        onClick={() =>
-                          setActionMenuId(actionMenuId === file.id ? null : file.id)
-                        }
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                      {actionMenuId === file.id && (
-                        <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-md shadow-lg border z-10">
-                          <button
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 min-h-[44px]"
-                            onClick={() => handleDownload(file.id)}
-                          >
-                            <Download className="h-4 w-4" />
-                            ダウンロード
-                          </button>
-                          {file.publicUrl && (
-                            <a
-                              href={file.publicUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 min-h-[44px]"
-                              onClick={() => setActionMenuId(null)}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                              新しいタブで開く
-                            </a>
-                          )}
-                          {onDelete && (
-                            <button
-                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 min-h-[44px]"
-                              onClick={() => {
-                                setDeleteConfirmId(file.id);
-                                setActionMenuId(null);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              削除
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      className="p-2 text-gray-400 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      onClick={() => onDownload?.(file.id)}
+                      title="ダウンロード"
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
                   </TableCell>
                 </TableRow>
               );
@@ -203,27 +133,6 @@ export function FileList({
           </TableBody>
         </Table>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={!!deleteConfirmId}
-        onClose={() => setDeleteConfirmId(null)}
-        title="ファイルの削除"
-        size="sm"
-      >
-        <p className="text-sm text-gray-600">
-          「{fileToDelete?.originalName}」を削除しますか？
-          この操作は取り消せません。
-        </p>
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
-            キャンセル
-          </Button>
-          <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>
-            削除
-          </Button>
-        </ModalFooter>
-      </Modal>
     </>
   );
 }
