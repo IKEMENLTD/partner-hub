@@ -136,6 +136,23 @@ export class ReportConfigService {
     await this.reportConfigRepository.save(config);
   }
 
+  // Recalculate nextRunAt for all active configs (startup migration)
+  async recalculateAllNextRunTimes(): Promise<number> {
+    const configs = await this.reportConfigRepository.find({
+      where: { status: ReportStatus.ACTIVE },
+    });
+
+    for (const config of configs) {
+      config.nextRunAt = this.calculateNextRunTime(config);
+    }
+
+    if (configs.length > 0) {
+      await this.reportConfigRepository.save(configs);
+    }
+
+    return configs.length;
+  }
+
   // Helper methods
   buildCronExpression(config: Partial<ReportConfig>): string {
     const [hour, minute] = (config.sendTime || '09:00').split(':').map(Number);

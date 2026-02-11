@@ -64,6 +64,10 @@ export class ReportService {
     return this.reportConfigService.markConfigAsRun(configId);
   }
 
+  async recalculateAllNextRunTimes(): Promise<number> {
+    return this.reportConfigService.recalculateAllNextRunTimes();
+  }
+
   // ==================== Generated Reports ====================
 
   async findAllGeneratedReports(

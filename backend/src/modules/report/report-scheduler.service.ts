@@ -20,8 +20,16 @@ export class ReportSchedulerService implements OnModuleInit {
     private emailService: EmailService,
   ) {}
 
-  onModuleInit() {
+  async onModuleInit() {
     this.logger.log('Report Scheduler Service initialized');
+
+    // 起動時に全アクティブ設定の nextRunAt を再計算（タイムゾーン修正の反映）
+    try {
+      const count = await this.reportService.recalculateAllNextRunTimes();
+      this.logger.log(`Recalculated nextRunAt for ${count} active report config(s)`);
+    } catch (error) {
+      this.logger.error(`Failed to recalculate nextRunAt on startup: ${error.message}`);
+    }
   }
 
   /**
