@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuthStore } from '@/store';
 import { authService } from '@/services/authService';
+import { ApiError } from '@/services/api';
 import { queryClient } from '@/lib/queryClient';
 import type { AuthError } from '@supabase/supabase-js';
 import type { User } from '@/types';
@@ -65,14 +66,24 @@ async function fetchAndSetUserProfile(
     }
   } catch (error) {
     console.error('Failed to fetch user profile from backend:', error);
-    // フォールバック: Supabaseの情報を使用（roleはmemberになる）
+
+    // 認証エラー（未有効化アカウント等）: サインアウトしてログインページへ
+    if (error instanceof ApiError && error.status === 401) {
+      const errorMessage = error.message || 'アカウントが有効化されていません。管理者にお問い合わせください。';
+      sessionStorage.setItem('auth_error', errorMessage);
+      setUser(null);
+      supabase.auth.signOut().catch(() => {});
+      return;
+    }
+
+    // その他のエラー（ネットワーク等）: フォールバック（isActive: false で安全側に倒す）
     setUser({
       id: fallbackUser.id,
       email: fallbackUser.email,
       firstName: '',
       lastName: '',
       role: 'member',
-      isActive: true,
+      isActive: false,
       createdAt: fallbackUser.createdAt,
     });
   }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuthStore } from '@/store';
@@ -6,7 +6,7 @@ import { useLogin } from '@/hooks';
 import { Button, Input, Alert } from '@/components/common';
 
 export function LoginPage() {
-  const { isAuthenticated, error, isLoading } = useAuthStore();
+  const { isAuthenticated, error, isLoading, setError } = useAuthStore();
   const { mutate: login } = useLogin();
 
   // 注意: リカバリーモードフラグはログイン実行時(useLogin)でクリアされる
@@ -19,6 +19,15 @@ export function LoginPage() {
     email?: string;
     password?: string;
   }>({});
+
+  // 未有効化アカウント等のエラーメッセージをsessionStorageから読み取り
+  useEffect(() => {
+    const authError = sessionStorage.getItem('auth_error');
+    if (authError) {
+      setError(authError);
+      sessionStorage.removeItem('auth_error');
+    }
+  }, [setError]);
 
   if (isAuthenticated) {
     return <Navigate to="/today" replace />;

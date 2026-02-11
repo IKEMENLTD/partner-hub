@@ -29,13 +29,46 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
     }));
   };
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!formData.name.trim()) {
+      errors.name = 'お名前を入力してください';
+    }
+    const trimmedEmail = formData.email.trim();
+    if (!trimmedEmail) {
+      errors.email = 'メールアドレスを入力してください';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      errors.email = '有効なメールアドレスを入力してください';
+    }
+    if (!formData.subject.trim()) {
+      errors.subject = '件名を入力してください';
+    }
+    if (!formData.message.trim()) {
+      errors.message = 'お問い合わせ内容を入力してください';
+    } else if (formData.message.length > 2000) {
+      errors.message = 'お問い合わせ内容は2000文字以内で入力してください';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      await api.post('/contact/inquiry', formData);
+      const payload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
+      };
+      await api.post('/contact/inquiry', payload);
       setIsSubmitted(true);
     } catch (err: unknown) {
       const errorMessage = (err as { message?: string })?.message;
@@ -54,6 +87,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
     });
     setIsSubmitted(false);
     setError(null);
+    setFieldErrors({});
   };
 
   const handleClose = () => {
@@ -146,6 +180,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                 onChange={handleChange}
                 required
                 placeholder="山田 太郎"
+                error={fieldErrors.name}
               />
               <Input
                 label="メールアドレス"
@@ -155,6 +190,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                 onChange={handleChange}
                 required
                 placeholder="example@email.com"
+                error={fieldErrors.email}
               />
             </div>
 
@@ -165,6 +201,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
               onChange={handleChange}
               required
               placeholder="お問い合わせの件名"
+              error={fieldErrors.subject}
             />
 
             <TextArea
@@ -175,6 +212,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
               required
               placeholder="お問い合わせ内容をご記入ください"
               rows={4}
+              error={fieldErrors.message}
             />
 
             <div className="flex justify-end gap-3">

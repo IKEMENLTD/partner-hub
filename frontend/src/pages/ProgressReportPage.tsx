@@ -93,6 +93,23 @@ export function ProgressReportPage() {
   const handleSubmit = async () => {
     if (!token) return;
 
+    // 送信前バリデーション
+    if (!reportData.reporterName.trim()) {
+      setError('お名前を入力してください');
+      setCurrentStep(1);
+      return;
+    }
+    if (reportData.progress < 0 || reportData.progress > 100) {
+      setError('進捗率は0〜100の範囲で入力してください');
+      setCurrentStep(2);
+      return;
+    }
+    if (reportData.comment && reportData.comment.length > 2000) {
+      setError('コメントは2000文字以内で入力してください');
+      setCurrentStep(2);
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setError(null);
@@ -328,7 +345,8 @@ export function ProgressReportPage() {
                 }
                 placeholder="進捗状況の詳細、課題、次のステップなどを記入してください"
                 rows={5}
-                helperText="任意項目です"
+                helperText={`任意項目です（${reportData.comment.length}/2000文字）`}
+                error={reportData.comment.length > 2000 ? 'コメントは2000文字以内で入力してください' : undefined}
               />
             </div>
           )}

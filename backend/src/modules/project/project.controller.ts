@@ -66,6 +66,7 @@ export class ProjectController {
   }
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all projects with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of projects' })
   async findAll(
@@ -101,6 +102,7 @@ export class ProjectController {
   }
 
   @Get('overdue')
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get overdue projects' })
   @ApiResponse({ status: 200, description: 'List of overdue projects' })
   async getOverdueProjects() {
@@ -108,6 +110,7 @@ export class ProjectController {
   }
 
   @Get('upcoming-deadlines')
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get projects with upcoming deadlines' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of projects with upcoming deadlines' })
@@ -116,6 +119,7 @@ export class ProjectController {
   }
 
   @Get('by-partner/:partnerId')
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get projects by partner ID' })
   @ApiParam({ name: 'partnerId', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'List of projects for the partner' })

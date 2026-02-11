@@ -50,6 +50,7 @@ export class PartnerController {
   }
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all partners with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of partners' })
   async findAll(@Query() queryDto: QueryPartnerDto, @CurrentUser('id') userId: string) {
@@ -65,6 +66,7 @@ export class PartnerController {
   }
 
   @Get('active')
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all active partners' })
   @ApiResponse({ status: 200, description: 'List of active partners' })
   async getActivePartners() {
@@ -72,6 +74,7 @@ export class PartnerController {
   }
 
   @Get('by-skills')
+  @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get partners by skills' })
   @ApiResponse({ status: 200, description: 'List of partners matching skills' })
   async getBySkills(@Query('skills') skills: string) {

@@ -96,17 +96,18 @@ export class SupabaseAuthGuard implements CanActivate {
         });
 
         if (!userProfile) {
-          this.logger.log(`Creating profile for new user: ${user.email}`);
+          // SECURITY: 新規ユーザーは isActive: false で作成し、管理者による承認を必須にする
+          this.logger.log(`Creating inactive profile for new user: ${user.email}`);
           userProfile = this.userProfileRepository.create({
             id: user.id,
             email: user.email || '',
             firstName: user.user_metadata?.first_name || '',
             lastName: user.user_metadata?.last_name || '',
             role: UserRole.MEMBER,
-            isActive: true,
+            isActive: false,
           });
           await this.userProfileRepository.save(userProfile);
-          this.logger.log(`Profile created for user: ${user.email}`);
+          this.logger.log(`Inactive profile created for user: ${user.email} (requires admin activation)`);
         }
 
         // Cache the profile
@@ -119,7 +120,7 @@ export class SupabaseAuthGuard implements CanActivate {
         this.logger.warn(`User is inactive: ${user.email}`);
         throw new AuthenticationException('AUTH_005', {
           message: 'User account is inactive',
-          userMessage: 'アカウントが無効化されています',
+          userMessage: 'アカウントが有効化されていません。管理者にお問い合わせください。',
         });
       }
 
