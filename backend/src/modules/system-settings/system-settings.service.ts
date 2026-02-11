@@ -54,10 +54,6 @@ export class SystemSettingsService {
       ...(dto.slackNotifyAllReminders !== undefined && {
         slackNotifyAllReminders: dto.slackNotifyAllReminders,
       }),
-      ...(dto.lineChannelAccessToken !== undefined && {
-        lineChannelAccessToken: dto.lineChannelAccessToken,
-      }),
-      ...(dto.lineChannelSecret !== undefined && { lineChannelSecret: dto.lineChannelSecret }),
       ...(dto.twilioAccountSid !== undefined && { twilioAccountSid: dto.twilioAccountSid }),
       ...(dto.twilioAuthToken !== undefined && { twilioAuthToken: dto.twilioAuthToken }),
       ...(dto.twilioPhoneNumber !== undefined && { twilioPhoneNumber: dto.twilioPhoneNumber }),
@@ -105,23 +101,6 @@ export class SystemSettingsService {
       notifyEscalation: settings?.slackNotifyEscalation ?? true,
       notifyDailySummary: settings?.slackNotifyDailySummary ?? true,
       notifyAllReminders: settings?.slackNotifyAllReminders ?? false,
-    };
-  }
-
-  /**
-   * LINE設定を取得
-   */
-  async getLineSettings(organizationId: string): Promise<{
-    channelAccessToken: string | null;
-    channelSecret: string | null;
-  }> {
-    const settings = await this.systemSettingsRepository.findOne({
-      where: { organizationId },
-    });
-
-    return {
-      channelAccessToken: settings?.lineChannelAccessToken || null,
-      channelSecret: settings?.lineChannelSecret || null,
     };
   }
 

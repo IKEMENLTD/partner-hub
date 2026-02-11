@@ -8,8 +8,6 @@ export interface SystemSettings {
   slackNotifyEscalation: boolean;
   slackNotifyDailySummary: boolean;
   slackNotifyAllReminders: boolean;
-  lineChannelAccessToken: string | null;
-  lineChannelSecret: string | null;
   twilioAccountSid: string | null;
   twilioAuthToken: string | null;
   twilioPhoneNumber: string | null;
@@ -23,8 +21,6 @@ export interface UpdateSystemSettingsInput {
   slackNotifyEscalation?: boolean;
   slackNotifyDailySummary?: boolean;
   slackNotifyAllReminders?: boolean;
-  lineChannelAccessToken?: string;
-  lineChannelSecret?: string;
   twilioAccountSid?: string;
   twilioAuthToken?: string;
   twilioPhoneNumber?: string;

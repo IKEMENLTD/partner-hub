@@ -60,7 +60,7 @@ export function generateContactSetupEmailHtml(params: ContactSetupEmailParams): 
               <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 4px;">
                 <p style="margin: 0; color: #92400e; font-size: 14px;">
                   <strong>登録内容：</strong><br>
-                  ・通常連絡用（メールまたはLINEを選択）<br>
+                  ・通常連絡用（メール）<br>
                   ・緊急連絡先（電話番号 - 必須）
                 </p>
               </div>
@@ -125,7 +125,7 @@ Partner Hubをご利用いただきありがとうございます。
 重要なご連絡が確実に届くよう、通常連絡用の方法と緊急連絡先の登録をお願いいたします。
 
 【登録内容】
-・通常連絡用（メールまたはLINEを選択）
+・通常連絡用（メール）
 ・緊急連絡先（電話番号 - 必須）
 
 以下のURLから登録を完了してください：

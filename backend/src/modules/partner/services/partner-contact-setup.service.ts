@@ -142,19 +142,9 @@ export class PartnerContactSetupService {
       throw ResourceNotFoundException.forPartner(token);
     }
 
-    // LINE選択時はlineUserIdが必要（LINE友達追加フローの後に設定される）
-    // ここでは一旦preferredChannelをLINEに設定して後からlineUserIdが設定される想定
-    if (dto.preferredChannel === PreferredChannel.LINE && !dto.lineUserId) {
-      // LINEの場合はまだlineUserIdが無くてもOK（後から設定）
-      this.logger.log(`Partner ${partner.email} chose LINE but lineUserId not yet set`);
-    }
-
     // 連絡先設定を更新
     partner.preferredChannel = dto.preferredChannel;
     partner.smsPhoneNumber = dto.smsPhoneNumber;
-    if (dto.lineUserId) {
-      partner.lineUserId = dto.lineUserId;
-    }
     partner.contactSetupCompleted = true;
     // トークンは使用済みにするため削除
     partner.contactSetupToken = null;

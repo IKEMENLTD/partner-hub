@@ -29,16 +29,6 @@ export class UpdateSystemSettingsDto {
   @IsBoolean()
   slackNotifyAllReminders?: boolean;
 
-  @ApiPropertyOptional({ description: 'LINE Channel Access Token' })
-  @IsOptional()
-  @IsString()
-  lineChannelAccessToken?: string;
-
-  @ApiPropertyOptional({ description: 'LINE Channel Secret' })
-  @IsOptional()
-  @IsString()
-  lineChannelSecret?: string;
-
   @ApiPropertyOptional({ description: 'Twilio Account SID' })
   @IsOptional()
   @IsString()

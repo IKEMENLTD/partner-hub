@@ -27,7 +27,6 @@ export enum ProgressStatus {
 export enum ReportSource {
   WEB_FORM = 'web_form',
   EMAIL = 'email',
-  LINE = 'line',
   TEAMS = 'teams',
   API = 'api',
 }

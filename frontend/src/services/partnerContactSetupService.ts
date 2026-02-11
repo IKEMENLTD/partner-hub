@@ -1,10 +1,9 @@
 import { api, extractData } from './api';
 
-export type PreferredChannel = 'email' | 'line';
+export type PreferredChannel = 'email';
 
 export interface PartnerContactSetupInput {
   preferredChannel: PreferredChannel;
-  lineUserId?: string;
   smsPhoneNumber: string;
 }
 

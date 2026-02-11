@@ -58,8 +58,6 @@ export function AdminSettingsPage() {
     slackNotifyEscalation: true,
     slackNotifyDailySummary: true,
     slackNotifyAllReminders: false,
-    lineChannelAccessToken: '',
-    lineChannelSecret: '',
     twilioAccountSid: '',
     twilioAuthToken: '',
     twilioPhoneNumber: '',
@@ -78,8 +76,6 @@ export function AdminSettingsPage() {
           slackNotifyEscalation: data.slackNotifyEscalation,
           slackNotifyDailySummary: data.slackNotifyDailySummary,
           slackNotifyAllReminders: data.slackNotifyAllReminders,
-          lineChannelAccessToken: data.lineChannelAccessToken || '',
-          lineChannelSecret: data.lineChannelSecret || '',
           twilioAccountSid: data.twilioAccountSid || '',
           twilioAuthToken: data.twilioAuthToken || '',
           twilioPhoneNumber: data.twilioPhoneNumber || '',
@@ -110,8 +106,6 @@ export function AdminSettingsPage() {
       };
       if (formData.slackWebhookUrl?.trim()) payload.slackWebhookUrl = formData.slackWebhookUrl.trim();
       if (formData.slackChannelName?.trim()) payload.slackChannelName = formData.slackChannelName.trim();
-      if (formData.lineChannelAccessToken?.trim()) payload.lineChannelAccessToken = formData.lineChannelAccessToken.trim();
-      if (formData.lineChannelSecret?.trim()) payload.lineChannelSecret = formData.lineChannelSecret.trim();
       if (formData.twilioAccountSid?.trim()) payload.twilioAccountSid = formData.twilioAccountSid.trim();
       if (formData.twilioAuthToken?.trim()) payload.twilioAuthToken = formData.twilioAuthToken.trim();
       if (formData.twilioPhoneNumber?.trim()) payload.twilioPhoneNumber = formData.twilioPhoneNumber.trim();
@@ -294,45 +288,6 @@ export function AdminSettingsPage() {
                   }
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* LINE設定 */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-green-500" />
-              <span>LINE連携</span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Channel Access Token
-              </label>
-              <Input
-                type="password"
-                value={formData.lineChannelAccessToken}
-                onChange={(e) =>
-                  setFormData({ ...formData, lineChannelAccessToken: e.target.value })
-                }
-                placeholder="LINE Developersで取得"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Channel Secret
-              </label>
-              <Input
-                type="password"
-                value={formData.lineChannelSecret}
-                onChange={(e) =>
-                  setFormData({ ...formData, lineChannelSecret: e.target.value })
-                }
-                placeholder="LINE Developersで取得"
-              />
             </div>
           </CardContent>
         </Card>

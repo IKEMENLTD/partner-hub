@@ -8,16 +8,8 @@ export class PartnerContactSetupDto {
     description: '通常連絡用チャネル',
     example: PreferredChannel.EMAIL,
   })
-  @IsEnum(PreferredChannel, { message: '有効な連絡チャネルを選択してください（email または line）' })
+  @IsEnum(PreferredChannel, { message: '有効な連絡チャネルを選択してください' })
   preferredChannel: PreferredChannel;
-
-  @ApiPropertyOptional({
-    description: 'LINE User ID（LINE連携時に設定）',
-    example: 'U1234567890abcdef',
-  })
-  @IsOptional()
-  @IsString({ message: 'LINE User IDは文字列で入力してください' })
-  lineUserId?: string;
 
   @ApiProperty({
     description: '緊急連絡用電話番号（必須）',

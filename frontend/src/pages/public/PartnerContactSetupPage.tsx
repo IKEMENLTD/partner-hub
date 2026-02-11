@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Mail,
-  MessageCircle,
   Phone,
   Loader2,
   AlertCircle,
@@ -28,7 +27,7 @@ export function PartnerContactSetupPage() {
   const [success, setSuccess] = useState(false);
 
   // フォーム状態
-  const [preferredChannel, setPreferredChannel] = useState<PreferredChannel>('email');
+  const preferredChannel: PreferredChannel = 'email';
   const [smsPhoneNumber, setSmsPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
@@ -213,64 +212,14 @@ export function PartnerContactSetupPage() {
               {/* 通常連絡用チャネル */}
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-3">
-                  通常連絡用の方法を選択してください
+                  通常連絡用の方法
                 </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setPreferredChannel('email')}
-                    className={`p-4 rounded-lg border-2 text-center transition-colors ${
-                      preferredChannel === 'email'
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <Mail
-                      className={`h-8 w-8 mx-auto mb-2 ${
-                        preferredChannel === 'email' ? 'text-primary-600' : 'text-gray-400'
-                      }`}
-                    />
-                    <span
-                      className={`text-sm font-medium ${
-                        preferredChannel === 'email' ? 'text-primary-700' : 'text-gray-700'
-                      }`}
-                    >
-                      メール
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPreferredChannel('line')}
-                    className={`p-4 rounded-lg border-2 text-center transition-colors ${
-                      preferredChannel === 'line'
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <MessageCircle
-                      className={`h-8 w-8 mx-auto mb-2 ${
-                        preferredChannel === 'line' ? 'text-green-600' : 'text-gray-400'
-                      }`}
-                    />
-                    <span
-                      className={`text-sm font-medium ${
-                        preferredChannel === 'line' ? 'text-green-700' : 'text-gray-700'
-                      }`}
-                    >
-                      LINE
-                    </span>
-                  </button>
+                <div className="p-4 rounded-lg border-2 border-primary-500 bg-primary-50 text-center">
+                  <Mail className="h-8 w-8 mx-auto mb-2 text-primary-600" />
+                  <span className="text-sm font-medium text-primary-700">
+                    メール
+                  </span>
                 </div>
-
-                {preferredChannel === 'line' && (
-                  <div className="mt-4 p-4 bg-green-50 rounded-lg">
-                    <p className="text-sm text-green-700">
-                      LINE通知をご利用いただくには、設定完了後に表示される
-                      QRコードからLINE公式アカウントを友達追加してください。
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* 緊急連絡先（電話番号） */}

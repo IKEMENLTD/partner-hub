@@ -18,7 +18,6 @@ import {
   Smile,
   AlertTriangle,
   XCircle,
-  MessageCircle,
 } from 'lucide-react';
 import { usePartner, usePartnerProjects, useDeletePartner, usePartnerReports, getProgressStatusLabel } from '@/hooks';
 import { api } from '@/services/api';
@@ -326,16 +325,10 @@ export function PartnerDetailPage() {
               {partner.contactSetupCompleted ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    {partner.preferredChannel === 'line' ? (
-                      <MessageCircle className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <Mail className="h-5 w-5 text-gray-400" />
-                    )}
+                    <Mail className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="text-xs text-gray-500">通常連絡方法</p>
-                      <p className="text-sm text-gray-900">
-                        {partner.preferredChannel === 'line' ? 'LINE' : 'メール'}
-                      </p>
+                      <p className="text-sm text-gray-900">メール</p>
                     </div>
                   </div>
                   {partner.smsPhoneNumber && (

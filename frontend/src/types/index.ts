@@ -48,7 +48,7 @@ export interface Partner {
   metadata?: Record<string, unknown>;
   userId?: string;
   createdById?: string;
-  preferredChannel?: 'email' | 'line';
+  preferredChannel?: 'email';
   smsPhoneNumber?: string;
   contactSetupCompleted?: boolean;
   createdAt: string;
@@ -713,7 +713,7 @@ export interface CustomFieldTemplateFilter {
 
 export type ReportType = 'progress' | 'issue' | 'completion' | 'general';
 
-export type ReportSource = 'web_form' | 'email' | 'line' | 'teams' | 'api';
+export type ReportSource = 'web_form' | 'email' | 'teams' | 'api';
 
 // パートナー報告
 export interface PartnerReport {
