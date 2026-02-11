@@ -16,6 +16,11 @@ export interface UpdateSystemSettingsInput {
   twilioPhoneNumber?: string;
 }
 
+export interface SmsTestResult {
+  success: boolean;
+  message: string;
+}
+
 interface BackendResponse<T> {
   success: boolean;
   data: T;
@@ -36,5 +41,12 @@ export const systemSettingsService = {
   async updateSettings(input: UpdateSystemSettingsInput): Promise<SystemSettings> {
     const response = await api.put<BackendResponse<SystemSettings>>('/system-settings', input);
     return extractData(response);
+  },
+
+  /**
+   * テストSMSを送信
+   */
+  async testSms(phoneNumber: string): Promise<SmsTestResult> {
+    return api.post<SmsTestResult>('/system-settings/test-sms', { phoneNumber });
   },
 };
