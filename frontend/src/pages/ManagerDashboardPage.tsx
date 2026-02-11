@@ -371,7 +371,11 @@ export function ManagerDashboardPage() {
                     </div>
                     <div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
                       <span>進捗: {project.progress}%</span>
-                      <span>残り {project.daysRemaining} 日</span>
+                      <span className={project.daysRemaining < 0 ? 'text-red-500 font-medium' : ''}>
+                        {project.daysRemaining < 0
+                          ? `${Math.abs(project.daysRemaining)}日超過`
+                          : `残り ${project.daysRemaining} 日`}
+                      </span>
                       {project.overdueTaskCount > 0 && (
                         <span className="text-red-500">
                           期限超過タスク: {project.overdueTaskCount}件
