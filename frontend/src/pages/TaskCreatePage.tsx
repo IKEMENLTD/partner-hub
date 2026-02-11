@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useCreateTask, useUpdateTask, useTask, useProject, usePartners } from '@/hooks';
+import { useCreateTask, useUpdateTask, useTask, useProject } from '@/hooks';
 import type { TaskInput, TaskStatus, Priority } from '@/types';
 import { getUserDisplayName } from '@/types';
 import {
@@ -48,7 +48,6 @@ export function TaskCreatePage() {
 
   const { data: taskData, isLoading: isLoadingTask } = useTask(taskId);
   const { data: projectData, isLoading: isLoadingProject } = useProject(projectId);
-  const { data: partnersData } = usePartners({ pageSize: 100 });
   const { mutate: createTask, isPending: isCreating, error: createError } = useCreateTask();
   const { mutate: updateTask, isPending: isUpdating, error: updateError } = useUpdateTask();
 
@@ -98,7 +97,7 @@ export function TaskCreatePage() {
 
   const partnerOptions = [
     { value: '', label: 'パートナー未割当' },
-    ...(partnersData?.data || []).map((p: { id: string; name: string }) => ({ value: p.id, label: p.name })),
+    ...(project?.partners || []).map((p: { id: string; name: string }) => ({ value: p.id, label: p.name })),
   ];
 
   const isPending = isCreating || isUpdating;
