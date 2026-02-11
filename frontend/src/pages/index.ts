@@ -16,8 +16,6 @@ export { SettingsPage } from './SettingsPage';
 export { ProfilePage } from './ProfilePage';
 export { NotificationsPage } from './NotificationsPage';
 export { ProgressReportPage } from './ProgressReportPage';
-export { PartnerReportPage } from './public/PartnerReportPage';
-export { PartnerDashboardPage } from './public/PartnerDashboardPage';
 export { PartnerPortalPage } from './public/PartnerPortalPage';
 export { PartnerContactSetupPage } from './public/PartnerContactSetupPage';
 export { PartnerReportsListPage } from './PartnerReportsListPage';
