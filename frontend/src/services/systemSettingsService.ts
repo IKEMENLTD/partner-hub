@@ -61,7 +61,7 @@ export const systemSettingsService = {
    * Slack Webhook URLをテスト
    */
   async testSlackWebhook(webhookUrl: string): Promise<SlackTestResult> {
-    const response = await api.post<SlackTestResult>('/system-settings/test-slack', { webhookUrl });
-    return response;
+    const response = await api.post<BackendResponse<SlackTestResult>>('/system-settings/test-slack', { webhookUrl });
+    return extractData(response);
   },
 };
