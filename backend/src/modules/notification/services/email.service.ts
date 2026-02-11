@@ -53,6 +53,8 @@ export class EmailService {
   private readonly isEnabled: boolean;
   private readonly fromAddress: string;
   private readonly fromName: string;
+  private readonly useResendApi: boolean;
+  private readonly resendApiKey: string;
 
   constructor(
     private configService: ConfigService,
@@ -65,8 +67,16 @@ export class EmailService {
       'Partner Collaboration Platform',
     );
 
+    const host = this.configService.get<string>('email.host', '');
+    this.useResendApi = host.includes('resend.com');
+    this.resendApiKey = this.configService.get<string>('email.pass', '');
+
     if (this.isEnabled) {
-      this.initializeTransporter();
+      if (this.useResendApi) {
+        this.logger.log('Email configured via Resend HTTP API (SMTP port blocked workaround)');
+      } else {
+        this.initializeTransporter();
+      }
     } else {
       this.logger.warn('Email sending is disabled. Emails will be logged to console only.');
     }
@@ -74,17 +84,24 @@ export class EmailService {
 
   private initializeTransporter(): void {
     try {
+      const host = this.configService.get<string>('email.host');
+      const port = this.configService.get<number>('email.port');
+      const secure = this.configService.get<boolean>('email.secure');
+
       this.transporter = nodemailer.createTransport({
-        host: this.configService.get<string>('email.host'),
-        port: this.configService.get<number>('email.port'),
-        secure: this.configService.get<boolean>('email.secure'),
+        host,
+        port,
+        secure,
         auth: {
           user: this.configService.get<string>('email.user'),
           pass: this.configService.get<string>('email.pass'),
         },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
 
-      this.logger.log('Email transporter initialized successfully');
+      this.logger.log(`Email transporter initialized: host=${host}, port=${port}, secure=${secure}`);
     } catch (error) {
       this.logger.error('Failed to initialize email transporter', error);
       this.transporter = null;
@@ -124,6 +141,40 @@ export class EmailService {
   }
 
   /**
+   * Send via Resend HTTP API (bypasses SMTP port blocking on cloud providers)
+   */
+  private async sendViaResendApi(options: SendEmailOptions): Promise<boolean> {
+    const { to, subject, html, text } = options;
+    const recipients = Array.isArray(to) ? to : [to];
+
+    this.logger.log(`Sending email via Resend API to ${recipients.join(', ')}, subject="${subject}"`);
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: `${this.fromName} <${this.fromAddress}>`,
+        to: recipients,
+        subject,
+        html,
+        text: text || this.htmlToText(html),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Resend API error (${response.status}): ${errorBody}`);
+    }
+
+    const result = await response.json();
+    this.logger.log(`Email sent via Resend API: id=${result.id} to ${recipients.join(', ')}`);
+    return true;
+  }
+
+  /**
    * Send a generic email directly (synchronous, blocking)
    * Used for test emails and as fallback when queue is unavailable
    */
@@ -143,13 +194,19 @@ export class EmailService {
       return true;
     }
 
-    // Production mode: send actual email
+    // Resend HTTP API mode (bypasses SMTP port blocking)
+    if (this.useResendApi) {
+      return this.sendViaResendApi(options);
+    }
+
+    // SMTP mode: send actual email via nodemailer
     if (!this.transporter) {
       this.logger.error('Email transporter not available');
       return false;
     }
 
     try {
+      this.logger.log(`Sending email to ${recipients}, subject="${subject}"`);
       const mailOptions = {
         from: `"${this.fromName}" <${this.fromAddress}>`,
         to: recipients,

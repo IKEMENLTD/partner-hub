@@ -20,6 +20,8 @@ export class EmailProcessor extends WorkerHost {
   private readonly isEnabled: boolean;
   private readonly fromAddress: string;
   private readonly fromName: string;
+  private readonly useResendApi: boolean;
+  private readonly resendApiKey: string;
 
   constructor(private readonly configService: ConfigService) {
     super();
@@ -30,11 +32,15 @@ export class EmailProcessor extends WorkerHost {
       'Partner Collaboration Platform',
     );
 
-    if (this.isEnabled) {
+    const host = this.configService.get<string>('email.host', '');
+    this.useResendApi = host.includes('resend.com');
+    this.resendApiKey = this.configService.get<string>('email.pass', '');
+
+    if (this.isEnabled && !this.useResendApi) {
       this.initializeTransporter();
     }
 
-    this.logger.log('Email processor initialized');
+    this.logger.log(`Email processor initialized (resendApi=${this.useResendApi})`);
   }
 
   private initializeTransporter(): void {
@@ -47,12 +53,42 @@ export class EmailProcessor extends WorkerHost {
           user: this.configService.get<string>('email.user'),
           pass: this.configService.get<string>('email.pass'),
         },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
       this.logger.log('Email processor transporter initialized');
     } catch (error) {
       this.logger.error('Failed to initialize email processor transporter', error);
       this.transporter = null;
     }
+  }
+
+  private async sendViaResendApi(to: string, subject: string, html: string, text?: string, from?: string): Promise<string> {
+    const fromField = from || `${this.fromName} <${this.fromAddress}>`;
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromField,
+        to: [to],
+        subject,
+        html,
+        text: text || this.htmlToText(html),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Resend API error (${response.status}): ${errorBody}`);
+    }
+
+    const result = await response.json();
+    return result.id;
   }
 
   async process(job: Job<EmailJobData>): Promise<boolean> {
@@ -72,7 +108,19 @@ export class EmailProcessor extends WorkerHost {
       return true;
     }
 
-    // Production mode: send actual email
+    // Resend HTTP API mode
+    if (this.useResendApi) {
+      try {
+        const emailId = await this.sendViaResendApi(to, subject, html, text, job.data.from);
+        this.logger.log(`Email sent via Resend API (queue): id=${emailId} to ${to}`);
+        return true;
+      } catch (error) {
+        this.logger.error(`Failed to send email via Resend API to ${to}: ${error.message}`);
+        throw error; // BullMQ will retry
+      }
+    }
+
+    // SMTP mode: send actual email
     if (!this.transporter) {
       throw new Error('Email transporter not available');
     }
