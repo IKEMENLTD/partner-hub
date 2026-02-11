@@ -63,8 +63,8 @@ export const partnerService = {
   delete: (id: string) => api.delete<void>(`/partners/${id}`),
 
   getProjects: async (partnerId: string): Promise<Project[]> => {
-    const response = await api.get<{ success: boolean; data: { projects: Project[] } }>(`/partners/${partnerId}/projects`);
-    return response.data.projects;
+    const response = await api.get<{ success: boolean; data: Project[] }>(`/partners/${partnerId}/projects`);
+    return extractData(response);
   },
 
   getDeleted: async (): Promise<Partner[]> => {
