@@ -68,7 +68,9 @@ export function ProfilePage() {
       formData.append('file', file);
 
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      const baseUrl = import.meta.env.VITE_API_URL || '/api/v1';
+      const baseUrl = import.meta.env.VITE_API_URL
+        ? `${import.meta.env.VITE_API_URL}/api/v1`
+        : '/api/v1';
       const res = await fetch(`${baseUrl}/auth/me/avatar`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
