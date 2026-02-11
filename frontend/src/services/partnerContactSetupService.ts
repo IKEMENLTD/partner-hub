@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, extractData } from './api';
 
 export type PreferredChannel = 'email' | 'line';
 
@@ -36,10 +36,11 @@ export const partnerContactSetupService = {
    * トークンを検証してパートナー情報を取得
    */
   async verifyToken(token: string): Promise<TokenVerifyResult> {
-    return api.get<TokenVerifyResult>(
+    const response = await api.get<{ success: boolean; data: TokenVerifyResult }>(
       `/partner-contact-setup/verify/${token}`,
       true // skipAuth - 公開エンドポイント
     );
+    return extractData(response);
   },
 
   /**
@@ -49,10 +50,11 @@ export const partnerContactSetupService = {
     token: string,
     input: PartnerContactSetupInput
   ): Promise<ContactSetupResult> {
-    return api.post<ContactSetupResult>(
+    const response = await api.post<{ success: boolean; data: ContactSetupResult }>(
       `/partner-contact-setup/complete/${token}`,
       input,
       true // skipAuth - 公開エンドポイント
     );
+    return extractData(response);
   },
 };
