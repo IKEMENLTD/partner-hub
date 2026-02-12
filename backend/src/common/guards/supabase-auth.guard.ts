@@ -100,16 +100,20 @@ export class SupabaseAuthGuard implements CanActivate {
 
       if (userProfile) {
         this.logger.debug(`Profile cache hit for user: ${user.email}`);
-      } else {
+      }
+
+      if (!userProfile) {
         // Cache miss - query DB
         userProfile = await this.userProfileRepository.findOne({
           where: { id: user.id },
         });
+      }
 
-        // 新規ユーザーまたはorganizationId未設定のユーザーに対して組織セットアップを実行
-        // Note: Supabaseの on_auth_user_created トリガーが先にprofilesにデフォルト値で
-        // レコードを作成するため、!userProfile だけでなく !organizationId もチェックする
-        const needsOrgSetup = !userProfile || !userProfile.organizationId;
+      // 新規ユーザーまたはorganizationId未設定のユーザーに対して組織セットアップを実行
+      // Note: Supabaseの on_auth_user_created トリガーが先にprofilesにデフォルト値で
+      // レコードを作成するため、!userProfile だけでなく !organizationId もチェックする
+      // キャッシュヒット時でも実行する必要がある
+      const needsOrgSetup = !userProfile || !userProfile.organizationId;
 
         if (needsOrgSetup) {
           const inviteToken = user.user_metadata?.invite_token;
@@ -199,13 +203,12 @@ export class SupabaseAuthGuard implements CanActivate {
             this.logger.log(`New organization created for admin user: ${user.email}`);
           }
 
-          // キャッシュを無効化して最新状態を反映
-          this.userProfileCache.invalidate(user.id);
-        }
-
-        // Cache the profile
-        this.userProfileCache.set(user.id, userProfile!);
+        // キャッシュを無効化して最新状態を反映
+        this.userProfileCache.invalidate(user.id);
       }
+
+      // Cache the profile
+      this.userProfileCache.set(user.id, userProfile!);
 
       if (!userProfile!.isActive) {
         // Remove inactive users from cache immediately
