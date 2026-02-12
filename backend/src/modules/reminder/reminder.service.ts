@@ -19,6 +19,17 @@ import { ProjectStatus } from '../project/enums/project-status.enum';
 import { NotificationService } from '../notification/services/notification.service';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 
+// SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
+const ALLOWED_SORT_COLUMNS = [
+  'scheduledAt',
+  'createdAt',
+  'updatedAt',
+  'title',
+  'type',
+  'status',
+  'sentAt',
+];
+
 @Injectable()
 export class ReminderService {
   private readonly logger = new Logger(ReminderService.name);
@@ -100,7 +111,9 @@ export class ReminderService {
       queryBuilder.andWhere('reminder.isRead = :isRead', { isRead });
     }
 
-    queryBuilder.orderBy(`reminder.${sortBy}`, sortOrder);
+    // SECURITY FIX: Validate sortBy against whitelist to prevent SQL injection
+    const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'scheduledAt';
+    queryBuilder.orderBy(`reminder.${safeSortBy}`, sortOrder);
 
     const skip = (page - 1) * limit;
     queryBuilder.skip(skip).take(limit);

@@ -7,7 +7,7 @@ import {
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { BusinessException, AuthorizationException } from '../../common/exceptions/business.exception';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Not, IsNull } from 'typeorm';
+import { Repository, In, Not, IsNull, DataSource } from 'typeorm';
 import { Project } from './entities/project.entity';
 import { ProjectTemplate } from './entities/project-template.entity';
 import { ProjectStakeholder } from './entities/project-stakeholder.entity';
@@ -56,6 +56,7 @@ export class ProjectService {
     private emailService: EmailService,
     @Inject(forwardRef(() => ProjectStatisticsService))
     private statisticsService: ProjectStatisticsService,
+    private dataSource: DataSource,
   ) {}
 
   async create(createProjectDto: CreateProjectDto, createdById: string): Promise<Project> {
@@ -81,19 +82,11 @@ export class ProjectService {
       allPartnerIds.push(...partnerIds);
     }
 
-    const project = this.projectRepository.create({
-      ...projectData,
-      tags: sanitizedTags,
-      createdById,
-      organizationId,
-      // ownerId が指定されていない場合は createdById を使用
-      ownerId: projectData.ownerId || createdById,
-    });
-
-    // Handle partner associations (project_partners join table)
+    // Validate partners before starting transaction
+    let partners: Partner[] = [];
     if (allPartnerIds.length > 0) {
       const uniquePartnerIds = [...new Set(allPartnerIds)];
-      const partners = await this.partnerRepository.findBy({
+      partners = await this.partnerRepository.findBy({
         id: In(uniquePartnerIds),
       });
       if (partners.length !== uniquePartnerIds.length) {
@@ -102,46 +95,60 @@ export class ProjectService {
           userMessage: '一部のパートナーIDが無効です',
         });
       }
-      project.partners = partners;
     }
 
-    await this.projectRepository.save(project);
+    // SECURITY FIX: Wrap all DB writes in a transaction for atomicity
+    const projectId = await this.dataSource.transaction(async (manager) => {
+      const project = this.projectRepository.create({
+        ...projectData,
+        tags: sanitizedTags,
+        createdById,
+        organizationId,
+        ownerId: projectData.ownerId || createdById,
+      });
 
-    // Create project_stakeholders entries
-    if (stakeholders && stakeholders.length > 0) {
-      const stakeholderEntities = stakeholders.map((s) =>
-        this.stakeholderRepository.create({
-          projectId: project.id,
-          partnerId: s.partnerId,
-          tier: s.tier ?? 1,
-          roleDescription: s.roleDescription,
-          isPrimary: s.isPrimary ?? false,
-        }),
-      );
-      await this.stakeholderRepository.save(stakeholderEntities);
-      this.logger.log(`Created ${stakeholderEntities.length} stakeholders for project ${project.id}`);
-    } else if (partnerIds && partnerIds.length > 0) {
-      // Backward compat: partnerIds → stakeholders with tier 1
-      const stakeholderEntities = partnerIds.map((pid) =>
-        this.stakeholderRepository.create({
-          projectId: project.id,
-          partnerId: pid,
-          tier: 1,
-          isPrimary: false,
-        }),
-      );
-      await this.stakeholderRepository.save(stakeholderEntities);
-      this.logger.log(`Created ${stakeholderEntities.length} stakeholders (from partnerIds) for project ${project.id}`);
-    }
+      if (partners.length > 0) {
+        project.partners = partners;
+      }
 
-    // Apply template tasks if templateId is provided
-    if (templateId) {
-      await this.applyTemplate(project.id, templateId, project.startDate, createdById);
-    }
+      await manager.save(project);
 
-    this.logger.log(`Project created: ${project.name} (${project.id})`);
+      // Create project_stakeholders entries
+      if (stakeholders && stakeholders.length > 0) {
+        const stakeholderEntities = stakeholders.map((s) =>
+          this.stakeholderRepository.create({
+            projectId: project.id,
+            partnerId: s.partnerId,
+            tier: s.tier ?? 1,
+            roleDescription: s.roleDescription,
+            isPrimary: s.isPrimary ?? false,
+          }),
+        );
+        await manager.save(stakeholderEntities);
+        this.logger.log(`Created ${stakeholderEntities.length} stakeholders for project ${project.id}`);
+      } else if (partnerIds && partnerIds.length > 0) {
+        const stakeholderEntities = partnerIds.map((pid) =>
+          this.stakeholderRepository.create({
+            projectId: project.id,
+            partnerId: pid,
+            tier: 1,
+            isPrimary: false,
+          }),
+        );
+        await manager.save(stakeholderEntities);
+        this.logger.log(`Created ${stakeholderEntities.length} stakeholders (from partnerIds) for project ${project.id}`);
+      }
 
-    return this.findOne(project.id);
+      // Apply template tasks if templateId is provided
+      if (templateId) {
+        await this.applyTemplate(project.id, templateId, project.startDate, createdById);
+      }
+
+      this.logger.log(`Project created: ${project.name} (${project.id})`);
+      return project.id;
+    });
+
+    return this.findOne(projectId);
   }
 
   /**

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ProjectService } from './project.service';
 import { Project } from './entities/project.entity';
 import { ProjectTemplate } from './entities/project-template.entity';
@@ -108,6 +108,20 @@ describe('ProjectService', () => {
     sendProjectInvitationEmail: jest.fn().mockResolvedValue(undefined),
   };
 
+  const mockDataSource = {
+    transaction: jest.fn((cb: (manager: any) => Promise<any>) => {
+      const manager = {
+        save: jest.fn((entity: any) => {
+          if (Array.isArray(entity)) {
+            return Promise.resolve(entity);
+          }
+          return mockProjectRepository.save(entity);
+        }),
+      };
+      return cb(manager);
+    }),
+  };
+
   const mockStatisticsService = {
     getProjectStatistics: jest.fn().mockResolvedValue({
       total: 10,
@@ -158,6 +172,10 @@ describe('ProjectService', () => {
         {
           provide: ProjectStatisticsService,
           useValue: mockStatisticsService,
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
         },
       ],
     }).compile();
