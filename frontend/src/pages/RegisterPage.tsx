@@ -8,10 +8,11 @@ import { organizationService } from '@/services/organizationService';
 
 export function RegisterPage() {
   const { isAuthenticated, error, isLoading } = useAuthStore();
-  const { mutate: register } = useRegister();
+  const registerMutation = useRegister();
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get('invite');
 
+  const [registerSuccess, setRegisterSuccess] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -130,13 +131,18 @@ export function RegisterPage() {
       return;
     }
 
-    register(
+    registerMutation.mutate(
       {
         email: formData.email.trim(),
         password: formData.password,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         inviteToken: inviteValid ? (inviteToken || undefined) : undefined,
+      },
+      {
+        onSuccess: () => {
+          setRegisterSuccess(true);
+        },
       }
     );
   };
@@ -225,6 +231,27 @@ export function RegisterPage() {
             )}
           </div>
 
+          {registerSuccess && (
+            <div className="mt-6 rounded-lg bg-green-50 p-6 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-green-800">登録が完了しました</h3>
+              <p className="mt-2 text-sm text-green-700">
+                <strong>{formData.email}</strong> に確認メールを送信しました。
+                メール内のリンクをクリックしてアカウントを有効化してください。
+              </p>
+              <Link
+                to="/login"
+                className="mt-4 inline-block rounded-lg bg-primary-600 px-6 py-2 text-sm font-medium text-white hover:bg-primary-700"
+              >
+                ログインページへ
+              </Link>
+            </div>
+          )}
+
           {inviteLoading && (
             <div className="mt-6 flex items-center justify-center">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
@@ -245,7 +272,7 @@ export function RegisterPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5" style={{ display: registerSuccess ? 'none' : undefined }}>
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="姓"
