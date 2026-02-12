@@ -89,8 +89,8 @@ jobs:
       - name: Run test coverage with threshold
         run: |
           npm run test:coverage -- --run
-          # Fail if coverage is below threshold
-          npx istanbul check-coverage --lines 60 --functions 60 --branches 50 || echo "Coverage below threshold - warning only"
+          # Fail CI if coverage is below threshold
+          npx istanbul check-coverage --lines 60 --functions 60 --branches 50
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

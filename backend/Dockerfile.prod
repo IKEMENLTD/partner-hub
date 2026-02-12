@@ -4,7 +4,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
@@ -15,17 +15,24 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
+
+# Run as non-root user for security
+USER node
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
 EXPOSE 3000
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/v1/health/liveness || exit 1
+
 # SECURITY: Do NOT run seed in production
 # Seed script creates demo users with known credentials
 # If database seeding is needed, run it manually in a secure environment:
 #   docker exec <container> node dist/seeds/seed.js
-CMD node dist/main.js
+CMD ["node", "dist/main.js"]

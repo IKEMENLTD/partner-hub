@@ -4,7 +4,21 @@
 -- =============================================================================
 
 -- =============================================================================
+-- 安全ガード: 本番環境での実行を防止
+-- =============================================================================
+DO $$
+BEGIN
+  -- DATABASE_URL や app.environment などで本番判定
+  -- Supabase の本番プロジェクトでは current_database() が 'postgres' で
+  -- 開発環境と同じ名前になるため、明示的なフラグで判定する
+  IF NOT current_setting('app.allow_seed', true) = 'true' THEN
+    RAISE EXCEPTION '⚠️ Seed data の実行には SET app.allow_seed = ''true'' が必要です。本番環境では実行しないでください。';
+  END IF;
+END $$;
+
+-- =============================================================================
 -- 注意: このスクリプトは開発環境でのみ使用してください
+-- 実行前に: SET app.allow_seed = 'true';
 -- 本番環境では実行しないでください
 -- =============================================================================
 
@@ -256,8 +270,18 @@ INSERT INTO public.projects (
 -- 開発環境向けクリーンアップスクリプト
 -- =============================================================================
 
--- すべてのテストデータを削除（危険！開発環境のみ）
+-- ⚠️ 危険: すべてのテストデータを削除
+-- 使用方法: コメントを外す前に必ず以下を確認
+--   1. 本番環境でないこと
+--   2. SET app.allow_seed = 'true'; を実行済みであること
+--   3. バックアップを取得済みであること
 /*
+DO $$ BEGIN
+  IF NOT current_setting('app.allow_seed', true) = 'true' THEN
+    RAISE EXCEPTION 'TRUNCATE には SET app.allow_seed = ''true'' が必要です';
+  END IF;
+END $$;
+
 TRUNCATE public.notification_logs CASCADE;
 TRUNCATE public.reminders CASCADE;
 TRUNCATE public.task_comments CASCADE;

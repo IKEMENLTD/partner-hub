@@ -19,6 +19,20 @@ import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { ReportConfigService } from './services/report-config.service';
 import { ReportDataService } from './services/report-data.service';
 
+// SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
+const ALLOWED_SORT_COLUMNS = [
+  'createdAt',
+  'updatedAt',
+  'status',
+  'period',
+  'reportConfigId',
+  'generatedAt',
+  'title',
+  'dateRangeStart',
+  'dateRangeEnd',
+  'sentAt',
+];
+
 @Injectable()
 export class ReportService {
   private readonly logger = new Logger(ReportService.name);
@@ -112,7 +126,9 @@ export class ReportService {
       queryBuilder.andWhere('report.createdAt <= :toDate', { toDate });
     }
 
-    queryBuilder.orderBy(`report.${sortBy}`, sortOrder);
+    // SECURITY FIX: Validate sortBy against whitelist to prevent SQL injection
+    const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'createdAt';
+    queryBuilder.orderBy(`report.${safeSortBy}`, sortOrder);
 
     const skip = (page - 1) * limit;
     queryBuilder.skip(skip).take(limit);
