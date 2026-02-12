@@ -54,12 +54,6 @@ export class OrganizationGuard implements CanActivate {
       });
     }
 
-    // Super admin without organization can access all data
-    if (user.role === UserRole.ADMIN && !user.organizationId) {
-      this.logger.debug(`Super admin ${user.id} bypassing organization check`);
-      return true;
-    }
-
     const userProfile = await this.userProfileRepository.findOne({
       where: { id: user.id },
     });
@@ -73,11 +67,7 @@ export class OrganizationGuard implements CanActivate {
     request.user.organizationId = userProfile.organizationId;
 
     if (!userProfile.organizationId) {
-      if (userProfile.role === UserRole.ADMIN) {
-        this.logger.debug(`Admin ${user.id} without organization - allowing access`);
-        return true;
-      }
-      this.logger.warn(`User ${user.id} has no organization - access denied`);
+      this.logger.warn(`User ${user.id} (role=${userProfile.role}) has no organization - access denied`);
       throw new AuthorizationException('ORG_001', {
         message: 'User has no organization',
         userMessage: '組織に所属していません。管理者にお問い合わせください。',

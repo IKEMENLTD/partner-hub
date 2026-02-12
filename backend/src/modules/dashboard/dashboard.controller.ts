@@ -38,8 +38,8 @@ export class DashboardController {
   @ApiOperation({ summary: 'Get project summaries for dashboard' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Project summaries' })
-  async getProjectSummaries(@Query('limit') limit?: number) {
-    return this.dashboardService.getProjectSummaries(limit || 10);
+  async getProjectSummaries(@Query('limit') limit?: number, @CurrentUser('organizationId') organizationId?: string) {
+    return this.dashboardService.getProjectSummaries(limit || 10, organizationId);
   }
 
   @Get('partner-performance')
@@ -47,8 +47,8 @@ export class DashboardController {
   @ApiOperation({ summary: 'Get partner performance metrics' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Partner performance data' })
-  async getPartnerPerformance(@Query('limit') limit?: number) {
-    return this.dashboardService.getPartnerPerformance(limit || 10);
+  async getPartnerPerformance(@Query('limit') limit?: number, @CurrentUser('organizationId') organizationId?: string) {
+    return this.dashboardService.getPartnerPerformance(limit || 10, organizationId);
   }
 
   @Get('upcoming-deadlines')
@@ -56,16 +56,16 @@ export class DashboardController {
   @ApiOperation({ summary: 'Get upcoming deadlines' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Upcoming deadlines' })
-  async getUpcomingDeadlines(@Query('days') days?: number) {
-    return this.dashboardService.getUpcomingDeadlines(days || 7);
+  async getUpcomingDeadlines(@Query('days') days?: number, @CurrentUser('organizationId') organizationId?: string) {
+    return this.dashboardService.getUpcomingDeadlines(days || 7, organizationId);
   }
 
   @Get('overdue')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get overdue projects and tasks' })
   @ApiResponse({ status: 200, description: 'Overdue items' })
-  async getOverdueItems() {
-    return this.dashboardService.getOverdueItems();
+  async getOverdueItems(@CurrentUser('organizationId') organizationId?: string) {
+    return this.dashboardService.getOverdueItems(organizationId);
   }
 
   @Get('recent-activity')
@@ -73,24 +73,24 @@ export class DashboardController {
   @ApiOperation({ summary: 'Get recent activity' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Recent activity list' })
-  async getRecentActivity(@Query('limit') limit?: number) {
-    return this.dashboardService.getRecentActivity(limit || 20);
+  async getRecentActivity(@Query('limit') limit?: number, @CurrentUser('organizationId') organizationId?: string) {
+    return this.dashboardService.getRecentActivity(limit || 20, organizationId);
   }
 
   @Get('task-distribution')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get task distribution statistics' })
   @ApiResponse({ status: 200, description: 'Task distribution data' })
-  async getTaskDistribution() {
-    return this.dashboardService.getTaskDistribution();
+  async getTaskDistribution(@CurrentUser('organizationId') organizationId?: string) {
+    return this.dashboardService.getTaskDistribution(organizationId);
   }
 
   @Get('project-progress')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get project progress statistics' })
   @ApiResponse({ status: 200, description: 'Project progress data' })
-  async getProjectProgress() {
-    return this.dashboardService.getProjectProgress();
+  async getProjectProgress(@CurrentUser('organizationId') organizationId?: string) {
+    return this.dashboardService.getProjectProgress(organizationId);
   }
 
   @Get('my-dashboard')
@@ -147,8 +147,8 @@ export class DashboardController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get manager dashboard' })
   @ApiResponse({ status: 200, description: 'Manager dashboard data' })
-  async getManagerDashboard(@Query('period') period?: string) {
-    return this.dashboardService.getManagerDashboard(period || 'month');
+  async getManagerDashboard(@Query('period') period?: string, @CurrentUser('organizationId') organizationId?: string) {
+    return this.dashboardService.getManagerDashboard(period || 'month', organizationId);
   }
 
   @Get('reports/generate')
@@ -185,6 +185,7 @@ export class DashboardController {
     @Query('format') format: ReportFormat,
     @Query('startDate') startDate: string | undefined,
     @Query('endDate') endDate: string | undefined,
+    @CurrentUser('organizationId') organizationId: string,
     @Res() res: Response,
   ) {
     const result = await this.dashboardService.generateReport({
@@ -192,7 +193,7 @@ export class DashboardController {
       format,
       startDate,
       endDate,
-    });
+    }, organizationId);
 
     // Set response headers for file download
     res.setHeader('Content-Type', result.mimeType);

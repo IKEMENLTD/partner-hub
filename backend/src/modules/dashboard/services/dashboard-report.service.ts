@@ -22,14 +22,14 @@ export class DashboardReportService {
    * Supports weekly, monthly, and custom date range reports
    * Output formats: CSV
    */
-  async generateReport(dto: GenerateReportDto): Promise<ReportGenerationResult> {
+  async generateReport(dto: GenerateReportDto, organizationId?: string): Promise<ReportGenerationResult> {
     this.logger.log(`Generating ${dto.reportType} report in ${dto.format} format`);
 
     // Calculate date range based on report type
     const { startDate, endDate } = this.calculateDateRange(dto);
 
     // Gather report data
-    const reportData = await this.gatherReportData(startDate, endDate);
+    const reportData = await this.gatherReportData(startDate, endDate, organizationId);
 
     // Generate file based on format
     const { fileName, fileContent, mimeType } = await this.generateReportFile(
@@ -100,6 +100,7 @@ export class DashboardReportService {
   private async gatherReportData(
     startDate: Date,
     endDate: Date,
+    organizationId?: string,
   ): Promise<{
     overview: DashboardOverview;
     projectSummaries: ProjectSummary[];
@@ -111,11 +112,11 @@ export class DashboardReportService {
   }> {
     const [overview, projectSummaries, partnerPerformance, taskDistribution, overdueItems] =
       await Promise.all([
-        this.overviewService.getOverview(),
-        this.overviewService.getProjectSummaries(20),
-        this.overviewService.getPartnerPerformance(20),
-        this.overviewService.getTaskDistribution(),
-        this.overviewService.getOverdueItems(),
+        this.overviewService.getOverview(undefined, organizationId),
+        this.overviewService.getProjectSummaries(20, organizationId),
+        this.overviewService.getPartnerPerformance(20, organizationId),
+        this.overviewService.getTaskDistribution(organizationId),
+        this.overviewService.getOverdueItems(organizationId),
       ]);
 
     return {

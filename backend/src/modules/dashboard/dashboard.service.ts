@@ -51,37 +51,37 @@ export class DashboardService {
     return this.overviewService.getOverview(userId);
   }
 
-  async getProjectSummaries(limit: number = 10): Promise<ProjectSummary[]> {
-    return this.overviewService.getProjectSummaries(limit);
+  async getProjectSummaries(limit: number = 10, organizationId?: string): Promise<ProjectSummary[]> {
+    return this.overviewService.getProjectSummaries(limit, organizationId);
   }
 
-  async getPartnerPerformance(limit: number = 10): Promise<PartnerPerformance[]> {
-    return this.overviewService.getPartnerPerformance(limit);
+  async getPartnerPerformance(limit: number = 10, organizationId?: string): Promise<PartnerPerformance[]> {
+    return this.overviewService.getPartnerPerformance(limit, organizationId);
   }
 
-  async getUpcomingDeadlines(days: number = 7): Promise<{
+  async getUpcomingDeadlines(days: number = 7, organizationId?: string): Promise<{
     projects: Project[];
     tasks: Task[];
   }> {
-    return this.overviewService.getUpcomingDeadlines(days);
+    return this.overviewService.getUpcomingDeadlines(days, organizationId);
   }
 
-  async getOverdueItems(): Promise<{
+  async getOverdueItems(organizationId?: string): Promise<{
     projects: Project[];
     tasks: Task[];
   }> {
-    return this.overviewService.getOverdueItems();
+    return this.overviewService.getOverdueItems(organizationId);
   }
 
-  async getTaskDistribution(): Promise<{
+  async getTaskDistribution(organizationId?: string): Promise<{
     byStatus: Record<string, number>;
     byPriority: Record<string, number>;
     byType: Record<string, number>;
   }> {
-    return this.overviewService.getTaskDistribution();
+    return this.overviewService.getTaskDistribution(organizationId);
   }
 
-  async getProjectProgress(): Promise<{
+  async getProjectProgress(organizationId?: string): Promise<{
     byStatus: Record<string, number>;
     averageProgress: number;
     onTrack: number;
@@ -89,7 +89,7 @@ export class DashboardService {
     delayed: number;
     healthScoreStats: any;
   }> {
-    return this.overviewService.getProjectProgress();
+    return this.overviewService.getProjectProgress(organizationId);
   }
 
   async getHealthScoreStatistics() {
@@ -101,8 +101,8 @@ export class DashboardService {
   }
 
   // Delegate to activity service
-  async getRecentActivity(limit: number = 20): Promise<ActivityItem[]> {
-    return this.activityService.getRecentActivity(limit);
+  async getRecentActivity(limit: number = 20, organizationId?: string): Promise<ActivityItem[]> {
+    return this.activityService.getRecentActivity(limit, organizationId);
   }
 
   async getUserAlerts(userId: string): Promise<Reminder[]> {
@@ -118,8 +118,8 @@ export class DashboardService {
   }
 
   // Delegate to report service
-  async generateReport(dto: GenerateReportDto): Promise<ReportGenerationResult> {
-    return this.reportService.generateReport(dto);
+  async generateReport(dto: GenerateReportDto, organizationId?: string): Promise<ReportGenerationResult> {
+    return this.reportService.generateReport(dto, organizationId);
   }
 
   // User dashboard - kept in main service for orchestration
@@ -220,8 +220,11 @@ export class DashboardService {
       throw ResourceNotFoundException.forUser(userId);
     }
 
+    // Build org filter for queries
+    const orgId = user.organizationId;
+
     // Get today's tasks (innerJoin + deletedAt filter ensures only tasks with active projects)
-    const tasksForToday = await this.taskRepository
+    const tasksForTodayQuery = this.taskRepository
       .createQueryBuilder('task')
       .innerJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
@@ -230,14 +233,18 @@ export class DashboardService {
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
       })
-      .andWhere('(task.dueDate = :todayStr OR task.dueDate < :todayStr)', { todayStr })
+      .andWhere('(task.dueDate = :todayStr OR task.dueDate < :todayStr)', { todayStr });
+    if (orgId) {
+      tasksForTodayQuery.andWhere('project.organizationId = :orgId', { orgId });
+    }
+    const tasksForToday = await tasksForTodayQuery
       .orderBy('task.dueDate', 'ASC', 'NULLS LAST')
       .addOrderBy('task.priority', 'DESC')
       .take(20)
       .getMany();
 
     // Get upcoming deadlines (innerJoin + deletedAt filter ensures only tasks with active projects)
-    const upcomingDeadlines = await this.taskRepository
+    const upcomingDeadlinesQuery = this.taskRepository
       .createQueryBuilder('task')
       .innerJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
@@ -247,13 +254,17 @@ export class DashboardService {
       .andWhere('task.dueDate <= :nextWeekStr', { nextWeekStr })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
+      });
+    if (orgId) {
+      upcomingDeadlinesQuery.andWhere('project.organizationId = :orgId', { orgId });
+    }
+    const upcomingDeadlines = await upcomingDeadlinesQuery
       .orderBy('task.dueDate', 'ASC')
       .take(10)
       .getMany();
 
     // Get upcoming project deadlines (user's projects only, exclude soft-deleted)
-    const upcomingProjectDeadlines = await this.projectRepository
+    const upcomingProjectDeadlinesQuery = this.projectRepository
       .createQueryBuilder('project')
       .leftJoinAndSelect('project.owner', 'owner')
       .leftJoinAndSelect('project.manager', 'manager')
@@ -263,7 +274,11 @@ export class DashboardService {
       .andWhere('project.endDate <= :nextWeekStr', { nextWeekStr })
       .andWhere('project.status NOT IN (:...completedStatuses)', {
         completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
-      })
+      });
+    if (orgId) {
+      upcomingProjectDeadlinesQuery.andWhere('project.organizationId = :orgId', { orgId });
+    }
+    const upcomingProjectDeadlines = await upcomingProjectDeadlinesQuery
       .orderBy('project.endDate', 'ASC')
       .take(10)
       .getMany();
@@ -286,8 +301,8 @@ export class DashboardService {
       isRead: alert.isRead,
     }));
 
-    // Get recent activity
-    const recentActivities = await this.activityService.getRecentActivity(10);
+    // Get recent activity (filtered by organization)
+    const recentActivities = await this.activityService.getRecentActivity(10, orgId);
     const recentActivity = recentActivities.map((activity) => ({
       id: activity.entityId,
       type: activity.type,
@@ -300,8 +315,8 @@ export class DashboardService {
       userName: activity.userName,
     }));
 
-    // Get counts
-    const orgFilter = user.organizationId ? { organizationId: user.organizationId } : {};
+    // Get counts (always filter by organization)
+    const orgFilter = orgId ? { organizationId: orgId } : {};
     const [totalProjects, totalPartners] = await Promise.all([
       this.projectRepository.count({ where: { ...orgFilter, status: Not(ProjectStatus.DRAFT) } }),
       this.partnerRepository.count({ where: { ...orgFilter, deletedAt: IsNull() } }),
@@ -318,7 +333,7 @@ export class DashboardService {
     };
   }
 
-  async getManagerDashboard(period: string = 'month'): Promise<any> {
+  async getManagerDashboard(period: string = 'month', organizationId?: string): Promise<any> {
     const today = new Date();
     const periodStart = new Date();
     const periodEnd = new Date();
@@ -332,23 +347,26 @@ export class DashboardService {
     }
 
     const [projectSummary, taskSummary, partnerPerformance] = await Promise.all([
-      this.overviewService.getProjectProgress(),
-      this.overviewService.getTaskDistribution(),
-      this.overviewService.getPartnerPerformance(10),
+      this.overviewService.getProjectProgress(organizationId),
+      this.overviewService.getTaskDistribution(organizationId),
+      this.overviewService.getPartnerPerformance(10, organizationId),
     ]);
 
-    // Get projects at risk (exclude soft-deleted)
-    const projectsAtRisk = await this.projectRepository
+    // Get projects at risk (exclude soft-deleted, filter by org)
+    const projectsAtRiskQuery = this.projectRepository
       .createQueryBuilder('project')
       .where('project.deletedAt IS NULL')
       .andWhere('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
       .andWhere('project.progress < 50')
       .andWhere('project.endDate < :futureDate', {
         futureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      })
-      .getMany();
+      });
+    if (organizationId) {
+      projectsAtRiskQuery.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const projectsAtRisk = await projectsAtRiskQuery.getMany();
 
-    const recentActivities = await this.activityService.getRecentActivity(10);
+    const recentActivities = await this.activityService.getRecentActivity(10, organizationId);
 
     return {
       period,
@@ -362,7 +380,7 @@ export class DashboardService {
         onTrack: projectSummary.onTrack,
         atRisk: projectSummary.atRisk,
       },
-      taskSummary: await this.calculateTaskSummary(taskSummary),
+      taskSummary: await this.calculateTaskSummary(taskSummary, organizationId),
       partnerPerformance: await this.calculatePartnerPerformance(partnerPerformance),
       projectsAtRisk: await this.enrichProjectsAtRisk(projectsAtRisk),
       recentActivities: recentActivities.map((a) => ({
@@ -375,9 +393,9 @@ export class DashboardService {
         userName: a.userName,
         createdAt: a.timestamp,
       })),
-      budgetOverview: await this.calculateBudgetOverview(),
-      upcomingDeadlines: await this.getUpcomingDeadlinesForManager(),
-      teamWorkload: await this.getTeamWorkload(),
+      budgetOverview: await this.calculateBudgetOverview(organizationId),
+      upcomingDeadlines: await this.getUpcomingDeadlinesForManager(organizationId),
+      teamWorkload: await this.getTeamWorkload(organizationId),
     };
   }
 
@@ -386,7 +404,7 @@ export class DashboardService {
     byStatus: Record<string, number>;
     byPriority: Record<string, number>;
     byType: Record<string, number>;
-  }): Promise<{
+  }, organizationId?: string): Promise<{
     total: number;
     completed: number;
     inProgress: number;
@@ -395,13 +413,17 @@ export class DashboardService {
     completionRate: number;
   }> {
     const today = new Date();
-    const overdue = await this.taskRepository
+    const overdueQuery = this.taskRepository
       .createQueryBuilder('task')
+      .innerJoin('task.project', 'project')
       .where('task.dueDate < :today', { today })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
-      .getCount();
+      });
+    if (organizationId) {
+      overdueQuery.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const overdue = await overdueQuery.getCount();
 
     const total = Object.values(taskSummary.byStatus).reduce((a, b) => a + b, 0);
     const completed = taskSummary.byStatus[TaskStatus.COMPLETED] || 0;
@@ -487,14 +509,18 @@ export class DashboardService {
     }));
   }
 
-  private async calculateBudgetOverview(): Promise<{
+  private async calculateBudgetOverview(organizationId?: string): Promise<{
     totalBudget: number;
     totalSpent: number;
     utilizationRate: number;
     projectBudgets: any[];
   }> {
+    const where: any = { status: Not(ProjectStatus.CANCELLED) };
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
     const projects = await this.projectRepository.find({
-      where: { status: Not(ProjectStatus.CANCELLED) },
+      where,
       select: ['id', 'name', 'budget', 'actualCost'],
     });
 
@@ -599,12 +625,12 @@ export class DashboardService {
     });
   }
 
-  private async getUpcomingDeadlinesForManager(): Promise<any[]> {
+  private async getUpcomingDeadlinesForManager(organizationId?: string): Promise<any[]> {
     const today = new Date();
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
 
-    const tasks = await this.taskRepository
+    const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
       .innerJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
@@ -612,7 +638,11 @@ export class DashboardService {
       .andWhere('task.dueDate BETWEEN :today AND :nextWeek', { today, nextWeek })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
+      });
+    if (organizationId) {
+      queryBuilder.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const tasks = await queryBuilder
       .orderBy('task.dueDate', 'ASC')
       .take(10)
       .getMany();
@@ -639,12 +669,13 @@ export class DashboardService {
     }));
   }
 
-  private async getTeamWorkload(): Promise<any[]> {
+  private async getTeamWorkload(organizationId?: string): Promise<any[]> {
     const today = new Date();
 
-    // Get all users who have tasks assigned
-    const taskCounts = await this.taskRepository
+    // Get all users who have tasks assigned (filtered by organization)
+    const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
+      .innerJoin('task.project', 'project')
       .select('task.assigneeId', 'assigneeId')
       .addSelect('COUNT(*)', 'totalTasks')
       .addSelect(
@@ -662,7 +693,11 @@ export class DashboardService {
       .where('task.assigneeId IS NOT NULL')
       .andWhere('task.deletedAt IS NULL')
       .setParameter('today', today)
-      .setParameter('completedStatuses', [TaskStatus.COMPLETED, TaskStatus.CANCELLED])
+      .setParameter('completedStatuses', [TaskStatus.COMPLETED, TaskStatus.CANCELLED]);
+    if (organizationId) {
+      queryBuilder.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const taskCounts = await queryBuilder
       .groupBy('task.assigneeId')
       .getRawMany();
 

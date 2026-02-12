@@ -56,17 +56,17 @@ describe('DashboardController', () => {
     it('should return project summaries with default limit', async () => {
       mockDashboardService.getProjectSummaries.mockResolvedValue([]);
 
-      await controller.getProjectSummaries(undefined);
+      await controller.getProjectSummaries(undefined, 'org-1');
 
-      expect(mockDashboardService.getProjectSummaries).toHaveBeenCalledWith(10);
+      expect(mockDashboardService.getProjectSummaries).toHaveBeenCalledWith(10, 'org-1');
     });
 
     it('should return project summaries with custom limit', async () => {
       mockDashboardService.getProjectSummaries.mockResolvedValue([]);
 
-      await controller.getProjectSummaries(5);
+      await controller.getProjectSummaries(5, 'org-1');
 
-      expect(mockDashboardService.getProjectSummaries).toHaveBeenCalledWith(5);
+      expect(mockDashboardService.getProjectSummaries).toHaveBeenCalledWith(5, 'org-1');
     });
   });
 
@@ -74,9 +74,9 @@ describe('DashboardController', () => {
     it('should return partner performance with default limit', async () => {
       mockDashboardService.getPartnerPerformance.mockResolvedValue([]);
 
-      await controller.getPartnerPerformance(undefined);
+      await controller.getPartnerPerformance(undefined, 'org-1');
 
-      expect(mockDashboardService.getPartnerPerformance).toHaveBeenCalledWith(10);
+      expect(mockDashboardService.getPartnerPerformance).toHaveBeenCalledWith(10, 'org-1');
     });
   });
 
@@ -84,17 +84,17 @@ describe('DashboardController', () => {
     it('should return upcoming deadlines with default days', async () => {
       mockDashboardService.getUpcomingDeadlines.mockResolvedValue([]);
 
-      await controller.getUpcomingDeadlines(undefined);
+      await controller.getUpcomingDeadlines(undefined, 'org-1');
 
-      expect(mockDashboardService.getUpcomingDeadlines).toHaveBeenCalledWith(7);
+      expect(mockDashboardService.getUpcomingDeadlines).toHaveBeenCalledWith(7, 'org-1');
     });
 
     it('should return upcoming deadlines with custom days', async () => {
       mockDashboardService.getUpcomingDeadlines.mockResolvedValue([]);
 
-      await controller.getUpcomingDeadlines(14);
+      await controller.getUpcomingDeadlines(14, 'org-1');
 
-      expect(mockDashboardService.getUpcomingDeadlines).toHaveBeenCalledWith(14);
+      expect(mockDashboardService.getUpcomingDeadlines).toHaveBeenCalledWith(14, 'org-1');
     });
   });
 
@@ -103,9 +103,10 @@ describe('DashboardController', () => {
       const items = { projects: [], tasks: [] };
       mockDashboardService.getOverdueItems.mockResolvedValue(items);
 
-      const result = await controller.getOverdueItems();
+      const result = await controller.getOverdueItems('org-1');
 
       expect(result).toEqual(items);
+      expect(mockDashboardService.getOverdueItems).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -113,9 +114,9 @@ describe('DashboardController', () => {
     it('should return recent activity with default limit', async () => {
       mockDashboardService.getRecentActivity.mockResolvedValue([]);
 
-      await controller.getRecentActivity(undefined);
+      await controller.getRecentActivity(undefined, 'org-1');
 
-      expect(mockDashboardService.getRecentActivity).toHaveBeenCalledWith(20);
+      expect(mockDashboardService.getRecentActivity).toHaveBeenCalledWith(20, 'org-1');
     });
   });
 
@@ -124,9 +125,10 @@ describe('DashboardController', () => {
       const distribution = { todo: 5, inProgress: 3, completed: 2 };
       mockDashboardService.getTaskDistribution.mockResolvedValue(distribution);
 
-      const result = await controller.getTaskDistribution();
+      const result = await controller.getTaskDistribution('org-1');
 
       expect(result).toEqual(distribution);
+      expect(mockDashboardService.getTaskDistribution).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -134,9 +136,10 @@ describe('DashboardController', () => {
     it('should return project progress', async () => {
       mockDashboardService.getProjectProgress.mockResolvedValue([]);
 
-      const result = await controller.getProjectProgress();
+      const result = await controller.getProjectProgress('org-1');
 
       expect(result).toEqual([]);
+      expect(mockDashboardService.getProjectProgress).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -224,17 +227,17 @@ describe('DashboardController', () => {
     it('should return manager dashboard with default period', async () => {
       mockDashboardService.getManagerDashboard.mockResolvedValue({});
 
-      await controller.getManagerDashboard(undefined);
+      await controller.getManagerDashboard(undefined, 'org-1');
 
-      expect(mockDashboardService.getManagerDashboard).toHaveBeenCalledWith('month');
+      expect(mockDashboardService.getManagerDashboard).toHaveBeenCalledWith('month', 'org-1');
     });
 
     it('should return manager dashboard with custom period', async () => {
       mockDashboardService.getManagerDashboard.mockResolvedValue({});
 
-      await controller.getManagerDashboard('week');
+      await controller.getManagerDashboard('week', 'org-1');
 
-      expect(mockDashboardService.getManagerDashboard).toHaveBeenCalledWith('week');
+      expect(mockDashboardService.getManagerDashboard).toHaveBeenCalledWith('week', 'org-1');
     });
   });
 
@@ -253,7 +256,7 @@ describe('DashboardController', () => {
         send: jest.fn().mockReturnThis(),
       };
 
-      await controller.generateReport('weekly' as any, 'csv' as any, undefined, undefined, mockRes as any);
+      await controller.generateReport('weekly' as any, 'csv' as any, undefined, undefined, 'org-1', mockRes as any);
 
       expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
       expect(mockRes.status).toHaveBeenCalledWith(HttpStatus.OK);
@@ -270,7 +273,7 @@ describe('DashboardController', () => {
       };
 
       await expect(
-        controller.generateReport('invalid' as any, 'csv' as any, undefined, undefined, mockRes as any),
+        controller.generateReport('invalid' as any, 'csv' as any, undefined, undefined, 'org-1', mockRes as any),
       ).rejects.toThrow('Invalid params');
     });
   });

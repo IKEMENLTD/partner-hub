@@ -19,6 +19,7 @@ import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 import { ProjectStatus } from './enums/project-status.enum';
 import { EmailService } from '../notification/services/email.service';
 import { ProjectStatisticsService } from './services/project-statistics.service';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 // TypeORM QueryBuilder uses property names (camelCase), not DB column names
@@ -264,6 +265,8 @@ export class ProjectService {
         const user = await this.userProfileRepository.findOne({ where: { id: userId } });
         if (user?.organizationId) {
           queryBuilder.andWhere('project.organizationId = :orgId', { orgId: user.organizationId });
+        } else if (user?.role !== UserRole.ADMIN) {
+          queryBuilder.andWhere('1 = 0'); // No org = no data for non-admin
         }
       }
 

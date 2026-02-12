@@ -31,15 +31,22 @@ export class DashboardActivityService {
     private reminderRepository: Repository<Reminder>,
   ) {}
 
-  async getRecentActivity(limit: number = 20): Promise<ActivityItem[]> {
+  async getRecentActivity(limit: number = 20, organizationId?: string): Promise<ActivityItem[]> {
     const activities: ActivityItem[] = [];
+    const perEntityLimit = Math.ceil(limit / 4);
 
-    // Get recent projects
-    const recentProjects = await this.projectRepository.find({
-      relations: ['createdBy'],
-      order: { updatedAt: 'DESC' },
-      take: limit / 4,
-    });
+    // Get recent projects (filtered by organization)
+    const projectQuery = this.projectRepository
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.createdBy', 'createdBy')
+      .where('project.deletedAt IS NULL');
+    if (organizationId) {
+      projectQuery.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const recentProjects = await projectQuery
+      .orderBy('project.updatedAt', 'DESC')
+      .take(perEntityLimit)
+      .getMany();
 
     for (const project of recentProjects) {
       activities.push({
@@ -55,12 +62,19 @@ export class DashboardActivityService {
       });
     }
 
-    // Get recent tasks
-    const recentTasks = await this.taskRepository.find({
-      relations: ['createdBy'],
-      order: { updatedAt: 'DESC' },
-      take: limit / 4,
-    });
+    // Get recent tasks (filtered by organization via project)
+    const taskQuery = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.createdBy', 'createdBy')
+      .innerJoin('task.project', 'project')
+      .where('task.deletedAt IS NULL');
+    if (organizationId) {
+      taskQuery.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const recentTasks = await taskQuery
+      .orderBy('task.updatedAt', 'DESC')
+      .take(perEntityLimit)
+      .getMany();
 
     for (const task of recentTasks) {
       activities.push({
@@ -76,12 +90,18 @@ export class DashboardActivityService {
       });
     }
 
-    // Get recent partners
-    const recentPartners = await this.partnerRepository.find({
-      relations: ['createdBy'],
-      order: { updatedAt: 'DESC' },
-      take: limit / 4,
-    });
+    // Get recent partners (filtered by organization)
+    const partnerQuery = this.partnerRepository
+      .createQueryBuilder('partner')
+      .leftJoinAndSelect('partner.createdBy', 'createdBy')
+      .where('partner.deletedAt IS NULL');
+    if (organizationId) {
+      partnerQuery.andWhere('partner.organizationId = :organizationId', { organizationId });
+    }
+    const recentPartners = await partnerQuery
+      .orderBy('partner.updatedAt', 'DESC')
+      .take(perEntityLimit)
+      .getMany();
 
     for (const partner of recentPartners) {
       activities.push({

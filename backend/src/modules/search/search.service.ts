@@ -64,7 +64,7 @@ export class SearchService {
 
     // Search partners
     if (type === SearchType.ALL || type === SearchType.PARTNERS) {
-      results.partners = await this.searchPartners(searchTerm, q, limit || 10, organizationId);
+      results.partners = await this.searchPartners(searchTerm, q, limit || 10, userRole, organizationId);
     }
 
     // Search tasks
@@ -143,6 +143,7 @@ export class SearchService {
     searchTerm: string,
     originalQuery: string,
     limit: number,
+    userRole: string,
     organizationId?: string,
   ): Promise<SearchResultItem[]> {
     const queryBuilder = this.partnerRepository
@@ -153,11 +154,13 @@ export class SearchService {
         { searchTerm },
       );
 
-    // Organization filtering if provided
+    // Organization filtering
     if (organizationId) {
       queryBuilder.andWhere('partner.organizationId = :organizationId', {
         organizationId,
       });
+    } else if (userRole !== UserRole.ADMIN) {
+      queryBuilder.andWhere('1 = 0');
     }
 
     // Order by updated date (most recent first) and take limit

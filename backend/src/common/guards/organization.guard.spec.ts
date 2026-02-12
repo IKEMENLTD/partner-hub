@@ -6,7 +6,7 @@ import { Repository } from 'typeorm';
 import { OrganizationGuard, SKIP_ORGANIZATION_CHECK } from './organization.guard';
 import { UserProfile } from '../../modules/auth/entities/user-profile.entity';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
-import { AuthenticationException } from '../exceptions/business.exception';
+import { AuthenticationException, AuthorizationException } from '../exceptions/business.exception';
 import { ResourceNotFoundException } from '../exceptions/resource-not-found.exception';
 
 describe('OrganizationGuard', () => {
@@ -95,17 +95,17 @@ describe('OrganizationGuard', () => {
       );
     });
 
-    it('should allow super admin without organization to bypass check', async () => {
+    it('should deny access for admin without organization', async () => {
       const superAdmin = {
         id: 'admin-123',
         role: UserRole.ADMIN,
         organizationId: null,
       };
       const context = mockExecutionContext(superAdmin, false);
+      const adminProfile = { ...mockUserProfile, id: 'admin-123', role: UserRole.ADMIN, organizationId: null } as unknown as UserProfile;
+      jest.spyOn(userProfileRepository, 'findOne').mockResolvedValue(adminProfile);
 
-      const result = await guard.canActivate(context);
-
-      expect(result).toBe(true);
+      await expect(guard.canActivate(context)).rejects.toThrow(AuthorizationException);
     });
 
     it('should throw ResourceNotFoundException when user profile not found', async () => {
@@ -141,20 +141,18 @@ describe('OrganizationGuard', () => {
       expect(request.user.organizationId).toBe('org-123');
     });
 
-    it('should allow user without organization but with warning', async () => {
+    it('should deny access for member without organization', async () => {
       const user = {
         id: 'user-456',
         role: UserRole.MEMBER,
         organizationId: undefined,
       };
       const context = mockExecutionContext(user, false);
-      const userWithoutOrg = { ...mockUserProfile, organizationId: null } as unknown as UserProfile;
+      const userWithoutOrg = { ...mockUserProfile, id: 'user-456', organizationId: null } as unknown as UserProfile;
 
       jest.spyOn(userProfileRepository, 'findOne').mockResolvedValue(userWithoutOrg);
 
-      const result = await guard.canActivate(context);
-
-      expect(result).toBe(true);
+      await expect(guard.canActivate(context)).rejects.toThrow(AuthorizationException);
     });
   });
 
