@@ -407,7 +407,7 @@ describe('partnerService', () => {
 
       vi.mocked(api.get).mockResolvedValueOnce({
         success: true,
-        data: { projects: mockProjects },
+        data: mockProjects,
       });
 
       const result = await partnerService.getProjects('partner-1');
@@ -419,7 +419,7 @@ describe('partnerService', () => {
     it('should handle empty projects list', async () => {
       vi.mocked(api.get).mockResolvedValueOnce({
         success: true,
-        data: { projects: [] },
+        data: [],
       });
 
       const result = await partnerService.getProjects('partner-1');

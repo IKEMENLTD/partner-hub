@@ -7,8 +7,11 @@ import { EscalationLog } from '../entities/escalation-log.entity';
 import { EscalationRule } from '../entities/escalation-rule.entity';
 import { Project } from '../../project/entities/project.entity';
 import { ProjectStakeholder } from '../../project/entities/project-stakeholder.entity';
+import { Partner } from '../../partner/entities/partner.entity';
 import { Task } from '../../task/entities/task.entity';
 import { ReminderService } from '../../reminder/reminder.service';
+import { SmsService } from '../../notification/services/sms.service';
+import { SystemSettingsService } from '../../system-settings/system-settings.service';
 import {
   EscalationAction,
   EscalationTriggerType,
@@ -107,6 +110,25 @@ describe('EscalationExecutorService', () => {
           provide: EscalationRuleService,
           useValue: {
             getActiveRulesForTask: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: getRepositoryToken(Partner),
+          useValue: {
+            findOne: jest.fn(),
+            find: jest.fn(),
+          },
+        },
+        {
+          provide: SmsService,
+          useValue: {
+            sendSms: jest.fn().mockResolvedValue(true),
+          },
+        },
+        {
+          provide: SystemSettingsService,
+          useValue: {
+            getSettings: jest.fn().mockResolvedValue(null),
           },
         },
       ],
@@ -590,7 +612,7 @@ describe('EscalationExecutorService', () => {
       await service.executeEscalation(rule, task);
 
       expect(mockLog.status).toBe(EscalationLogStatus.FAILED);
-      expect(mockLog.errorMessage).toBe('Task has no assignee to notify');
+      expect(mockLog.errorMessage).toBe('タスクに担当者が設定されていません');
     });
 
     it('should save log and return with relations', async () => {
@@ -623,7 +645,7 @@ describe('EscalationExecutorService', () => {
           type: ReminderType.TASK_OVERDUE,
           channel: ReminderChannel.IN_APP,
         }),
-        'system',
+        null,
       );
     });
 
@@ -663,7 +685,7 @@ describe('EscalationExecutorService', () => {
             priority: 'high',
           }),
         }),
-        'system',
+        null,
       );
     });
   });
@@ -686,14 +708,14 @@ describe('EscalationExecutorService', () => {
 
       expect(reminderService.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: `Escalation: ${rule.name}`,
+          title: `エスカレーション: ${rule.name}`,
           userId: 'user-abc',
           taskId: task.id,
           projectId: task.projectId,
           type: ReminderType.TASK_OVERDUE,
           channel: ReminderChannel.IN_APP,
         }),
-        'system',
+        null,
       );
     });
 
@@ -706,7 +728,7 @@ describe('EscalationExecutorService', () => {
       await service.executeEscalation(rule, task);
 
       expect(mockLog.notifiedUsers).toEqual(['user-abc']);
-      expect(mockLog.actionDetail).toBe('Notified task owner (user-abc)');
+      expect(mockLog.actionDetail).toBe('タスク担当者に通知しました');
     });
 
     it('should fail when task has no assigneeId', async () => {
@@ -718,7 +740,7 @@ describe('EscalationExecutorService', () => {
       await service.executeEscalation(rule, task);
 
       expect(mockLog.status).toBe(EscalationLogStatus.FAILED);
-      expect(mockLog.errorMessage).toBe('Task has no assignee to notify');
+      expect(mockLog.errorMessage).toBe('タスクに担当者が設定されていません');
       expect(reminderService.create).not.toHaveBeenCalled();
     });
   });
@@ -752,11 +774,11 @@ describe('EscalationExecutorService', () => {
       expect(reminderService.create).toHaveBeenCalledTimes(2);
       expect(reminderService.create).toHaveBeenCalledWith(
         expect.objectContaining({ userId: 'owner-1' }),
-        'system',
+        null,
       );
       expect(reminderService.create).toHaveBeenCalledWith(
         expect.objectContaining({ userId: 'manager-1' }),
-        'system',
+        null,
       );
       expect(mockLog.notifiedUsers).toEqual(['owner-1', 'manager-1']);
     });
@@ -811,7 +833,7 @@ describe('EscalationExecutorService', () => {
       await service.executeEscalation(rule, task);
 
       expect(mockLog.status).toBe(EscalationLogStatus.FAILED);
-      expect(mockLog.errorMessage).toBe('Task has no project, cannot notify stakeholders');
+      expect(mockLog.errorMessage).toBe('タスクに案件が紐づいていないため関係者に通知できません');
     });
 
     it('should handle project with no owner or manager', async () => {
@@ -857,7 +879,7 @@ describe('EscalationExecutorService', () => {
 
       expect(reminderService.create).toHaveBeenCalledWith(
         expect.objectContaining({ userId: 'explicit-manager' }),
-        'system',
+        null,
       );
       expect(projectRepo.findOne).not.toHaveBeenCalled();
     });
@@ -882,7 +904,7 @@ describe('EscalationExecutorService', () => {
 
       expect(reminderService.create).toHaveBeenCalledWith(
         expect.objectContaining({ userId: 'project-manager' }),
-        'system',
+        null,
       );
       expect(mockLog.escalatedToUserId).toBe('project-manager');
     });
@@ -907,7 +929,7 @@ describe('EscalationExecutorService', () => {
 
       expect(reminderService.create).toHaveBeenCalledWith(
         expect.objectContaining({ userId: 'project-owner' }),
-        'system',
+        null,
       );
       expect(mockLog.escalatedToUserId).toBe('project-owner');
     });
@@ -931,7 +953,7 @@ describe('EscalationExecutorService', () => {
       await service.executeEscalation(rule, task);
 
       expect(mockLog.status).toBe(EscalationLogStatus.FAILED);
-      expect(mockLog.errorMessage).toBe('No manager found to escalate to');
+      expect(mockLog.errorMessage).toBe('エスカレーション先の管理者が見つかりません');
       expect(reminderService.create).not.toHaveBeenCalled();
     });
 
@@ -948,7 +970,7 @@ describe('EscalationExecutorService', () => {
       await service.executeEscalation(rule, task);
 
       expect(mockLog.status).toBe(EscalationLogStatus.FAILED);
-      expect(mockLog.errorMessage).toBe('No manager found to escalate to');
+      expect(mockLog.errorMessage).toBe('エスカレーション先の管理者が見つかりません');
     });
 
     it('should use BOTH channel and include escalation metadata', async () => {
@@ -963,7 +985,7 @@ describe('EscalationExecutorService', () => {
 
       expect(reminderService.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'ESCALATION: Test Rule',
+          title: '【緊急】エスカレーション: Test Rule',
           channel: ReminderChannel.EMAIL,
           metadata: {
             escalation: true,
@@ -971,7 +993,7 @@ describe('EscalationExecutorService', () => {
             priority: 'high',
           },
         }),
-        'system',
+        null,
       );
     });
 
@@ -988,7 +1010,7 @@ describe('EscalationExecutorService', () => {
 
       expect(mockLog.escalatedToUserId).toBe('mgr-1');
       expect(mockLog.notifiedUsers).toEqual(['mgr-1']);
-      expect(mockLog.actionDetail).toBe('Escalated to manager (mgr-1)');
+      expect(mockLog.actionDetail).toBe('管理者にエスカレーションしました');
     });
   });
 
@@ -1019,11 +1041,11 @@ describe('EscalationExecutorService', () => {
       const call = reminderService.create.mock.calls[0];
       const message = call[0].message;
 
-      expect(message).toContain('Task "Deploy v2" requires attention.');
-      expect(message).toContain('Rule: Overdue Warning');
-      expect(message).toContain('Progress: 40%');
-      expect(message).toContain('Status: in_progress');
-      expect(message).not.toContain('[ESCALATION]');
+      expect(message).toContain('タスク「Deploy v2」に対応が必要です。');
+      expect(message).toContain('ルール: Overdue Warning');
+      expect(message).toContain('進捗: 40%');
+      expect(message).toContain('ステータス: in_progress');
+      expect(message).not.toContain('【エスカレーション】');
     });
 
     it('should build message WITH [ESCALATION] prefix for ESCALATE_TO_MANAGER', async () => {
@@ -1044,10 +1066,10 @@ describe('EscalationExecutorService', () => {
       const call = reminderService.create.mock.calls[0];
       const message = call[0].message;
 
-      expect(message).toContain('[ESCALATION]');
-      expect(message).toContain('Task "Fix Critical Bug" requires attention.');
-      expect(message).toContain('Rule: Critical Escalation');
-      expect(message).toContain('Progress: 10%');
+      expect(message).toContain('【エスカレーション】');
+      expect(message).toContain('タスク「Fix Critical Bug」に対応が必要です。');
+      expect(message).toContain('ルール: Critical Escalation');
+      expect(message).toContain('進捗: 10%');
     });
 
     it('should show "No due date" when task has no dueDate', async () => {
@@ -1064,7 +1086,7 @@ describe('EscalationExecutorService', () => {
       const call = reminderService.create.mock.calls[0];
       const message = call[0].message;
 
-      expect(message).toContain('No due date');
+      expect(message).toContain('期限未設定');
     });
   });
 

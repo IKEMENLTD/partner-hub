@@ -255,7 +255,7 @@ describe('SupabaseAuthGuard', () => {
       );
     });
 
-    it('should handle user with missing metadata', async () => {
+    it('should reject new user with missing metadata (created as inactive)', async () => {
       const context = mockExecutionContext('Bearer valid-token', false);
       const userWithoutMetadata = {
         id: 'user-456',
@@ -273,18 +273,14 @@ describe('SupabaseAuthGuard', () => {
         firstName: dto.firstName || '',
         lastName: dto.lastName || '',
       } as UserProfile));
-      jest.spyOn(userProfileRepository, 'save').mockResolvedValue({
-        id: 'user-456',
-        email: 'noname@example.com',
-        firstName: '',
-        lastName: '',
-        role: UserRole.MEMBER,
-        isActive: true,
-      } as UserProfile);
+      jest.spyOn(userProfileRepository, 'save').mockImplementation((profile) =>
+        Promise.resolve(profile as UserProfile),
+      );
 
-      const result = await guard.canActivate(context);
-
-      expect(result).toBe(true);
+      // New users are created with isActive: false for security
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        AuthenticationException,
+      );
     });
 
     it('should handle generic errors', async () => {

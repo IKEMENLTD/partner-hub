@@ -334,7 +334,7 @@ describe('ReminderService', () => {
 
       expect(reminderRepository.save).toHaveBeenCalledWith([
         expect.objectContaining({
-          title: 'Task Due Tomorrow: Important Task',
+          title: '期限間近: Important Task',
           type: ReminderType.TASK_DUE,
           channel: ReminderChannel.IN_APP,
           userId: 'user-1',
@@ -421,7 +421,7 @@ describe('ReminderService', () => {
 
       expect(reminderRepository.save).toHaveBeenCalledWith([
         expect.objectContaining({
-          title: 'Task Overdue: Late Task',
+          title: '期限超過: Late Task',
           type: ReminderType.TASK_OVERDUE,
           userId: 'user-1',
           taskId: 'task-1',
@@ -465,7 +465,7 @@ describe('ReminderService', () => {
 
       expect(reminderRepository.save).toHaveBeenCalledWith([
         expect.objectContaining({
-          title: expect.stringContaining('Project Deadline Approaching: Big Project'),
+          title: '案件期限間近: Big Project',
           type: ReminderType.PROJECT_DEADLINE,
           userId: 'manager-1',
           projectId: 'p-1',
