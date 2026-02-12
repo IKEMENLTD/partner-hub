@@ -106,33 +106,80 @@ export class SupabaseAuthGuard implements CanActivate {
           where: { id: user.id },
         });
 
-        if (!userProfile) {
+        // 新規ユーザーまたはorganizationId未設定のユーザーに対して組織セットアップを実行
+        // Note: Supabaseの on_auth_user_created トリガーが先にprofilesにデフォルト値で
+        // レコードを作成するため、!userProfile だけでなく !organizationId もチェックする
+        const needsOrgSetup = !userProfile || !userProfile.organizationId;
+
+        if (needsOrgSetup) {
           const inviteToken = user.user_metadata?.invite_token;
-          const firstName = user.user_metadata?.first_name || '';
-          const lastName = user.user_metadata?.last_name || '';
+          const firstName = user.user_metadata?.first_name || userProfile?.firstName || '';
+          const lastName = user.user_metadata?.last_name || userProfile?.lastName || '';
 
           if (inviteToken) {
             // 招待トークン経由の登録: 招待を検証して組織に追加
-            this.logger.log(`New user with invite token: ${user.email}`);
+            this.logger.log(`User with invite token: ${user.email}`);
             const orgService = this.getOrganizationService();
             const validation = await orgService.validateInvitation(inviteToken);
 
             if (validation.valid && validation.invitation) {
-              userProfile = this.userProfileRepository.create({
-                id: user.id,
-                email: user.email || '',
-                firstName,
-                lastName,
-                role: validation.invitation.role,
-                isActive: true,
-                organizationId: validation.invitation.organizationId,
-              });
-              await this.userProfileRepository.save(userProfile);
+              if (userProfile) {
+                // 既存プロファイルを更新
+                userProfile.role = validation.invitation.role;
+                userProfile.isActive = true;
+                userProfile.organizationId = validation.invitation.organizationId;
+                if (firstName) userProfile.firstName = firstName;
+                if (lastName) userProfile.lastName = lastName;
+                await this.userProfileRepository.save(userProfile);
+              } else {
+                userProfile = this.userProfileRepository.create({
+                  id: user.id,
+                  email: user.email || '',
+                  firstName,
+                  lastName,
+                  role: validation.invitation.role,
+                  isActive: true,
+                  organizationId: validation.invitation.organizationId,
+                });
+                await this.userProfileRepository.save(userProfile);
+              }
               await orgService.acceptInvitation(inviteToken, user.id);
               this.logger.log(`User ${user.email} joined org via invitation (role: ${validation.invitation.role})`);
             } else {
               // 無効な招待トークン: 新規組織作成にフォールバック
               this.logger.warn(`Invalid invite token for ${user.email}, creating new organization`);
+              if (userProfile) {
+                userProfile.role = UserRole.ADMIN;
+                userProfile.isActive = true;
+                if (firstName) userProfile.firstName = firstName;
+                if (lastName) userProfile.lastName = lastName;
+                await this.userProfileRepository.save(userProfile);
+              } else {
+                userProfile = this.userProfileRepository.create({
+                  id: user.id,
+                  email: user.email || '',
+                  firstName,
+                  lastName,
+                  role: UserRole.ADMIN,
+                  isActive: true,
+                });
+                await this.userProfileRepository.save(userProfile);
+              }
+              const orgService2 = this.getOrganizationService();
+              await orgService2.createOrganizationForNewUser(user.id, user.email || '', firstName, lastName);
+              const refetchedFallback = await this.userProfileRepository.findOne({ where: { id: user.id } });
+              if (refetchedFallback) userProfile = refetchedFallback;
+            }
+          } else {
+            // 招待なし: 新規組織の管理者として作成
+            this.logger.log(`Setting up organization admin for user: ${user.email}`);
+            if (userProfile) {
+              userProfile.role = UserRole.ADMIN;
+              userProfile.isActive = true;
+              if (firstName) userProfile.firstName = firstName;
+              if (lastName) userProfile.lastName = lastName;
+              await this.userProfileRepository.save(userProfile);
+            } else {
               userProfile = this.userProfileRepository.create({
                 id: user.id,
                 email: user.email || '',
@@ -142,32 +189,18 @@ export class SupabaseAuthGuard implements CanActivate {
                 isActive: true,
               });
               await this.userProfileRepository.save(userProfile);
-              await orgService.createOrganizationForNewUser(user.id, user.email || '', firstName, lastName);
-              // Re-fetch to get updated organizationId
-              const refetchedFallback = await this.userProfileRepository.findOne({ where: { id: user.id } });
-              if (refetchedFallback) userProfile = refetchedFallback;
             }
-          } else {
-            // 招待なし: 新規組織の管理者として作成
-            this.logger.log(`Creating new organization admin for user: ${user.email}`);
-            userProfile = this.userProfileRepository.create({
-              id: user.id,
-              email: user.email || '',
-              firstName,
-              lastName,
-              role: UserRole.ADMIN,
-              isActive: true,
-            });
-            await this.userProfileRepository.save(userProfile);
 
             // 新規組織を作成
             const orgService = this.getOrganizationService();
             await orgService.createOrganizationForNewUser(user.id, user.email || '', firstName, lastName);
-            // Re-fetch to get updated organizationId
             const refetched = await this.userProfileRepository.findOne({ where: { id: user.id } });
             if (refetched) userProfile = refetched;
             this.logger.log(`New organization created for admin user: ${user.email}`);
           }
+
+          // キャッシュを無効化して最新状態を反映
+          this.userProfileCache.invalidate(user.id);
         }
 
         // Cache the profile
