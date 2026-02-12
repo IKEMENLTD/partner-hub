@@ -59,7 +59,7 @@ export class SearchService {
 
     // Search projects
     if (type === SearchType.ALL || type === SearchType.PROJECTS) {
-      results.projects = await this.searchProjects(searchTerm, q, limit || 10, userId, userRole);
+      results.projects = await this.searchProjects(searchTerm, q, limit || 10, userId, userRole, organizationId);
     }
 
     // Search partners
@@ -69,7 +69,7 @@ export class SearchService {
 
     // Search tasks
     if (type === SearchType.ALL || type === SearchType.TASKS) {
-      results.tasks = await this.searchTasks(searchTerm, q, limit || 10, userId, userRole);
+      results.tasks = await this.searchTasks(searchTerm, q, limit || 10, userId, userRole, organizationId);
     }
 
     results.total = results.projects.length + results.partners.length + results.tasks.length;
@@ -87,6 +87,7 @@ export class SearchService {
     limit: number,
     userId: string,
     userRole: string,
+    organizationId?: string,
   ): Promise<SearchResultItem[]> {
     const queryBuilder = this.projectRepository
       .createQueryBuilder('project')
@@ -96,6 +97,13 @@ export class SearchService {
       .andWhere('(project.name ILIKE :searchTerm OR project.description ILIKE :searchTerm)', {
         searchTerm,
       });
+
+    // Organization filtering
+    if (organizationId) {
+      queryBuilder.andWhere('project.organizationId = :organizationId', { organizationId });
+    } else if (userRole !== UserRole.ADMIN) {
+      queryBuilder.andWhere('1 = 0');
+    }
 
     // Role-based filtering
     if (userRole !== UserRole.ADMIN) {
@@ -185,6 +193,7 @@ export class SearchService {
     limit: number,
     userId: string,
     userRole: string,
+    organizationId?: string,
   ): Promise<SearchResultItem[]> {
     const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
@@ -194,6 +203,13 @@ export class SearchService {
       .andWhere('(task.title ILIKE :searchTerm OR task.description ILIKE :searchTerm)', {
         searchTerm,
       });
+
+    // Organization filtering
+    if (organizationId) {
+      queryBuilder.andWhere('project.organizationId = :organizationId', { organizationId });
+    } else if (userRole !== UserRole.ADMIN) {
+      queryBuilder.andWhere('1 = 0');
+    }
 
     // Role-based filtering
     if (userRole !== UserRole.ADMIN) {

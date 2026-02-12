@@ -65,8 +65,8 @@ export class TaskController {
   @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all tasks with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of tasks' })
-  async findAll(@Query() queryDto: QueryTaskDto) {
-    return this.taskService.findAll(queryDto);
+  async findAll(@Query() queryDto: QueryTaskDto, @CurrentUser() user: any) {
+    return this.taskService.findAll(queryDto, user);
   }
 
   @Get('statistics')

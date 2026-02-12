@@ -7,6 +7,7 @@ export interface User {
   role: UserRole;
   isActive: boolean;
   avatarUrl?: string;
+  organizationId?: string;
   departmentId?: string;
   createdAt: string;
   updatedAt?: string;

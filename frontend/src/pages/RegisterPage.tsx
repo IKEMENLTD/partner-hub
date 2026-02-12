@@ -1,13 +1,16 @@
-import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { Eye, EyeOff, UserPlus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Eye, EyeOff, UserPlus, Building2, Shield } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { useRegister } from '@/hooks';
 import { Button, Input, Alert } from '@/components/common';
+import { organizationService } from '@/services/organizationService';
 
 export function RegisterPage() {
   const { isAuthenticated, error, isLoading } = useAuthStore();
   const { mutate: register } = useRegister();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -25,6 +28,38 @@ export function RegisterPage() {
     firstName?: string;
     lastName?: string;
   }>({});
+
+  // 招待トークン検証状態
+  const [inviteLoading, setInviteLoading] = useState(!!inviteToken);
+  const [inviteValid, setInviteValid] = useState(false);
+  const [inviteOrgName, setInviteOrgName] = useState('');
+  const [inviteError, setInviteError] = useState('');
+
+  useEffect(() => {
+    if (!inviteToken) return;
+
+    setInviteLoading(true);
+    organizationService
+      .validateInvitation(inviteToken)
+      .then((res) => {
+        const data = res.data || res;
+        if (data.valid) {
+          setInviteValid(true);
+          setInviteOrgName(data.organizationName || '');
+          if (data.email) {
+            setFormData((prev) => ({ ...prev, email: data.email! }));
+          }
+        } else {
+          setInviteError('招待リンクが無効または期限切れです。');
+        }
+      })
+      .catch(() => {
+        setInviteError('招待リンクの検証に失敗しました。');
+      })
+      .finally(() => {
+        setInviteLoading(false);
+      });
+  }, [inviteToken]);
 
   if (isAuthenticated) {
     return <Navigate to="/today" replace />;
@@ -101,6 +136,7 @@ export function RegisterPage() {
         password: formData.password,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
+        inviteToken: inviteValid ? (inviteToken || undefined) : undefined,
       }
     );
   };
@@ -113,6 +149,8 @@ export function RegisterPage() {
       setValidationErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
+
+  const isInviteMode = inviteValid && !!inviteToken;
 
   return (
     <div className="flex min-h-screen">
@@ -174,10 +212,32 @@ export function RegisterPage() {
 
           <div>
             <h2 className="text-2xl font-bold text-gray-900">新規登録</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              アカウント情報を入力して登録してください
-            </p>
+            {isInviteMode ? (
+              <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
+                <Building2 className="h-5 w-5 flex-shrink-0" />
+                <span><strong>{inviteOrgName}</strong> への招待を受けて登録します</span>
+              </div>
+            ) : (
+              <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+                <Shield className="h-5 w-5 flex-shrink-0" />
+                <span>新しい組織の<strong>管理者</strong>として登録されます。登録後、メンバーを招待できます。</span>
+              </div>
+            )}
           </div>
+
+          {inviteLoading && (
+            <div className="mt-6 flex items-center justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+              <span className="ml-2 text-sm text-gray-600">招待を確認中...</span>
+            </div>
+          )}
+
+          {inviteError && (
+            <Alert variant="warning" className="mt-6">
+              {inviteError}
+              <span className="block mt-1 text-sm">通常の管理者登録として続行できます。</span>
+            </Alert>
+          )}
 
           {error && (
             <Alert variant="error" className="mt-6">
@@ -222,6 +282,7 @@ export function RegisterPage() {
               placeholder="example@company.com"
               autoComplete="email"
               required
+              disabled={isInviteMode && !!formData.email}
             />
 
             <Input
@@ -282,10 +343,10 @@ export function RegisterPage() {
             <Button
               type="submit"
               fullWidth
-              isLoading={isLoading}
+              isLoading={isLoading || inviteLoading}
               leftIcon={<UserPlus className="h-4 w-4" />}
             >
-              登録する
+              {isInviteMode ? `${inviteOrgName} に参加する` : '管理者として登録する'}
             </Button>
           </form>
 

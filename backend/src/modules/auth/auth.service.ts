@@ -145,6 +145,7 @@ export class AuthService {
       role: profile.role,
       isActive: profile.isActive,
       avatarUrl: profile.avatarUrl,
+      organizationId: profile.organizationId,
       createdAt: profile.createdAt,
     };
   }

@@ -376,6 +376,45 @@ export const ErrorCodes = {
     message: 'レート制限に達しました。しばらく待ってから再試行してください',
     httpStatus: 429,
   },
+
+  // ============================================
+  // 組織関連 (ORG_001 - ORG_099)
+  // ============================================
+  ORG_001: {
+    code: 'ORG_001',
+    message: '組織が見つかりません',
+    httpStatus: 404,
+  },
+  ORG_002: {
+    code: 'ORG_002',
+    message: 'このメールアドレスには既に招待が送信されています',
+    httpStatus: 409,
+  },
+  ORG_003: {
+    code: 'ORG_003',
+    message: 'このユーザーは既に組織のメンバーです',
+    httpStatus: 409,
+  },
+  ORG_004: {
+    code: 'ORG_004',
+    message: '招待が見つかりません',
+    httpStatus: 404,
+  },
+  ORG_005: {
+    code: 'ORG_005',
+    message: '招待の有効期限が切れているか、既に使用されています',
+    httpStatus: 400,
+  },
+  ORG_006: {
+    code: 'ORG_006',
+    message: '招待のキャンセルに失敗しました',
+    httpStatus: 400,
+  },
+  ORG_007: {
+    code: 'ORG_007',
+    message: '招待の再送信に失敗しました',
+    httpStatus: 400,
+  },
 } as const;
 
 export type ErrorCodeKey = keyof typeof ErrorCodes;

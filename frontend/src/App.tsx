@@ -37,6 +37,7 @@ import {
   AuditLogPage,
   UserManagementPage,
   CustomFieldTemplatePage,
+  InvitationManagementPage,
 } from '@/pages';
 
 // 認証初期化コンポーネント
@@ -144,6 +145,7 @@ function App() {
             <Route path="/admin/audit" element={<RoleGuard allowedRoles={ADMIN_ONLY}><AuditLogPage /></RoleGuard>} />
             <Route path="/admin/users" element={<RoleGuard allowedRoles={ADMIN_ONLY}><UserManagementPage /></RoleGuard>} />
             <Route path="/admin/custom-fields" element={<RoleGuard allowedRoles={ADMIN_ONLY}><CustomFieldTemplatePage /></RoleGuard>} />
+            <Route path="/admin/invitations" element={<RoleGuard allowedRoles={ADMIN_ONLY}><InvitationManagementPage /></RoleGuard>} />
 
             {/* Catch all - redirect to today */}
             <Route path="*" element={<Navigate to="/today" replace />} />

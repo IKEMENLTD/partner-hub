@@ -41,6 +41,7 @@ import { SearchModule } from './modules/search/search.module';
 import { ReportModule } from './modules/report/report.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
 import { HealthModule } from './modules/health/health.module';
+import { OrganizationModule } from './modules/organization/organization.module';
 
 @Module({
   imports: [
@@ -132,6 +133,7 @@ import { HealthModule } from './modules/health/health.module';
     ReportModule,
     SystemSettingsModule,
     HealthModule,
+    OrganizationModule,
   ],
   providers: [
     // Global Exception Filter

@@ -4,6 +4,7 @@ import {
   Logger,
   CanActivate,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { AuthenticationException } from '../exceptions/business.exception';
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,18 +14,28 @@ import { SupabaseService } from '../../modules/supabase/supabase.service';
 import { UserProfile } from '../../modules/auth/entities/user-profile.entity';
 import { UserRole } from '../../modules/auth/enums/user-role.enum';
 import { UserProfileCacheService } from '../services/user-profile-cache.service';
+import { OrganizationService } from '../../modules/organization/organization.service';
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   private readonly logger = new Logger(SupabaseAuthGuard.name);
+  private organizationService: OrganizationService | undefined;
 
   constructor(
     private reflector: Reflector,
+    private moduleRef: ModuleRef,
     private supabaseService: SupabaseService,
     @InjectRepository(UserProfile)
     private userProfileRepository: Repository<UserProfile>,
     private userProfileCache: UserProfileCacheService,
   ) {}
+
+  private getOrganizationService(): OrganizationService {
+    if (!this.organizationService) {
+      this.organizationService = this.moduleRef.get(OrganizationService, { strict: false });
+    }
+    return this.organizationService!;
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if route is public
@@ -96,25 +107,74 @@ export class SupabaseAuthGuard implements CanActivate {
         });
 
         if (!userProfile) {
-          // SECURITY: 新規ユーザーは isActive: false で作成し、管理者による承認を必須にする
-          this.logger.log(`Creating inactive profile for new user: ${user.email}`);
-          userProfile = this.userProfileRepository.create({
-            id: user.id,
-            email: user.email || '',
-            firstName: user.user_metadata?.first_name || '',
-            lastName: user.user_metadata?.last_name || '',
-            role: UserRole.MEMBER,
-            isActive: false,
-          });
-          await this.userProfileRepository.save(userProfile);
-          this.logger.log(`Inactive profile created for user: ${user.email} (requires admin activation)`);
+          const inviteToken = user.user_metadata?.invite_token;
+          const firstName = user.user_metadata?.first_name || '';
+          const lastName = user.user_metadata?.last_name || '';
+
+          if (inviteToken) {
+            // 招待トークン経由の登録: 招待を検証して組織に追加
+            this.logger.log(`New user with invite token: ${user.email}`);
+            const orgService = this.getOrganizationService();
+            const validation = await orgService.validateInvitation(inviteToken);
+
+            if (validation.valid && validation.invitation) {
+              userProfile = this.userProfileRepository.create({
+                id: user.id,
+                email: user.email || '',
+                firstName,
+                lastName,
+                role: validation.invitation.role,
+                isActive: true,
+                organizationId: validation.invitation.organizationId,
+              });
+              await this.userProfileRepository.save(userProfile);
+              await orgService.acceptInvitation(inviteToken, user.id);
+              this.logger.log(`User ${user.email} joined org via invitation (role: ${validation.invitation.role})`);
+            } else {
+              // 無効な招待トークン: 新規組織作成にフォールバック
+              this.logger.warn(`Invalid invite token for ${user.email}, creating new organization`);
+              userProfile = this.userProfileRepository.create({
+                id: user.id,
+                email: user.email || '',
+                firstName,
+                lastName,
+                role: UserRole.ADMIN,
+                isActive: true,
+              });
+              await this.userProfileRepository.save(userProfile);
+              await orgService.createOrganizationForNewUser(user.id, user.email || '', firstName, lastName);
+              // Re-fetch to get updated organizationId
+              const refetchedFallback = await this.userProfileRepository.findOne({ where: { id: user.id } });
+              if (refetchedFallback) userProfile = refetchedFallback;
+            }
+          } else {
+            // 招待なし: 新規組織の管理者として作成
+            this.logger.log(`Creating new organization admin for user: ${user.email}`);
+            userProfile = this.userProfileRepository.create({
+              id: user.id,
+              email: user.email || '',
+              firstName,
+              lastName,
+              role: UserRole.ADMIN,
+              isActive: true,
+            });
+            await this.userProfileRepository.save(userProfile);
+
+            // 新規組織を作成
+            const orgService = this.getOrganizationService();
+            await orgService.createOrganizationForNewUser(user.id, user.email || '', firstName, lastName);
+            // Re-fetch to get updated organizationId
+            const refetched = await this.userProfileRepository.findOne({ where: { id: user.id } });
+            if (refetched) userProfile = refetched;
+            this.logger.log(`New organization created for admin user: ${user.email}`);
+          }
         }
 
         // Cache the profile
-        this.userProfileCache.set(user.id, userProfile);
+        this.userProfileCache.set(user.id, userProfile!);
       }
 
-      if (!userProfile.isActive) {
+      if (!userProfile!.isActive) {
         // Remove inactive users from cache immediately
         this.userProfileCache.invalidate(user.id);
         this.logger.warn(`User is inactive: ${user.email}`);
@@ -125,8 +185,8 @@ export class SupabaseAuthGuard implements CanActivate {
       }
 
       // Attach user profile to request
-      request.user = userProfile;
-      this.logger.debug(`User authenticated: ${user.email}, role=${userProfile.role}`);
+      request.user = userProfile!;
+      this.logger.debug(`User authenticated: ${user.email}, role=${userProfile!.role}`);
 
       return true;
     } catch (error) {

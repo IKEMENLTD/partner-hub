@@ -88,7 +88,7 @@ describe('TaskController', () => {
       const expected = { data: [mockTask], total: 1 };
       mockTaskService.findAll.mockResolvedValue(expected);
 
-      const result = await controller.findAll({} as any);
+      const result = await controller.findAll({} as any, { id: 'user-1', organizationId: 'org-1' });
 
       expect(result).toEqual(expected);
     });

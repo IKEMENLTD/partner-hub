@@ -73,7 +73,15 @@ export class OrganizationGuard implements CanActivate {
     request.user.organizationId = userProfile.organizationId;
 
     if (!userProfile.organizationId) {
-      this.logger.warn(`User ${user.id} has no organization - access will be restricted`);
+      if (userProfile.role === UserRole.ADMIN) {
+        this.logger.debug(`Admin ${user.id} without organization - allowing access`);
+        return true;
+      }
+      this.logger.warn(`User ${user.id} has no organization - access denied`);
+      throw new AuthorizationException('ORG_001', {
+        message: 'User has no organization',
+        userMessage: '組織に所属していません。管理者にお問い合わせください。',
+      });
     }
 
     return true;

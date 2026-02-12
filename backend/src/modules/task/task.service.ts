@@ -17,6 +17,7 @@ import { EmailService } from '../notification/services/email.service';
 import { Partner } from '../partner/entities/partner.entity';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { BusinessException } from '../../common/exceptions/business.exception';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
 const ALLOWED_SORT_COLUMNS = [
@@ -108,7 +109,7 @@ export class TaskService {
     return savedTasks;
   }
 
-  async findAll(queryDto: QueryTaskDto): Promise<PaginatedResponseDto<Task>> {
+  async findAll(queryDto: QueryTaskDto, user?: { organizationId?: string; role?: string }): Promise<PaginatedResponseDto<Task>> {
     const {
       page = 1,
       limit = 10,
@@ -135,6 +136,13 @@ export class TaskService {
       .leftJoinAndSelect('task.partner', 'partner')
       .leftJoinAndSelect('task.createdBy', 'createdBy')
       .leftJoinAndSelect('task.childTasks', 'childTasks');
+
+    // Organization filter
+    if (user?.organizationId) {
+      queryBuilder.andWhere('project.organizationId = :orgId', { orgId: user.organizationId });
+    } else if (user?.role !== UserRole.ADMIN) {
+      queryBuilder.andWhere('1 = 0');
+    }
 
     // Apply filters
     if (status) {

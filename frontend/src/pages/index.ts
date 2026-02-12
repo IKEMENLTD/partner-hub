@@ -27,3 +27,4 @@ export { TrashPage } from './TrashPage';
 export { AuditLogPage } from './AuditLogPage';
 export { UserManagementPage } from './UserManagementPage';
 export { CustomFieldTemplatePage } from './CustomFieldTemplatePage';
+export { InvitationManagementPage } from './InvitationManagementPage';

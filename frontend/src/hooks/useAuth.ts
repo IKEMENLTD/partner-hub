@@ -61,6 +61,7 @@ async function fetchAndSetUserProfile(
         role: profile.role || 'member',
         isActive: profile.isActive ?? true,
         avatarUrl: profile.avatarUrl,
+        organizationId: profile.organizationId,
         createdAt: profile.createdAt || fallbackUser.createdAt,
       });
     }
@@ -217,25 +218,31 @@ interface RegisterInput {
   password: string;
   firstName: string;
   lastName: string;
+  inviteToken?: string;
 }
 
 export function useRegister() {
   const { setLoading, setError } = useAuthStore();
 
   return useMutation({
-    mutationFn: async ({ email, password, firstName, lastName }: RegisterInput) => {
+    mutationFn: async ({ email, password, firstName, lastName, inviteToken }: RegisterInput) => {
       if (!isSupabaseConfigured) {
         throw new Error('認証システムが設定されていません');
+      }
+
+      const metadata: Record<string, string> = {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+      };
+      if (inviteToken) {
+        metadata.invite_token = inviteToken;
       }
 
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          data: {
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-          },
+          data: metadata,
           emailRedirectTo: `${window.location.origin}/login`,
         },
       });

@@ -16,6 +16,7 @@ import {
   UserCog,
   FileSearch,
   Layers,
+  UserPlus,
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 
@@ -33,6 +34,7 @@ const adminNavItems = [
   { icon: LayoutDashboard, label: 'マネージャー', path: '/manager' },
   { icon: FileText, label: '自動レポート', path: '/reports' },
   { icon: AlertTriangle, label: 'エスカレーション', path: '/admin/escalations' },
+  { icon: UserPlus, label: 'メンバー招待', path: '/admin/invitations' },
   { icon: UserCog, label: 'ユーザー管理', path: '/admin/users' },
   { icon: Layers, label: 'カスタムフィールド', path: '/admin/custom-fields' },
   { icon: FileSearch, label: '監査ログ', path: '/admin/audit' },
