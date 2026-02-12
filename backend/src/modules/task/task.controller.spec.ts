@@ -99,18 +99,18 @@ describe('TaskController', () => {
       const stats = { total: 10 };
       mockTaskService.getTaskStatistics.mockResolvedValue(stats);
 
-      const result = await controller.getStatistics(undefined);
+      const result = await controller.getStatistics(undefined, 'org-1');
 
       expect(result).toEqual(stats);
-      expect(mockTaskService.getTaskStatistics).toHaveBeenCalledWith(undefined);
+      expect(mockTaskService.getTaskStatistics).toHaveBeenCalledWith(undefined, 'org-1');
     });
 
     it('should return task statistics with projectId', async () => {
       mockTaskService.getTaskStatistics.mockResolvedValue({ total: 5 });
 
-      await controller.getStatistics('proj-1');
+      await controller.getStatistics('proj-1', 'org-1');
 
-      expect(mockTaskService.getTaskStatistics).toHaveBeenCalledWith('proj-1');
+      expect(mockTaskService.getTaskStatistics).toHaveBeenCalledWith('proj-1', 'org-1');
     });
   });
 
@@ -118,9 +118,10 @@ describe('TaskController', () => {
     it('should return overdue tasks', async () => {
       mockTaskService.getOverdueTasks.mockResolvedValue([mockTask]);
 
-      const result = await controller.getOverdueTasks();
+      const result = await controller.getOverdueTasks('org-1');
 
       expect(result).toEqual([mockTask]);
+      expect(mockTaskService.getOverdueTasks).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -128,17 +129,17 @@ describe('TaskController', () => {
     it('should return upcoming tasks with default days', async () => {
       mockTaskService.getUpcomingTasks.mockResolvedValue([]);
 
-      await controller.getUpcomingTasks(undefined);
+      await controller.getUpcomingTasks(undefined, 'org-1');
 
-      expect(mockTaskService.getUpcomingTasks).toHaveBeenCalledWith(7);
+      expect(mockTaskService.getUpcomingTasks).toHaveBeenCalledWith(7, 'org-1');
     });
 
     it('should return upcoming tasks with custom days', async () => {
       mockTaskService.getUpcomingTasks.mockResolvedValue([]);
 
-      await controller.getUpcomingTasks(14);
+      await controller.getUpcomingTasks(14, 'org-1');
 
-      expect(mockTaskService.getUpcomingTasks).toHaveBeenCalledWith(14);
+      expect(mockTaskService.getUpcomingTasks).toHaveBeenCalledWith(14, 'org-1');
     });
   });
 
@@ -146,9 +147,10 @@ describe('TaskController', () => {
     it('should return tasks by project', async () => {
       mockTaskService.getTasksByProject.mockResolvedValue([mockTask]);
 
-      const result = await controller.getTasksByProject('proj-1');
+      const result = await controller.getTasksByProject('proj-1', 'org-1');
 
       expect(result).toEqual([mockTask]);
+      expect(mockTaskService.getTasksByProject).toHaveBeenCalledWith('proj-1', 'org-1');
     });
   });
 
@@ -156,9 +158,10 @@ describe('TaskController', () => {
     it('should return tasks by assignee', async () => {
       mockTaskService.getTasksByAssignee.mockResolvedValue([mockTask]);
 
-      const result = await controller.getTasksByAssignee('user-1');
+      const result = await controller.getTasksByAssignee('user-1', 'org-1');
 
       expect(result).toEqual([mockTask]);
+      expect(mockTaskService.getTasksByAssignee).toHaveBeenCalledWith('user-1', 'org-1');
     });
   });
 
@@ -166,9 +169,10 @@ describe('TaskController', () => {
     it('should return tasks by partner', async () => {
       mockTaskService.getTasksByPartner.mockResolvedValue([mockTask]);
 
-      const result = await controller.getTasksByPartner('partner-1');
+      const result = await controller.getTasksByPartner('partner-1', 'org-1');
 
       expect(result).toEqual([mockTask]);
+      expect(mockTaskService.getTasksByPartner).toHaveBeenCalledWith('partner-1', 'org-1');
     });
   });
 
@@ -176,9 +180,10 @@ describe('TaskController', () => {
     it('should return soft-deleted tasks', async () => {
       mockTaskService.findDeleted.mockResolvedValue([]);
 
-      const result = await controller.findDeleted();
+      const result = await controller.findDeleted('org-1');
 
       expect(result).toEqual([]);
+      expect(mockTaskService.findDeleted).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -186,9 +191,10 @@ describe('TaskController', () => {
     it('should restore a soft-deleted task', async () => {
       mockTaskService.restore.mockResolvedValue(mockTask);
 
-      const result = await controller.restore('task-1');
+      const result = await controller.restore('task-1', 'org-1');
 
       expect(result).toEqual(mockTask);
+      expect(mockTaskService.restore).toHaveBeenCalledWith('task-1', 'org-1');
     });
   });
 

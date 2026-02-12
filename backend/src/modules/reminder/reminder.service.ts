@@ -57,7 +57,7 @@ export class ReminderService {
     return this.findOne(reminder.id);
   }
 
-  async findAll(queryDto: QueryReminderDto): Promise<PaginatedResponseDto<Reminder>> {
+  async findAll(queryDto: QueryReminderDto, organizationId?: string): Promise<PaginatedResponseDto<Reminder>> {
     const {
       page = 1,
       limit = 10,
@@ -78,6 +78,11 @@ export class ReminderService {
       .leftJoinAndSelect('reminder.user', 'user')
       .leftJoinAndSelect('reminder.task', 'task')
       .leftJoinAndSelect('reminder.project', 'project');
+
+    // Filter by organization: join through project to verify org membership
+    if (organizationId) {
+      queryBuilder.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
 
     if (type) {
       queryBuilder.andWhere('reminder.type = :type', { type });
@@ -123,13 +128,22 @@ export class ReminderService {
     return new PaginatedResponseDto(data, total, page, limit);
   }
 
-  async findOne(id: string): Promise<Reminder> {
+  async findOne(id: string, organizationId?: string): Promise<Reminder> {
     const reminder = await this.reminderRepository.findOne({
       where: { id },
       relations: ['user', 'task', 'project', 'createdBy'],
     });
 
     if (!reminder) {
+      throw new ResourceNotFoundException('NOTIFICATION_001', {
+        resourceType: 'Reminder',
+        resourceId: id,
+        userMessage: 'リマインダーが見つかりません',
+      });
+    }
+
+    // Validate organization access via the associated project
+    if (organizationId && reminder.project && reminder.project.organizationId !== organizationId) {
       throw new ResourceNotFoundException('NOTIFICATION_001', {
         resourceType: 'Reminder',
         resourceId: id,
@@ -180,17 +194,25 @@ export class ReminderService {
     this.logger.log(`Reminder deleted: ${reminder.title} (${id})`);
   }
 
-  async getUserReminders(userId: string, unreadOnly: boolean = false): Promise<Reminder[]> {
-    const where: any = { userId };
+  async getUserReminders(userId: string, unreadOnly: boolean = false, organizationId?: string): Promise<Reminder[]> {
+    const queryBuilder = this.reminderRepository
+      .createQueryBuilder('reminder')
+      .leftJoinAndSelect('reminder.task', 'task')
+      .leftJoinAndSelect('reminder.project', 'project')
+      .where('reminder.userId = :userId', { userId });
+
     if (unreadOnly) {
-      where.isRead = false;
+      queryBuilder.andWhere('reminder.isRead = :isRead', { isRead: false });
     }
 
-    return this.reminderRepository.find({
-      where,
-      relations: ['task', 'project'],
-      order: { scheduledAt: 'DESC' },
-    });
+    // Filter by organization via the associated project
+    if (organizationId) {
+      queryBuilder.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+
+    queryBuilder.orderBy('reminder.scheduledAt', 'DESC');
+
+    return queryBuilder.getMany();
   }
 
   async getUnreadCount(userId: string): Promise<number> {
@@ -541,39 +563,47 @@ export class ReminderService {
     this.logger.log(`Stagnant project reminders created for ${remindersToCreate.length} projects`);
   }
 
-  async getReminderStatistics(): Promise<{
+  async getReminderStatistics(organizationId?: string): Promise<{
     total: number;
     byStatus: Record<string, number>;
     byType: Record<string, number>;
     pendingCount: number;
     sentToday: number;
   }> {
-    const total = await this.reminderRepository.count();
+    // Base query builder for org-filtered counts
+    const baseQb = () => {
+      const qb = this.reminderRepository
+        .createQueryBuilder('reminder')
+        .leftJoin('reminder.project', 'project');
+      if (organizationId) {
+        qb.andWhere('project.organizationId = :organizationId', { organizationId });
+      }
+      return qb;
+    };
 
-    const statusCounts = await this.reminderRepository
-      .createQueryBuilder('reminder')
+    const total = await baseQb().getCount();
+
+    const statusCounts = await baseQb()
       .select('reminder.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .groupBy('reminder.status')
       .getRawMany();
 
-    const typeCounts = await this.reminderRepository
-      .createQueryBuilder('reminder')
+    const typeCounts = await baseQb()
       .select('reminder.type', 'type')
       .addSelect('COUNT(*)', 'count')
       .groupBy('reminder.type')
       .getRawMany();
 
-    const pendingCount = await this.reminderRepository.count({
-      where: { status: ReminderStatus.PENDING },
-    });
+    const pendingCount = await baseQb()
+      .andWhere('reminder.status = :pendingStatus', { pendingStatus: ReminderStatus.PENDING })
+      .getCount();
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const sentToday = await this.reminderRepository
-      .createQueryBuilder('reminder')
-      .where('reminder.sentAt >= :todayStart', { todayStart })
+    const sentToday = await baseQb()
+      .andWhere('reminder.sentAt >= :todayStart', { todayStart })
       .andWhere('reminder.status = :status', { status: ReminderStatus.SENT })
       .getCount();
 

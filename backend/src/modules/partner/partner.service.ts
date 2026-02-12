@@ -5,7 +5,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
-import { ConflictException as CustomConflictException } from '../../common/exceptions/business.exception';
+import { ConflictException as CustomConflictException, AuthorizationException } from '../../common/exceptions/business.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, In, Not, IsNull } from 'typeorm';
 import { Partner } from './entities/partner.entity';
@@ -205,7 +205,7 @@ export class PartnerService {
     return new PaginatedResponseDto(data, total, page, limit);
   }
 
-  async findOne(id: string): Promise<Partner> {
+  async findOne(id: string, organizationId?: string): Promise<Partner> {
     const partner = await this.partnerRepository.findOne({
       where: { id },
       relations: ['user', 'createdBy'],
@@ -213,6 +213,13 @@ export class PartnerService {
 
     if (!partner) {
       throw ResourceNotFoundException.forPartner(id);
+    }
+
+    // Multi-tenancy: verify partner belongs to the user's organization
+    if (organizationId && partner.organizationId && partner.organizationId !== organizationId) {
+      throw new AuthorizationException('AUTH_004', {
+        message: 'このパートナーへのアクセス権限がありません',
+      });
     }
 
     return partner;
@@ -286,21 +293,31 @@ export class PartnerService {
     await this.partnerRepository.save(partner);
   }
 
-  async findDeleted(): Promise<Partner[]> {
+  async findDeleted(organizationId?: string): Promise<Partner[]> {
+    const where: any = { deletedAt: Not(IsNull()) };
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
     return this.partnerRepository.find({
       withDeleted: true,
-      where: { deletedAt: Not(IsNull()) },
+      where,
       order: { deletedAt: 'DESC' },
     });
   }
 
-  async restore(id: string): Promise<Partner> {
+  async restore(id: string, organizationId?: string): Promise<Partner> {
     const partner = await this.partnerRepository.findOne({
       where: { id },
       withDeleted: true,
     });
     if (!partner || !partner.deletedAt) {
       throw ResourceNotFoundException.forPartner(id);
+    }
+    // Multi-tenancy: verify partner belongs to the user's organization
+    if (organizationId && partner.organizationId && partner.organizationId !== organizationId) {
+      throw new AuthorizationException('AUTH_004', {
+        message: 'このパートナーへのアクセス権限がありません',
+      });
     }
     await this.partnerRepository.recover(partner);
     this.logger.log(`Partner restored: ${partner.name} (${id})`);
@@ -317,7 +334,7 @@ export class PartnerService {
   /**
    * Permanently delete a partner (admin only)
    */
-  async forceRemove(id: string): Promise<void> {
+  async forceRemove(id: string, organizationId?: string): Promise<void> {
     const partner = await this.partnerRepository.findOne({
       where: { id },
       withDeleted: true,
@@ -325,44 +342,63 @@ export class PartnerService {
     if (!partner) {
       throw ResourceNotFoundException.forPartner(id);
     }
+    // Multi-tenancy: verify partner belongs to the user's organization
+    if (organizationId && partner.organizationId && partner.organizationId !== organizationId) {
+      throw new AuthorizationException('AUTH_004', {
+        message: 'このパートナーへのアクセス権限がありません',
+      });
+    }
     await this.partnerRepository.remove(partner);
     this.logger.log(`Partner permanently deleted: ${partner.name} (${id})`);
   }
 
-  async getActivePartners(): Promise<Partner[]> {
-    return this.partnerRepository.find({
-      where: { status: PartnerStatus.ACTIVE },
-    });
+  async getActivePartners(organizationId?: string): Promise<Partner[]> {
+    const where: any = { status: PartnerStatus.ACTIVE };
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
+    return this.partnerRepository.find({ where });
   }
 
-  async getPartnersBySkills(skills: string[]): Promise<Partner[]> {
-    return this.partnerRepository
+  async getPartnersBySkills(skills: string[], organizationId?: string): Promise<Partner[]> {
+    const qb = this.partnerRepository
       .createQueryBuilder('partner')
       .where('partner.status = :status', { status: PartnerStatus.ACTIVE })
-      .andWhere('partner.skills && :skills', { skills })
-      .orderBy('partner.rating', 'DESC')
-      .getMany();
+      .andWhere('partner.skills && :skills', { skills });
+
+    if (organizationId) {
+      qb.andWhere('partner.organization_id = :orgId', { orgId: organizationId });
+    }
+
+    return qb.orderBy('partner.rating', 'DESC').getMany();
   }
 
-  async getPartnerStatistics(): Promise<{
+  async getPartnerStatistics(organizationId?: string): Promise<{
     total: number;
     active: number;
     inactive: number;
     pending: number;
     averageRating: number;
   }> {
+    const orgFilter: any = organizationId ? { organizationId } : {};
+
     const [total, active, inactive, pending] = await Promise.all([
-      this.partnerRepository.count(),
-      this.partnerRepository.count({ where: { status: PartnerStatus.ACTIVE } }),
-      this.partnerRepository.count({ where: { status: PartnerStatus.INACTIVE } }),
-      this.partnerRepository.count({ where: { status: PartnerStatus.PENDING } }),
+      this.partnerRepository.count({ where: { ...orgFilter } }),
+      this.partnerRepository.count({ where: { status: PartnerStatus.ACTIVE, ...orgFilter } }),
+      this.partnerRepository.count({ where: { status: PartnerStatus.INACTIVE, ...orgFilter } }),
+      this.partnerRepository.count({ where: { status: PartnerStatus.PENDING, ...orgFilter } }),
     ]);
 
-    const avgResult = await this.partnerRepository
+    const avgQb = this.partnerRepository
       .createQueryBuilder('partner')
       .select('AVG(partner.rating)', 'avg')
-      .where('partner.rating > 0')
-      .getRawOne();
+      .where('partner.rating > 0');
+
+    if (organizationId) {
+      avgQb.andWhere('partner.organization_id = :orgId', { orgId: organizationId });
+    }
+
+    const avgResult = await avgQb.getRawOne();
 
     return {
       total,

@@ -42,7 +42,7 @@ describe('EscalationController', () => {
       const rules = { data: [{ id: 'rule-1' }], total: 1 };
       mockEscalationService.findAllRules.mockResolvedValue(rules);
 
-      const result = await controller.findAllRules({} as any);
+      const result = await controller.findAllRules({} as any, 'org-1');
 
       expect(result).toEqual(rules);
     });
@@ -53,16 +53,16 @@ describe('EscalationController', () => {
       const rule = { id: 'rule-1', name: 'Test Rule' };
       mockEscalationService.findRuleById.mockResolvedValue(rule);
 
-      const result = await controller.findRuleById('rule-1');
+      const result = await controller.findRuleById('rule-1', 'org-1');
 
       expect(result).toEqual(rule);
-      expect(mockEscalationService.findRuleById).toHaveBeenCalledWith('rule-1');
+      expect(mockEscalationService.findRuleById).toHaveBeenCalledWith('rule-1', 'org-1');
     });
 
     it('should propagate not found errors', async () => {
       mockEscalationService.findRuleById.mockRejectedValue(new Error('Not found'));
 
-      await expect(controller.findRuleById('invalid')).rejects.toThrow('Not found');
+      await expect(controller.findRuleById('invalid', 'org-1')).rejects.toThrow('Not found');
     });
   });
 
@@ -84,10 +84,10 @@ describe('EscalationController', () => {
       const updateDto = { name: 'Updated Rule' };
       mockEscalationService.updateRule.mockResolvedValue({ id: 'rule-1', ...updateDto });
 
-      const result = await controller.updateRule('rule-1', updateDto as any);
+      const result = await controller.updateRule('rule-1', updateDto as any, 'org-1');
 
       expect(result.name).toBe('Updated Rule');
-      expect(mockEscalationService.updateRule).toHaveBeenCalledWith('rule-1', updateDto);
+      expect(mockEscalationService.updateRule).toHaveBeenCalledWith('rule-1', updateDto, 'org-1');
     });
   });
 
@@ -95,9 +95,9 @@ describe('EscalationController', () => {
     it('should delete an escalation rule', async () => {
       mockEscalationService.deleteRule.mockResolvedValue(undefined);
 
-      await controller.deleteRule('rule-1');
+      await controller.deleteRule('rule-1', 'org-1');
 
-      expect(mockEscalationService.deleteRule).toHaveBeenCalledWith('rule-1');
+      expect(mockEscalationService.deleteRule).toHaveBeenCalledWith('rule-1', 'org-1');
     });
   });
 
@@ -110,7 +110,7 @@ describe('EscalationController', () => {
       const logs = { data: [{ id: 'log-1' }], total: 1 };
       mockEscalationService.findAllLogs.mockResolvedValue(logs);
 
-      const result = await controller.findAllLogs({} as any);
+      const result = await controller.findAllLogs({} as any, 'org-1');
 
       expect(result).toEqual(logs);
     });
@@ -121,10 +121,10 @@ describe('EscalationController', () => {
       const history = [{ id: 'log-1', projectId: 'proj-1' }];
       mockEscalationService.getEscalationHistory.mockResolvedValue(history);
 
-      const result = await controller.getEscalationHistory('proj-1');
+      const result = await controller.getEscalationHistory('proj-1', 'org-1');
 
       expect(result).toEqual(history);
-      expect(mockEscalationService.getEscalationHistory).toHaveBeenCalledWith('proj-1');
+      expect(mockEscalationService.getEscalationHistory).toHaveBeenCalledWith('proj-1', 'org-1');
     });
   });
 
@@ -137,7 +137,7 @@ describe('EscalationController', () => {
       const checkResult = { tasksChecked: 10, escalationsTriggered: 2, logs: [] };
       mockEscalationService.triggerEscalationCheck.mockResolvedValue(checkResult);
 
-      const result = await controller.triggerCheck({} as any);
+      const result = await controller.triggerCheck({} as any, 'org-1');
 
       expect(result).toEqual(checkResult);
     });
@@ -152,7 +152,7 @@ describe('EscalationController', () => {
       const stats = { totalRules: 5, totalLogs: 100 };
       mockEscalationService.getEscalationStatistics.mockResolvedValue(stats);
 
-      const result = await controller.getStatistics();
+      const result = await controller.getStatistics('org-1');
 
       expect(result).toEqual(stats);
     });

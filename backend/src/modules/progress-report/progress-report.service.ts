@@ -73,8 +73,13 @@ export class ProgressReportService {
   /**
    * Request a progress report from a partner
    */
-  async requestReport(dto: RequestReportDto, requesterId: string): Promise<ProgressReport> {
+  async requestReport(dto: RequestReportDto, requesterId: string, organizationId?: string): Promise<ProgressReport> {
     const { taskId, partnerEmail, partnerName } = dto;
+
+    // Validate task belongs to user's organization
+    if (organizationId) {
+      await this.validateTaskOrganization(taskId, organizationId);
+    }
 
     // Generate token
     const progressReport = await this.generateReportToken(taskId, partnerEmail, partnerName);
@@ -270,7 +275,12 @@ export class ProgressReportService {
   /**
    * Get all reports for a task
    */
-  async getReportsByTask(taskId: string, includeUnsubmitted = false): Promise<ProgressReport[]> {
+  async getReportsByTask(taskId: string, includeUnsubmitted = false, organizationId?: string): Promise<ProgressReport[]> {
+    // Validate task belongs to user's organization
+    if (organizationId) {
+      await this.validateTaskOrganization(taskId, organizationId);
+    }
+
     const whereCondition: any = { taskId };
 
     if (!includeUnsubmitted) {
@@ -291,7 +301,13 @@ export class ProgressReportService {
     reportId: string,
     dto: ReviewReportDto,
     reviewerId: string,
+    organizationId?: string,
   ): Promise<ProgressReport> {
+    // Validate organization access first if organizationId provided
+    if (organizationId) {
+      await this.getReportById(reportId, organizationId);
+    }
+
     const report = await this.progressReportRepository.findOne({
       where: { id: reportId },
     });
@@ -321,7 +337,7 @@ export class ProgressReportService {
   /**
    * Get a single report by ID
    */
-  async getReportById(reportId: string): Promise<ProgressReport> {
+  async getReportById(reportId: string, organizationId?: string): Promise<ProgressReport> {
     const report = await this.progressReportRepository.findOne({
       where: { id: reportId },
       relations: ['task', 'task.project', 'reviewer'],
@@ -331,7 +347,29 @@ export class ProgressReportService {
       throw ResourceNotFoundException.forReport(reportId);
     }
 
+    // Validate organization access via task's project
+    if (organizationId && report.task?.project && report.task.project.organizationId !== organizationId) {
+      throw ResourceNotFoundException.forReport(reportId);
+    }
+
     return report;
+  }
+
+  /**
+   * Validate that a task belongs to the given organization
+   */
+  private async validateTaskOrganization(
+    taskId: string,
+    organizationId: string,
+  ): Promise<void> {
+    const task = await this.taskRepository.findOne({
+      where: { id: taskId },
+      relations: ['project'],
+    });
+
+    if (!task || !task.project || task.project.organizationId !== organizationId) {
+      throw ResourceNotFoundException.forTask(taskId);
+    }
   }
 
   /**

@@ -41,6 +41,7 @@ export class EscalationRuleService {
 
   async findAllRules(
     queryDto: QueryEscalationRuleDto,
+    organizationId?: string,
   ): Promise<PaginatedResponseDto<EscalationRule>> {
     const {
       page = 1,
@@ -58,6 +59,14 @@ export class EscalationRuleService {
       .leftJoinAndSelect('rule.project', 'project')
       .leftJoinAndSelect('rule.escalateToUser', 'escalateToUser')
       .leftJoinAndSelect('rule.createdBy', 'createdBy');
+
+    if (organizationId) {
+      // Filter rules: either linked to a project in this org, or global rules (no project)
+      queryBuilder.andWhere(
+        '(project.organizationId = :organizationId OR rule.projectId IS NULL)',
+        { organizationId },
+      );
+    }
 
     if (projectId) {
       queryBuilder.andWhere('(rule.projectId = :projectId OR rule.projectId IS NULL)', {
@@ -87,11 +96,22 @@ export class EscalationRuleService {
     return new PaginatedResponseDto(data, total, page, limit);
   }
 
-  async findRuleById(id: string): Promise<EscalationRule> {
-    const rule = await this.escalationRuleRepository.findOne({
-      where: { id },
-      relations: ['project', 'escalateToUser', 'createdBy'],
-    });
+  async findRuleById(id: string, organizationId?: string): Promise<EscalationRule> {
+    const queryBuilder = this.escalationRuleRepository
+      .createQueryBuilder('rule')
+      .leftJoinAndSelect('rule.project', 'project')
+      .leftJoinAndSelect('rule.escalateToUser', 'escalateToUser')
+      .leftJoinAndSelect('rule.createdBy', 'createdBy')
+      .where('rule.id = :id', { id });
+
+    if (organizationId) {
+      queryBuilder.andWhere(
+        '(project.organizationId = :organizationId OR rule.projectId IS NULL)',
+        { organizationId },
+      );
+    }
+
+    const rule = await queryBuilder.getOne();
 
     if (!rule) {
       throw new ResourceNotFoundException('SYSTEM_001', {
@@ -104,18 +124,18 @@ export class EscalationRuleService {
     return rule;
   }
 
-  async updateRule(id: string, updateRuleDto: UpdateEscalationRuleDto): Promise<EscalationRule> {
-    const rule = await this.findRuleById(id);
+  async updateRule(id: string, updateRuleDto: UpdateEscalationRuleDto, organizationId?: string): Promise<EscalationRule> {
+    const rule = await this.findRuleById(id, organizationId);
     Object.assign(rule, updateRuleDto);
     await this.escalationRuleRepository.save(rule);
 
     this.logger.log(`Escalation rule updated: ${rule.name} (${rule.id})`);
 
-    return this.findRuleById(id);
+    return this.findRuleById(id, organizationId);
   }
 
-  async deleteRule(id: string): Promise<void> {
-    const rule = await this.findRuleById(id);
+  async deleteRule(id: string, organizationId?: string): Promise<void> {
+    const rule = await this.findRuleById(id, organizationId);
     await this.escalationRuleRepository.remove(rule);
     this.logger.log(`Escalation rule deleted: ${rule.name} (${id})`);
   }
@@ -131,7 +151,7 @@ export class EscalationRuleService {
   }
 
   // Log Operations
-  async findAllLogs(queryDto: QueryEscalationLogDto): Promise<PaginatedResponseDto<EscalationLog>> {
+  async findAllLogs(queryDto: QueryEscalationLogDto, organizationId?: string): Promise<PaginatedResponseDto<EscalationLog>> {
     const {
       page = 1,
       limit = 10,
@@ -152,6 +172,10 @@ export class EscalationRuleService {
       .leftJoinAndSelect('log.task', 'task')
       .leftJoinAndSelect('log.project', 'project')
       .leftJoinAndSelect('log.escalatedToUser', 'escalatedToUser');
+
+    if (organizationId) {
+      queryBuilder.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
 
     if (projectId) {
       queryBuilder.andWhere('log.projectId = :projectId', { projectId });
@@ -191,11 +215,21 @@ export class EscalationRuleService {
     return new PaginatedResponseDto(data, total, page, limit);
   }
 
-  async getEscalationHistory(projectId: string): Promise<EscalationLog[]> {
-    return this.escalationLogRepository.find({
-      where: { projectId },
-      relations: ['rule', 'task', 'escalatedToUser'],
-      order: { createdAt: 'DESC' },
-    });
+  async getEscalationHistory(projectId: string, organizationId?: string): Promise<EscalationLog[]> {
+    const queryBuilder = this.escalationLogRepository
+      .createQueryBuilder('log')
+      .leftJoinAndSelect('log.rule', 'rule')
+      .leftJoinAndSelect('log.task', 'task')
+      .leftJoinAndSelect('log.escalatedToUser', 'escalatedToUser')
+      .leftJoinAndSelect('log.project', 'project')
+      .where('log.projectId = :projectId', { projectId });
+
+    if (organizationId) {
+      queryBuilder.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+
+    queryBuilder.orderBy('log.createdAt', 'DESC');
+
+    return queryBuilder.getMany();
   }
 }

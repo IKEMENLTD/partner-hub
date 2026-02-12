@@ -43,7 +43,7 @@ describe('AuditController', () => {
       const expected = { data: [mockAuditLog], total: 1 };
       mockAuditService.findAll.mockResolvedValue(expected);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll('org-uuid');
 
       expect(result).toEqual(expected);
       expect(mockAuditService.findAll).toHaveBeenCalledWith({
@@ -55,13 +55,14 @@ describe('AuditController', () => {
         entityName: undefined,
         startDate: undefined,
         endDate: undefined,
+        organizationId: 'org-uuid',
       });
     });
 
     it('should parse and pass query parameters', async () => {
       mockAuditService.findAll.mockResolvedValue({ data: [], total: 0 });
 
-      await controller.findAll('2', '50', 'user-1', 'test@test.com', 'CREATE' as any, 'Project', '2024-01-01', '2024-12-31');
+      await controller.findAll('org-uuid', '2', '50', 'user-1', 'test@test.com', 'CREATE' as any, 'Project', '2024-01-01', '2024-12-31');
 
       expect(mockAuditService.findAll).toHaveBeenCalledWith({
         page: 2,
@@ -72,6 +73,7 @@ describe('AuditController', () => {
         entityName: 'Project',
         startDate: expect.any(Date),
         endDate: expect.any(Date),
+        organizationId: 'org-uuid',
       });
     });
   });
@@ -80,10 +82,10 @@ describe('AuditController', () => {
     it('should return audit logs for a specific entity', async () => {
       mockAuditService.findByEntity.mockResolvedValue([mockAuditLog]);
 
-      const result = await controller.findByEntity('Project', 'proj-1');
+      const result = await controller.findByEntity('Project', 'proj-1', 'org-uuid');
 
       expect(result).toEqual([mockAuditLog]);
-      expect(mockAuditService.findByEntity).toHaveBeenCalledWith('Project', 'proj-1');
+      expect(mockAuditService.findByEntity).toHaveBeenCalledWith('Project', 'proj-1', 'org-uuid');
     });
   });
 
@@ -91,18 +93,18 @@ describe('AuditController', () => {
     it('should return audit logs for a user with default limit', async () => {
       mockAuditService.findByUser.mockResolvedValue([mockAuditLog]);
 
-      const result = await controller.findByUser('user-1', undefined);
+      const result = await controller.findByUser('user-1', undefined, 'org-uuid');
 
       expect(result).toEqual([mockAuditLog]);
-      expect(mockAuditService.findByUser).toHaveBeenCalledWith('user-1', { limit: undefined });
+      expect(mockAuditService.findByUser).toHaveBeenCalledWith('user-1', { limit: undefined }, 'org-uuid');
     });
 
     it('should return audit logs for a user with custom limit', async () => {
       mockAuditService.findByUser.mockResolvedValue([mockAuditLog]);
 
-      await controller.findByUser('user-1', '50');
+      await controller.findByUser('user-1', '50', 'org-uuid');
 
-      expect(mockAuditService.findByUser).toHaveBeenCalledWith('user-1', { limit: 50 });
+      expect(mockAuditService.findByUser).toHaveBeenCalledWith('user-1', { limit: 50 }, 'org-uuid');
     });
   });
 
@@ -110,18 +112,18 @@ describe('AuditController', () => {
     it('should return recent logs with default limit', async () => {
       mockAuditService.getRecentLogs.mockResolvedValue([mockAuditLog]);
 
-      const result = await controller.getRecentLogs(undefined);
+      const result = await controller.getRecentLogs(undefined, 'org-uuid');
 
       expect(result).toEqual([mockAuditLog]);
-      expect(mockAuditService.getRecentLogs).toHaveBeenCalledWith(undefined);
+      expect(mockAuditService.getRecentLogs).toHaveBeenCalledWith(undefined, 'org-uuid');
     });
 
     it('should return recent logs with custom limit', async () => {
       mockAuditService.getRecentLogs.mockResolvedValue([]);
 
-      await controller.getRecentLogs('25');
+      await controller.getRecentLogs('25', 'org-uuid');
 
-      expect(mockAuditService.getRecentLogs).toHaveBeenCalledWith(25);
+      expect(mockAuditService.getRecentLogs).toHaveBeenCalledWith(25, 'org-uuid');
     });
   });
 
@@ -129,12 +131,13 @@ describe('AuditController', () => {
     it('should return audit logs within a date range', async () => {
       mockAuditService.findByDateRange.mockResolvedValue([mockAuditLog]);
 
-      const result = await controller.findByDateRange('2024-01-01', '2024-12-31');
+      const result = await controller.findByDateRange('2024-01-01', '2024-12-31', 'org-uuid');
 
       expect(result).toEqual([mockAuditLog]);
       expect(mockAuditService.findByDateRange).toHaveBeenCalledWith(
         expect.any(Date),
         expect.any(Date),
+        'org-uuid',
       );
     });
   });

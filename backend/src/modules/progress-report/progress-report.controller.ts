@@ -16,6 +16,7 @@ import { RequestReportDto } from './dto/request-report.dto';
 import { SubmitReportDto } from './dto/submit-report.dto';
 import { ReviewReportDto } from './dto/review-report.dto';
 import { Public } from '../../common/decorators/public.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
@@ -38,8 +39,12 @@ export class ProgressReportController {
     status: 404,
     description: 'Task not found',
   })
-  async requestReport(@Body() dto: RequestReportDto, @Request() req: any) {
-    const report = await this.progressReportService.requestReport(dto, req.user.id);
+  async requestReport(
+    @Body() dto: RequestReportDto,
+    @Request() req: any,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    const report = await this.progressReportService.requestReport(dto, req.user.id, organizationId);
     return {
       success: true,
       data: {
@@ -138,8 +143,11 @@ export class ProgressReportController {
     status: 200,
     description: 'Reports retrieved successfully',
   })
-  async getReportsByTask(@Param('taskId') taskId: string) {
-    const reports = await this.progressReportService.getReportsByTask(taskId);
+  async getReportsByTask(
+    @Param('taskId') taskId: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    const reports = await this.progressReportService.getReportsByTask(taskId, false, organizationId);
     return {
       success: true,
       data: reports.map((report) => ({
@@ -171,8 +179,11 @@ export class ProgressReportController {
     status: 404,
     description: 'Report not found',
   })
-  async getReportById(@Param('id') id: string) {
-    const report = await this.progressReportService.getReportById(id);
+  async getReportById(
+    @Param('id') id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    const report = await this.progressReportService.getReportById(id, organizationId);
     return {
       success: true,
       data: report,
@@ -196,8 +207,13 @@ export class ProgressReportController {
     status: 404,
     description: 'Report not found',
   })
-  async reviewReport(@Param('id') id: string, @Body() dto: ReviewReportDto, @Request() req: any) {
-    const report = await this.progressReportService.reviewReport(id, dto, req.user.id);
+  async reviewReport(
+    @Param('id') id: string,
+    @Body() dto: ReviewReportDto,
+    @Request() req: any,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    const report = await this.progressReportService.reviewReport(id, dto, req.user.id, organizationId);
     return {
       success: true,
       data: {

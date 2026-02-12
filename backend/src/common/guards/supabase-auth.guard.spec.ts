@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { ModuleRef, Reflector } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SupabaseAuthGuard } from './supabase-auth.guard';
@@ -10,6 +10,7 @@ import { UserRole } from '../../modules/auth/enums/user-role.enum';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { AuthenticationException } from '../exceptions/business.exception';
 import { UserProfileCacheService } from '../services/user-profile-cache.service';
+import { OrganizationService } from '../../modules/organization/organization.service';
 
 describe('SupabaseAuthGuard', () => {
   let guard: SupabaseAuthGuard;
@@ -64,6 +65,15 @@ describe('SupabaseAuthGuard', () => {
             findOne: jest.fn(),
             create: jest.fn(),
             save: jest.fn(),
+          },
+        },
+        {
+          provide: OrganizationService,
+          useValue: {
+            createOrganizationForNewUser: jest.fn().mockResolvedValue(undefined),
+            findPendingInvitationByEmail: jest.fn().mockResolvedValue(null),
+            validateInvitation: jest.fn().mockResolvedValue({ valid: false }),
+            acceptInvitation: jest.fn().mockResolvedValue(undefined),
           },
         },
         UserProfileCacheService,
@@ -155,7 +165,9 @@ describe('SupabaseAuthGuard', () => {
         error: null,
       });
 
-      jest.spyOn(userProfileRepository, 'findOne').mockResolvedValue(null);
+      jest.spyOn(userProfileRepository, 'findOne')
+        .mockResolvedValueOnce(null)          // 1st call: user not found
+        .mockResolvedValueOnce(mockUserProfile); // 2nd call: refetch after org setup
       jest.spyOn(userProfileRepository, 'create').mockReturnValue(mockUserProfile);
       jest.spyOn(userProfileRepository, 'save').mockResolvedValue(mockUserProfile);
 
@@ -255,32 +267,39 @@ describe('SupabaseAuthGuard', () => {
       );
     });
 
-    it('should reject new user with missing metadata (created as inactive)', async () => {
+    it('should create new user with missing metadata as active admin', async () => {
       const context = mockExecutionContext('Bearer valid-token', false);
       const userWithoutMetadata = {
         id: 'user-456',
         email: 'noname@example.com',
       };
 
+      const createdProfile = {
+        id: 'user-456',
+        email: 'noname@example.com',
+        firstName: '',
+        lastName: '',
+        role: UserRole.ADMIN,
+        isActive: true,
+        organizationId: 'org-new',
+        get fullName() { return `${this.firstName} ${this.lastName}`; },
+      } as unknown as UserProfile;
+
       jest.spyOn(supabaseService.admin.auth, 'getUser').mockResolvedValue({
         data: { user: userWithoutMetadata as any },
         error: null,
       });
 
-      jest.spyOn(userProfileRepository, 'findOne').mockResolvedValue(null);
-      jest.spyOn(userProfileRepository, 'create').mockImplementation((dto) => ({
-        ...dto,
-        firstName: dto.firstName || '',
-        lastName: dto.lastName || '',
-      } as UserProfile));
-      jest.spyOn(userProfileRepository, 'save').mockImplementation((profile) =>
-        Promise.resolve(profile as UserProfile),
-      );
+      jest.spyOn(userProfileRepository, 'findOne')
+        .mockResolvedValueOnce(null)          // 1st call: user not found
+        .mockResolvedValueOnce(createdProfile); // 2nd call: refetch after org setup
+      jest.spyOn(userProfileRepository, 'create').mockReturnValue(createdProfile);
+      jest.spyOn(userProfileRepository, 'save').mockResolvedValue(createdProfile);
 
-      // New users are created with isActive: false for security
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        AuthenticationException,
-      );
+      // New users without invitations are created as active admins with a new organization
+      const result = await guard.canActivate(context);
+      expect(result).toBe(true);
+      expect(userProfileRepository.create).toHaveBeenCalled();
     });
 
     it('should handle generic errors', async () => {

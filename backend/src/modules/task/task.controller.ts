@@ -74,16 +74,16 @@ export class TaskController {
   @ApiOperation({ summary: 'Get task statistics' })
   @ApiQuery({ name: 'projectId', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Task statistics' })
-  async getStatistics(@Query('projectId') projectId?: string) {
-    return this.taskService.getTaskStatistics(projectId);
+  async getStatistics(@Query('projectId') projectId?: string, @CurrentUser('organizationId') organizationId?: string) {
+    return this.taskService.getTaskStatistics(projectId, organizationId);
   }
 
   @Get('overdue')
   @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get overdue tasks' })
   @ApiResponse({ status: 200, description: 'List of overdue tasks' })
-  async getOverdueTasks() {
-    return this.taskService.getOverdueTasks();
+  async getOverdueTasks(@CurrentUser('organizationId') organizationId: string) {
+    return this.taskService.getOverdueTasks(organizationId);
   }
 
   @Get('upcoming')
@@ -91,8 +91,8 @@ export class TaskController {
   @ApiOperation({ summary: 'Get tasks with upcoming deadlines' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of upcoming tasks' })
-  async getUpcomingTasks(@Query('days') days?: number) {
-    return this.taskService.getUpcomingTasks(days || 7);
+  async getUpcomingTasks(@Query('days') days?: number, @CurrentUser('organizationId') organizationId?: string) {
+    return this.taskService.getUpcomingTasks(days || 7, organizationId);
   }
 
   @Get('by-project/:projectId')
@@ -100,8 +100,8 @@ export class TaskController {
   @ApiOperation({ summary: 'Get tasks by project ID' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'List of tasks for the project' })
-  async getTasksByProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    return this.taskService.getTasksByProject(projectId);
+  async getTasksByProject(@Param('projectId', ParseUUIDPipe) projectId: string, @CurrentUser('organizationId') organizationId: string) {
+    return this.taskService.getTasksByProject(projectId, organizationId);
   }
 
   @Get('by-assignee/:assigneeId')
@@ -109,8 +109,8 @@ export class TaskController {
   @ApiOperation({ summary: 'Get tasks by assignee ID' })
   @ApiParam({ name: 'assigneeId', description: 'Assignee user ID' })
   @ApiResponse({ status: 200, description: 'List of tasks for the assignee' })
-  async getTasksByAssignee(@Param('assigneeId', ParseUUIDPipe) assigneeId: string) {
-    return this.taskService.getTasksByAssignee(assigneeId);
+  async getTasksByAssignee(@Param('assigneeId', ParseUUIDPipe) assigneeId: string, @CurrentUser('organizationId') organizationId: string) {
+    return this.taskService.getTasksByAssignee(assigneeId, organizationId);
   }
 
   @Get('by-partner/:partnerId')
@@ -118,16 +118,16 @@ export class TaskController {
   @ApiOperation({ summary: 'Get tasks by partner ID' })
   @ApiParam({ name: 'partnerId', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'List of tasks for the partner' })
-  async getTasksByPartner(@Param('partnerId', ParseUUIDPipe) partnerId: string) {
-    return this.taskService.getTasksByPartner(partnerId);
+  async getTasksByPartner(@Param('partnerId', ParseUUIDPipe) partnerId: string, @CurrentUser('organizationId') organizationId: string) {
+    return this.taskService.getTasksByPartner(partnerId, organizationId);
   }
 
   @Get('deleted')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get soft-deleted tasks' })
   @ApiResponse({ status: 200, description: 'List of soft-deleted tasks' })
-  async findDeleted() {
-    return this.taskService.findDeleted();
+  async findDeleted(@CurrentUser('organizationId') organizationId: string) {
+    return this.taskService.findDeleted(organizationId);
   }
 
   @Patch(':id/restore')
@@ -136,8 +136,8 @@ export class TaskController {
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiResponse({ status: 200, description: 'Task restored successfully' })
   @ApiResponse({ status: 404, description: 'Deleted task not found' })
-  async restore(@Param('id', ParseUUIDPipe) id: string) {
-    return this.taskService.restore(id);
+  async restore(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('organizationId') organizationId: string) {
+    return this.taskService.restore(id, organizationId);
   }
 
   @Get(':id/subtasks')

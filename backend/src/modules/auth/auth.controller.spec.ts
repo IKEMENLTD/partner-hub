@@ -19,6 +19,7 @@ describe('AuthController', () => {
     role: UserRole.MEMBER,
     isActive: true,
     avatarUrl: undefined,
+    organizationId: 'org-uuid',
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
   };
@@ -31,6 +32,7 @@ describe('AuthController', () => {
     role: UserRole.MEMBER,
     isActive: true,
     avatarUrl: undefined,
+    organizationId: 'org-uuid',
     createdAt: new Date('2025-01-01'),
   };
 
@@ -166,14 +168,14 @@ describe('AuthController', () => {
       mockAuthService.findAllProfiles.mockResolvedValue(profiles);
       mockAuthService.mapProfileToResponse.mockReturnValueOnce(mockProfileResponse).mockReturnValueOnce({ ...mockProfileResponse, id: 'uuid-2' });
 
-      const result = await controller.getAllUsers();
+      const result = await controller.getAllUsers('org-uuid');
       expect(result).toHaveLength(2);
-      expect(mockAuthService.findAllProfiles).toHaveBeenCalled();
+      expect(mockAuthService.findAllProfiles).toHaveBeenCalledWith('org-uuid');
     });
 
     it('should return empty array when no users', async () => {
       mockAuthService.findAllProfiles.mockResolvedValue([]);
-      const result = await controller.getAllUsers();
+      const result = await controller.getAllUsers('org-uuid');
       expect(result).toEqual([]);
     });
   });
@@ -182,57 +184,61 @@ describe('AuthController', () => {
     it('should return user mapped to response', async () => {
       mockAuthService.findProfileById.mockResolvedValue(mockProfile);
       mockAuthService.mapProfileToResponse.mockReturnValue(mockProfileResponse);
-      const result = await controller.getUserById('test-uuid');
+      const result = await controller.getUserById('test-uuid', 'org-uuid');
       expect(result).toEqual(mockProfileResponse);
+      expect(mockAuthService.findProfileById).toHaveBeenCalledWith('test-uuid', 'org-uuid');
     });
 
     it('should propagate not found error', async () => {
       mockAuthService.findProfileById.mockRejectedValue(new Error('User not found'));
-      await expect(controller.getUserById('non-existent')).rejects.toThrow('User not found');
+      await expect(controller.getUserById('non-existent', 'org-uuid')).rejects.toThrow('User not found');
     });
   });
 
   describe('updateUser', () => {
     it('should update user and return response', async () => {
       const updateDto = { firstName: 'Admin', role: UserRole.MANAGER };
+      mockAuthService.findProfileById.mockResolvedValue(mockProfile);
       mockAuthService.updateProfile.mockResolvedValue({ ...mockProfile, ...updateDto });
       mockAuthService.mapProfileToResponse.mockReturnValue({ ...mockProfileResponse, ...updateDto });
 
-      const result = await controller.updateUser('target-uuid', updateDto as any);
+      const result = await controller.updateUser('target-uuid', updateDto as any, 'org-uuid');
+      expect(mockAuthService.findProfileById).toHaveBeenCalledWith('target-uuid', 'org-uuid');
       expect(mockAuthService.updateProfile).toHaveBeenCalledWith('target-uuid', updateDto);
       expect(result.role).toBe(UserRole.MANAGER);
     });
 
     it('should propagate errors', async () => {
-      mockAuthService.updateProfile.mockRejectedValue(new Error('Not found'));
-      await expect(controller.updateUser('x', {} as any)).rejects.toThrow('Not found');
+      mockAuthService.findProfileById.mockRejectedValue(new Error('Not found'));
+      await expect(controller.updateUser('x', {} as any, 'org-uuid')).rejects.toThrow('Not found');
     });
   });
 
   describe('deactivateUser', () => {
     it('should deactivate user and return message', async () => {
       mockAuthService.deactivateUser.mockResolvedValue(undefined);
-      const result = await controller.deactivateUser('target-uuid', 'admin-uuid');
+      const result = await controller.deactivateUser('target-uuid', 'admin-uuid', 'org-uuid');
       expect(result).toEqual({ message: 'ユーザーを無効化しました' });
-      expect(mockAuthService.deactivateUser).toHaveBeenCalledWith('target-uuid', 'admin-uuid');
+      expect(mockAuthService.deactivateUser).toHaveBeenCalledWith('target-uuid', 'admin-uuid', 'org-uuid');
     });
 
     it('should propagate self-deactivation error', async () => {
       mockAuthService.deactivateUser.mockRejectedValue(new Error('Cannot deactivate self'));
-      await expect(controller.deactivateUser('uid', 'uid')).rejects.toThrow('Cannot deactivate self');
+      await expect(controller.deactivateUser('uid', 'uid', 'org-uuid')).rejects.toThrow('Cannot deactivate self');
     });
   });
 
   describe('activateUser', () => {
     it('should activate user and return message', async () => {
       mockAuthService.activateUser.mockResolvedValue(undefined);
-      const result = await controller.activateUser('target-uuid');
+      const result = await controller.activateUser('target-uuid', 'org-uuid');
       expect(result).toEqual({ message: 'ユーザーを有効化しました' });
+      expect(mockAuthService.activateUser).toHaveBeenCalledWith('target-uuid', 'org-uuid');
     });
 
     it('should propagate not found error', async () => {
       mockAuthService.activateUser.mockRejectedValue(new Error('User not found'));
-      await expect(controller.activateUser('x')).rejects.toThrow('User not found');
+      await expect(controller.activateUser('x', 'org-uuid')).rejects.toThrow('User not found');
     });
   });
 });

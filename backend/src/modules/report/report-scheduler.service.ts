@@ -70,8 +70,8 @@ export class ReportSchedulerService implements OnModuleInit {
     // Calculate date range based on period
     const { start, end } = this.calculatePeriodRange(config.period);
 
-    // Generate report data
-    const reportData = await this.reportService.gatherReportData(start, end);
+    // Generate report data (filter by config's organization)
+    const reportData = await this.reportService.gatherReportData(start, end, config.organizationId);
 
     // Determine title
     const periodLabel = config.period === ReportPeriod.MONTHLY ? '月次' : '週次';
@@ -89,6 +89,7 @@ export class ReportSchedulerService implements OnModuleInit {
       status: GeneratedReportStatus.GENERATED,
       reportData,
       isManual: false,
+      organizationId: config.organizationId,
     });
 
     await this.generatedReportRepository.save(generatedReport);

@@ -88,10 +88,10 @@ describe('PartnerController', () => {
       const stats = { total: 10, active: 8, inactive: 2 };
       mockPartnerService.getPartnerStatistics.mockResolvedValue(stats);
 
-      const result = await controller.getStatistics();
+      const result = await controller.getStatistics('org-1');
 
       expect(result).toEqual(stats);
-      expect(mockPartnerService.getPartnerStatistics).toHaveBeenCalled();
+      expect(mockPartnerService.getPartnerStatistics).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -99,10 +99,10 @@ describe('PartnerController', () => {
     it('should return active partners', async () => {
       mockPartnerService.getActivePartners.mockResolvedValue([mockPartner]);
 
-      const result = await controller.getActivePartners();
+      const result = await controller.getActivePartners('org-1');
 
       expect(result).toEqual([mockPartner]);
-      expect(mockPartnerService.getActivePartners).toHaveBeenCalled();
+      expect(mockPartnerService.getActivePartners).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -110,10 +110,10 @@ describe('PartnerController', () => {
     it('should return partners matching skills', async () => {
       mockPartnerService.getPartnersBySkills.mockResolvedValue([mockPartner]);
 
-      const result = await controller.getBySkills('React, Node.js');
+      const result = await controller.getBySkills('React, Node.js', 'org-1');
 
       expect(result).toEqual([mockPartner]);
-      expect(mockPartnerService.getPartnersBySkills).toHaveBeenCalledWith(['React', 'Node.js']);
+      expect(mockPartnerService.getPartnersBySkills).toHaveBeenCalledWith(['React', 'Node.js'], 'org-1');
     });
   });
 
@@ -121,10 +121,10 @@ describe('PartnerController', () => {
     it('should return soft-deleted partners', async () => {
       mockPartnerService.findDeleted.mockResolvedValue([]);
 
-      const result = await controller.findDeleted();
+      const result = await controller.findDeleted('org-1');
 
       expect(result).toEqual([]);
-      expect(mockPartnerService.findDeleted).toHaveBeenCalled();
+      expect(mockPartnerService.findDeleted).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -132,16 +132,16 @@ describe('PartnerController', () => {
     it('should restore a soft-deleted partner', async () => {
       mockPartnerService.restore.mockResolvedValue(mockPartner);
 
-      const result = await controller.restore('partner-uuid-1');
+      const result = await controller.restore('partner-uuid-1', 'org-1');
 
       expect(result).toEqual(mockPartner);
-      expect(mockPartnerService.restore).toHaveBeenCalledWith('partner-uuid-1');
+      expect(mockPartnerService.restore).toHaveBeenCalledWith('partner-uuid-1', 'org-1');
     });
 
     it('should propagate not found errors', async () => {
       mockPartnerService.restore.mockRejectedValue(new Error('Not found'));
 
-      await expect(controller.restore('invalid-id')).rejects.toThrow('Not found');
+      await expect(controller.restore('invalid-id', 'org-1')).rejects.toThrow('Not found');
     });
   });
 
@@ -161,16 +161,16 @@ describe('PartnerController', () => {
     it('should return a partner by id', async () => {
       mockPartnerService.findOne.mockResolvedValue(mockPartner);
 
-      const result = await controller.findOne('partner-uuid-1');
+      const result = await controller.findOne('partner-uuid-1', 'org-1');
 
       expect(result).toEqual(mockPartner);
-      expect(mockPartnerService.findOne).toHaveBeenCalledWith('partner-uuid-1');
+      expect(mockPartnerService.findOne).toHaveBeenCalledWith('partner-uuid-1', 'org-1');
     });
 
     it('should propagate not found errors', async () => {
       mockPartnerService.findOne.mockRejectedValue(new Error('Not found'));
 
-      await expect(controller.findOne('invalid-id')).rejects.toThrow('Not found');
+      await expect(controller.findOne('invalid-id', 'org-1')).rejects.toThrow('Not found');
     });
   });
 

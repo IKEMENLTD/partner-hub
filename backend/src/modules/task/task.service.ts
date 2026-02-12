@@ -16,7 +16,7 @@ import { HealthScoreService } from '../project/services/health-score.service';
 import { EmailService } from '../notification/services/email.service';
 import { Partner } from '../partner/entities/partner.entity';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
-import { BusinessException } from '../../common/exceptions/business.exception';
+import { BusinessException, AuthorizationException } from '../../common/exceptions/business.exception';
 import { UserRole } from '../auth/enums/user-role.enum';
 
 // SECURITY FIX: Whitelist of allowed sort columns to prevent SQL injection
@@ -212,7 +212,7 @@ export class TaskService {
     return new PaginatedResponseDto(data, total, page, limit);
   }
 
-  async findOne(id: string): Promise<Task> {
+  async findOne(id: string, organizationId?: string): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
       relations: ['project', 'assignee', 'partner', 'parentTask', 'childTasks', 'subtasks', 'comments', 'comments.author', 'createdBy'],
@@ -220,6 +220,13 @@ export class TaskService {
 
     if (!task) {
       throw ResourceNotFoundException.forTask(id);
+    }
+
+    // Multi-tenancy: verify task's project belongs to the user's organization
+    if (organizationId && task.project && task.project.organizationId && task.project.organizationId !== organizationId) {
+      throw new AuthorizationException('AUTH_004', {
+        message: 'このタスクへのアクセス権限がありません',
+      });
     }
 
     return task;
@@ -341,22 +348,34 @@ export class TaskService {
     return this.findOne(taskId);
   }
 
-  async findDeleted(): Promise<Task[]> {
-    return this.taskRepository.find({
-      withDeleted: true,
-      where: { deletedAt: Not(IsNull()) },
-      relations: ['project'],
-      order: { deletedAt: 'DESC' },
-    });
+  async findDeleted(organizationId?: string): Promise<Task[]> {
+    const qb = this.taskRepository
+      .createQueryBuilder('task')
+      .withDeleted()
+      .leftJoinAndSelect('task.project', 'project')
+      .where('task.deletedAt IS NOT NULL');
+
+    if (organizationId) {
+      qb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+
+    return qb.orderBy('task.deletedAt', 'DESC').getMany();
   }
 
-  async restore(id: string): Promise<Task> {
+  async restore(id: string, organizationId?: string): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
       withDeleted: true,
+      relations: ['project'],
     });
     if (!task || !task.deletedAt) {
       throw ResourceNotFoundException.forTask(id);
+    }
+    // Multi-tenancy: verify task's project belongs to the user's organization
+    if (organizationId && task.project && task.project.organizationId && task.project.organizationId !== organizationId) {
+      throw new AuthorizationException('AUTH_004', {
+        message: 'このタスクへのアクセス権限がありません',
+      });
     }
     await this.taskRepository.recover(task);
     this.logger.log(`Task restored: ${task.title} (${id})`);
@@ -385,13 +404,20 @@ export class TaskService {
   /**
    * Permanently delete a task (admin only)
    */
-  async forceRemove(id: string): Promise<void> {
+  async forceRemove(id: string, organizationId?: string): Promise<void> {
     const task = await this.taskRepository.findOne({
       where: { id },
       withDeleted: true,
+      relations: ['project'],
     });
     if (!task) {
       throw ResourceNotFoundException.forTask(id);
+    }
+    // Multi-tenancy: verify task's project belongs to the user's organization
+    if (organizationId && task.project && task.project.organizationId && task.project.organizationId !== organizationId) {
+      throw new AuthorizationException('AUTH_004', {
+        message: 'このタスクへのアクセス権限がありません',
+      });
     }
     const projectId = task.projectId;
     await this.taskRepository.remove(task);
@@ -403,48 +429,75 @@ export class TaskService {
     }
   }
 
-  async getTasksByProject(projectId: string): Promise<Task[]> {
-    return this.taskRepository.find({
-      where: { projectId },
-      relations: ['assignee', 'partner', 'childTasks'],
-      order: { createdAt: 'DESC' },
-    });
+  async getTasksByProject(projectId: string, organizationId?: string): Promise<Task[]> {
+    const qb = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .leftJoinAndSelect('task.partner', 'partner')
+      .leftJoinAndSelect('task.childTasks', 'childTasks')
+      .leftJoinAndSelect('task.project', 'project')
+      .where('task.projectId = :projectId', { projectId });
+
+    if (organizationId) {
+      qb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+
+    return qb.orderBy('task.createdAt', 'DESC').getMany();
   }
 
-  async getTasksByAssignee(assigneeId: string): Promise<Task[]> {
-    return this.taskRepository.find({
-      where: { assigneeId },
-      relations: ['project', 'partner'],
-      order: { dueDate: 'ASC' },
-    });
+  async getTasksByAssignee(assigneeId: string, organizationId?: string): Promise<Task[]> {
+    const qb = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.project', 'project')
+      .leftJoinAndSelect('task.partner', 'partner')
+      .where('task.assigneeId = :assigneeId', { assigneeId });
+
+    if (organizationId) {
+      qb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+
+    return qb.orderBy('task.dueDate', 'ASC').getMany();
   }
 
-  async getTasksByPartner(partnerId: string): Promise<Task[]> {
-    return this.taskRepository.find({
-      where: { partnerId },
-      relations: ['project', 'assignee'],
-      order: { dueDate: 'ASC' },
-    });
+  async getTasksByPartner(partnerId: string, organizationId?: string): Promise<Task[]> {
+    const qb = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.project', 'project')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .where('task.partnerId = :partnerId', { partnerId });
+
+    if (organizationId) {
+      qb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+
+    return qb.orderBy('task.dueDate', 'ASC').getMany();
   }
 
-  async getOverdueTasks(): Promise<Task[]> {
+  async getOverdueTasks(organizationId?: string): Promise<Task[]> {
     const today = new Date();
-    return this.taskRepository.find({
-      where: {
-        dueDate: LessThan(today),
-        status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
-      },
-      relations: ['project', 'assignee', 'partner'],
-      order: { dueDate: 'ASC' },
-    });
+    const qb = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.project', 'project')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .leftJoinAndSelect('task.partner', 'partner')
+      .where('task.dueDate < :today', { today })
+      .andWhere('task.status NOT IN (:...completedStatuses)', {
+        completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
+      });
+
+    if (organizationId) {
+      qb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+
+    return qb.orderBy('task.dueDate', 'ASC').getMany();
   }
 
-  async getUpcomingTasks(days: number = 7): Promise<Task[]> {
+  async getUpcomingTasks(days: number = 7, organizationId?: string): Promise<Task[]> {
     const today = new Date();
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
 
-    return this.taskRepository
+    const qb = this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('task.assignee', 'assignee')
@@ -452,9 +505,13 @@ export class TaskService {
       .where('task.dueDate BETWEEN :today AND :futureDate', { today, futureDate })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
-      .orderBy('task.dueDate', 'ASC')
-      .getMany();
+      });
+
+    if (organizationId) {
+      qb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+
+    return qb.orderBy('task.dueDate', 'ASC').getMany();
   }
 
   async getSubtasks(parentTaskId: string): Promise<Task[]> {
@@ -507,7 +564,7 @@ export class TaskService {
     return saved!;
   }
 
-  async getTaskStatistics(projectId?: string): Promise<{
+  async getTaskStatistics(projectId?: string, organizationId?: string): Promise<{
     total: number;
     byStatus: Record<string, number>;
     byPriority: Record<string, number>;
@@ -515,37 +572,65 @@ export class TaskService {
     overdue: number;
     completionRate: number;
   }> {
-    const queryBuilder = this.taskRepository.createQueryBuilder('task');
+    // Helper to add org filter via project join
+    const addOrgFilter = (qb: any) => {
+      if (organizationId && !projectId) {
+        qb.leftJoin('task.project', 'project');
+        qb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+      }
+    };
 
+    const queryBuilder = this.taskRepository.createQueryBuilder('task');
     if (projectId) {
       queryBuilder.andWhere('task.projectId = :projectId', { projectId });
     }
-
+    addOrgFilter(queryBuilder);
     const total = await queryBuilder.getCount();
 
-    const statusCounts = await this.taskRepository
+    const statusQb = this.taskRepository
       .createQueryBuilder('task')
       .select('task.status', 'status')
-      .addSelect('COUNT(*)', 'count')
-      .where(projectId ? 'task.projectId = :projectId' : '1=1', { projectId })
-      .groupBy('task.status')
-      .getRawMany();
+      .addSelect('COUNT(*)', 'count');
+    if (projectId) {
+      statusQb.where('task.projectId = :projectId', { projectId });
+    } else {
+      statusQb.where('1=1');
+    }
+    if (organizationId && !projectId) {
+      statusQb.leftJoin('task.project', 'project');
+      statusQb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+    const statusCounts = await statusQb.groupBy('task.status').getRawMany();
 
-    const priorityCounts = await this.taskRepository
+    const priorityQb = this.taskRepository
       .createQueryBuilder('task')
       .select('task.priority', 'priority')
-      .addSelect('COUNT(*)', 'count')
-      .where(projectId ? 'task.projectId = :projectId' : '1=1', { projectId })
-      .groupBy('task.priority')
-      .getRawMany();
+      .addSelect('COUNT(*)', 'count');
+    if (projectId) {
+      priorityQb.where('task.projectId = :projectId', { projectId });
+    } else {
+      priorityQb.where('1=1');
+    }
+    if (organizationId && !projectId) {
+      priorityQb.leftJoin('task.project', 'project');
+      priorityQb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+    const priorityCounts = await priorityQb.groupBy('task.priority').getRawMany();
 
-    const typeCounts = await this.taskRepository
+    const typeQb = this.taskRepository
       .createQueryBuilder('task')
       .select('task.type', 'type')
-      .addSelect('COUNT(*)', 'count')
-      .where(projectId ? 'task.projectId = :projectId' : '1=1', { projectId })
-      .groupBy('task.type')
-      .getRawMany();
+      .addSelect('COUNT(*)', 'count');
+    if (projectId) {
+      typeQb.where('task.projectId = :projectId', { projectId });
+    } else {
+      typeQb.where('1=1');
+    }
+    if (organizationId && !projectId) {
+      typeQb.leftJoin('task.project', 'project');
+      typeQb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+    const typeCounts = await typeQb.groupBy('task.type').getRawMany();
 
     const today = new Date();
     const overdueBuilder = this.taskRepository
@@ -556,6 +641,10 @@ export class TaskService {
       });
     if (projectId) {
       overdueBuilder.andWhere('task.projectId = :projectId', { projectId });
+    }
+    if (organizationId && !projectId) {
+      overdueBuilder.leftJoin('task.project', 'project');
+      overdueBuilder.andWhere('project.organizationId = :orgId', { orgId: organizationId });
     }
     const overdue = await overdueBuilder.getCount();
 

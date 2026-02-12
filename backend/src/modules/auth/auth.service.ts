@@ -27,8 +27,12 @@ export class AuthService {
   /**
    * プロファイルをIDで取得
    */
-  async findProfileById(id: string): Promise<UserProfile> {
-    const profile = await this.profileRepository.findOne({ where: { id } });
+  async findProfileById(id: string, organizationId?: string): Promise<UserProfile> {
+    const where: any = { id };
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
+    const profile = await this.profileRepository.findOne({ where });
     if (!profile) {
       throw ResourceNotFoundException.forUser(id);
     }
@@ -38,8 +42,13 @@ export class AuthService {
   /**
    * 全プロファイルを取得（管理者用）
    */
-  async findAllProfiles(): Promise<UserProfile[]> {
+  async findAllProfiles(organizationId?: string): Promise<UserProfile[]> {
+    const where: any = {};
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
     return this.profileRepository.find({
+      where,
       order: { createdAt: 'DESC' },
     });
   }
@@ -59,8 +68,8 @@ export class AuthService {
   /**
    * ユーザーロールを更新（管理者用）
    */
-  async updateUserRole(id: string, role: UserRole): Promise<UserProfile> {
-    const profile = await this.findProfileById(id);
+  async updateUserRole(id: string, role: UserRole, organizationId?: string): Promise<UserProfile> {
+    const profile = await this.findProfileById(id, organizationId);
     profile.role = role;
     await this.profileRepository.save(profile);
     this.userProfileCache.invalidate(id);
@@ -71,14 +80,14 @@ export class AuthService {
   /**
    * ユーザーを無効化（管理者用）
    */
-  async deactivateUser(id: string, currentUserId?: string): Promise<void> {
+  async deactivateUser(id: string, currentUserId?: string, organizationId?: string): Promise<void> {
     if (currentUserId && id === currentUserId) {
       throw new BusinessException('AUTH_004', {
         message: '自分自身のアカウントは無効化できません',
         userMessage: '自分自身のアカウントは無効化できません',
       });
     }
-    const profile = await this.findProfileById(id);
+    const profile = await this.findProfileById(id, organizationId);
     profile.isActive = false;
     await this.profileRepository.save(profile);
     this.userProfileCache.invalidate(id);
@@ -88,8 +97,8 @@ export class AuthService {
   /**
    * ユーザーを有効化（管理者用）
    */
-  async activateUser(id: string): Promise<void> {
-    const profile = await this.findProfileById(id);
+  async activateUser(id: string, organizationId?: string): Promise<void> {
+    const profile = await this.findProfileById(id, organizationId);
     profile.isActive = true;
     await this.profileRepository.save(profile);
     this.userProfileCache.invalidate(id);

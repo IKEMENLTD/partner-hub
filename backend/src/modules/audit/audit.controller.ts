@@ -11,6 +11,7 @@ import { AuditService } from './audit.service';
 import { AuditAction } from './entities/audit-log.entity';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Audit Logs')
@@ -64,6 +65,7 @@ export class AuditController {
   @ApiResponse({ status: 200, description: 'Paginated list of audit logs' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   async findAll(
+    @CurrentUser('organizationId') organizationId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('userId') userId?: string,
@@ -82,6 +84,7 @@ export class AuditController {
       entityName,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
+      organizationId,
     });
   }
 
@@ -91,8 +94,12 @@ export class AuditController {
   @ApiParam({ name: 'entityName', description: 'Entity name (e.g., Partner, Project, Task)' })
   @ApiParam({ name: 'entityId', description: 'Entity ID' })
   @ApiResponse({ status: 200, description: 'List of audit logs for the entity' })
-  async findByEntity(@Param('entityName') entityName: string, @Param('entityId') entityId: string) {
-    return this.auditService.findByEntity(entityName, entityId);
+  async findByEntity(
+    @Param('entityName') entityName: string,
+    @Param('entityId') entityId: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.auditService.findByEntity(entityName, entityId, organizationId);
   }
 
   @Get('user/:userId')
@@ -106,10 +113,14 @@ export class AuditController {
     description: 'Maximum number of logs to return (default: 100)',
   })
   @ApiResponse({ status: 200, description: 'List of audit logs for the user' })
-  async findByUser(@Param('userId', ParseUUIDPipe) userId: string, @Query('limit') limit?: string) {
+  async findByUser(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Query('limit') limit?: string,
+    @CurrentUser('organizationId') organizationId?: string,
+  ) {
     return this.auditService.findByUser(userId, {
       limit: limit ? parseInt(limit, 10) : undefined,
-    });
+    }, organizationId);
   }
 
   @Get('recent')
@@ -122,8 +133,11 @@ export class AuditController {
     description: 'Maximum number of logs to return (default: 50)',
   })
   @ApiResponse({ status: 200, description: 'List of recent audit logs' })
-  async getRecentLogs(@Query('limit') limit?: string) {
-    return this.auditService.getRecentLogs(limit ? parseInt(limit, 10) : undefined);
+  async getRecentLogs(
+    @Query('limit') limit?: string,
+    @CurrentUser('organizationId') organizationId?: string,
+  ) {
+    return this.auditService.getRecentLogs(limit ? parseInt(limit, 10) : undefined, organizationId);
   }
 
   @Get('date-range')
@@ -137,7 +151,11 @@ export class AuditController {
   })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (ISO format)' })
   @ApiResponse({ status: 200, description: 'List of audit logs within the date range' })
-  async findByDateRange(@Query('startDate') startDate: string, @Query('endDate') endDate: string) {
-    return this.auditService.findByDateRange(new Date(startDate), new Date(endDate));
+  async findByDateRange(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @CurrentUser('organizationId') organizationId?: string,
+  ) {
+    return this.auditService.findByDateRange(new Date(startDate), new Date(endDate), organizationId);
   }
 }

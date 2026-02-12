@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjectFile } from './entities/project-file.entity';
+import { Project } from '../project/entities/project.entity';
 import { FileCategory } from './enums/file-category.enum';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
@@ -23,8 +24,37 @@ export class FileStorageService {
   constructor(
     @InjectRepository(ProjectFile)
     private readonly projectFileRepository: Repository<ProjectFile>,
+    @InjectRepository(Project)
+    private readonly projectRepository: Repository<Project>,
     private readonly supabaseService: SupabaseService,
   ) {}
+
+  /**
+   * Validate that a project belongs to the given organization
+   */
+  private async validateProjectOrganization(
+    projectId: string,
+    organizationId: string,
+  ): Promise<void> {
+    const project = await this.projectRepository.findOne({
+      where: { id: projectId },
+      select: ['id', 'organizationId'],
+    });
+
+    if (!project || project.organizationId !== organizationId) {
+      throw ResourceNotFoundException.forProject(projectId);
+    }
+  }
+
+  /**
+   * Validate that a file belongs to a project within the given organization
+   */
+  private async validateFileOrganization(
+    file: ProjectFile,
+    organizationId: string,
+  ): Promise<void> {
+    await this.validateProjectOrganization(file.projectId, organizationId);
+  }
 
   /**
    * Upload a file to Supabase Storage
@@ -35,7 +65,12 @@ export class FileStorageService {
     uploaderId: string,
     taskId?: string,
     category?: FileCategory,
+    organizationId?: string,
   ): Promise<ProjectFile> {
+    // Validate project belongs to the user's organization
+    if (organizationId) {
+      await this.validateProjectOrganization(projectId, organizationId);
+    }
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       throw new BusinessException('FILE_003', {
@@ -112,7 +147,12 @@ export class FileStorageService {
   /**
    * Get all files for a project
    */
-  async getFilesByProject(projectId: string): Promise<ProjectFile[]> {
+  async getFilesByProject(projectId: string, organizationId?: string): Promise<ProjectFile[]> {
+    // Validate project belongs to the user's organization
+    if (organizationId) {
+      await this.validateProjectOrganization(projectId, organizationId);
+    }
+
     return this.projectFileRepository.find({
       where: { projectId },
       relations: ['uploader'],
@@ -123,18 +163,25 @@ export class FileStorageService {
   /**
    * Get all files for a task
    */
-  async getFilesByTask(taskId: string): Promise<ProjectFile[]> {
-    return this.projectFileRepository.find({
+  async getFilesByTask(taskId: string, organizationId?: string): Promise<ProjectFile[]> {
+    const files = await this.projectFileRepository.find({
       where: { taskId },
       relations: ['uploader'],
       order: { createdAt: 'DESC' },
     });
+
+    // Validate org via the project if files exist
+    if (organizationId && files.length > 0) {
+      await this.validateProjectOrganization(files[0].projectId, organizationId);
+    }
+
+    return files;
   }
 
   /**
    * Get a file by ID
    */
-  async getFileById(fileId: string): Promise<ProjectFile> {
+  async getFileById(fileId: string, organizationId?: string): Promise<ProjectFile> {
     const file = await this.projectFileRepository.findOne({
       where: { id: fileId },
       relations: ['uploader'],
@@ -144,14 +191,19 @@ export class FileStorageService {
       throw ResourceNotFoundException.forFile(fileId);
     }
 
+    // Validate file belongs to a project in the user's organization
+    if (organizationId) {
+      await this.validateFileOrganization(file, organizationId);
+    }
+
     return file;
   }
 
   /**
    * Delete a file from storage and database
    */
-  async deleteFile(fileId: string): Promise<void> {
-    const file = await this.getFileById(fileId);
+  async deleteFile(fileId: string, organizationId?: string): Promise<void> {
+    const file = await this.getFileById(fileId, organizationId);
 
     // Delete from Supabase Storage
     const supabaseAdmin = this.supabaseService.admin;
@@ -175,8 +227,9 @@ export class FileStorageService {
   async generateSignedUrl(
     fileId: string,
     expiresIn: number = 3600,
+    organizationId?: string,
   ): Promise<{ signedUrl: string; expiresIn: number }> {
-    const file = await this.getFileById(fileId);
+    const file = await this.getFileById(fileId, organizationId);
 
     const supabaseAdmin = this.supabaseService.admin;
     if (!supabaseAdmin) {

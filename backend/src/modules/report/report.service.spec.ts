@@ -187,7 +187,7 @@ describe('ReportService', () => {
 
       const result = await service.createConfig(createDto, 'user-1');
 
-      expect(mockReportConfigService.createConfig).toHaveBeenCalledWith(createDto, 'user-1');
+      expect(mockReportConfigService.createConfig).toHaveBeenCalledWith(createDto, 'user-1', undefined);
       expect(result).toEqual(mockReportConfig);
     });
 
@@ -211,7 +211,7 @@ describe('ReportService', () => {
 
       const result = await service.findAllConfigs(queryDto);
 
-      expect(mockReportConfigService.findAllConfigs).toHaveBeenCalledWith(queryDto);
+      expect(mockReportConfigService.findAllConfigs).toHaveBeenCalledWith(queryDto, undefined);
       expect(result).toEqual(paginatedResult);
     });
 
@@ -230,7 +230,7 @@ describe('ReportService', () => {
 
       const result = await service.findAllConfigs(queryDto);
 
-      expect(mockReportConfigService.findAllConfigs).toHaveBeenCalledWith(queryDto);
+      expect(mockReportConfigService.findAllConfigs).toHaveBeenCalledWith(queryDto, undefined);
       expect(result).toEqual(paginatedResult);
     });
 
@@ -251,7 +251,7 @@ describe('ReportService', () => {
 
       const result = await service.findConfigById('config-1');
 
-      expect(mockReportConfigService.findConfigById).toHaveBeenCalledWith('config-1');
+      expect(mockReportConfigService.findConfigById).toHaveBeenCalledWith('config-1', undefined);
       expect(result).toEqual(mockReportConfig);
     });
 
@@ -281,7 +281,7 @@ describe('ReportService', () => {
 
       const result = await service.updateConfig('config-1', updateDto);
 
-      expect(mockReportConfigService.updateConfig).toHaveBeenCalledWith('config-1', updateDto);
+      expect(mockReportConfigService.updateConfig).toHaveBeenCalledWith('config-1', updateDto, undefined);
       expect(result).toEqual(updatedConfig);
     });
 
@@ -306,7 +306,7 @@ describe('ReportService', () => {
 
       const result = await service.updateConfig('config-1', updateDto);
 
-      expect(mockReportConfigService.updateConfig).toHaveBeenCalledWith('config-1', updateDto);
+      expect(mockReportConfigService.updateConfig).toHaveBeenCalledWith('config-1', updateDto, undefined);
       expect(result.status).toBe(ReportStatus.PAUSED);
     });
   });
@@ -321,7 +321,7 @@ describe('ReportService', () => {
 
       await service.deleteConfig('config-1');
 
-      expect(mockReportConfigService.deleteConfig).toHaveBeenCalledWith('config-1');
+      expect(mockReportConfigService.deleteConfig).toHaveBeenCalledWith('config-1', undefined);
     });
 
     it('should propagate errors for non-existent config', async () => {
@@ -693,6 +693,7 @@ describe('ReportService', () => {
       expect(mockReportDataService.gatherReportData).toHaveBeenCalledWith(
         new Date('2026-02-05'),
         new Date('2026-02-12'),
+        undefined,
       );
       expect(mockGeneratedReportRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1072,7 +1073,7 @@ describe('ReportService', () => {
 
       const result = await service.gatherReportData(startDate, endDate);
 
-      expect(mockReportDataService.gatherReportData).toHaveBeenCalledWith(startDate, endDate);
+      expect(mockReportDataService.gatherReportData).toHaveBeenCalledWith(startDate, endDate, undefined);
       expect(result).toEqual(mockReportData);
     });
 
@@ -1114,6 +1115,7 @@ describe('ReportService', () => {
       expect(mockReportDataService.gatherReportData).toHaveBeenCalledWith(
         new Date('2026-01-15'),
         new Date('2026-01-22'),
+        undefined,
       );
     });
 

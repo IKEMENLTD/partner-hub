@@ -64,7 +64,7 @@ describe('ReminderController', () => {
       const expected = { data: [mockReminder], total: 1 };
       mockReminderService.findAll.mockResolvedValue(expected);
 
-      const result = await controller.findAll({} as any);
+      const result = await controller.findAll({} as any, 'org-1');
 
       expect(result).toEqual(expected);
     });
@@ -75,7 +75,7 @@ describe('ReminderController', () => {
       const stats = { total: 50, sent: 40, pending: 10 };
       mockReminderService.getReminderStatistics.mockResolvedValue(stats);
 
-      const result = await controller.getStatistics();
+      const result = await controller.getStatistics('org-1');
 
       expect(result).toEqual(stats);
     });
@@ -125,10 +125,10 @@ describe('ReminderController', () => {
     it('should return reminders for a specific user', async () => {
       mockReminderService.getUserReminders.mockResolvedValue([mockReminder]);
 
-      const result = await controller.getUserReminders('user-2', undefined);
+      const result = await controller.getUserReminders('user-2', undefined, 'org-1');
 
       expect(result).toEqual([mockReminder]);
-      expect(mockReminderService.getUserReminders).toHaveBeenCalledWith('user-2', false);
+      expect(mockReminderService.getUserReminders).toHaveBeenCalledWith('user-2', false, 'org-1');
     });
   });
 
@@ -136,7 +136,7 @@ describe('ReminderController', () => {
     it('should return a reminder by id', async () => {
       mockReminderService.findOne.mockResolvedValue(mockReminder);
 
-      const result = await controller.findOne('reminder-1');
+      const result = await controller.findOne('reminder-1', 'org-1');
 
       expect(result).toEqual(mockReminder);
     });
@@ -144,7 +144,7 @@ describe('ReminderController', () => {
     it('should propagate not found errors', async () => {
       mockReminderService.findOne.mockRejectedValue(new Error('Not found'));
 
-      await expect(controller.findOne('invalid')).rejects.toThrow('Not found');
+      await expect(controller.findOne('invalid', 'org-1')).rejects.toThrow('Not found');
     });
   });
 
@@ -153,7 +153,8 @@ describe('ReminderController', () => {
       const updateDto = { message: 'Updated message' };
       mockReminderService.update.mockResolvedValue({ ...mockReminder, ...updateDto });
 
-      const result = await controller.update('reminder-1', updateDto as any);
+      mockReminderService.findOne.mockResolvedValue(mockReminder);
+      const result = await controller.update('reminder-1', updateDto as any, 'org-1');
 
       expect(result.message).toBe('Updated message');
     });
@@ -163,7 +164,8 @@ describe('ReminderController', () => {
     it('should mark a reminder as read', async () => {
       mockReminderService.markAsRead.mockResolvedValue({ ...mockReminder, isRead: true });
 
-      const result = await controller.markAsRead('reminder-1');
+      mockReminderService.findOne.mockResolvedValue(mockReminder);
+      const result = await controller.markAsRead('reminder-1', 'org-1');
 
       expect(mockReminderService.markAsRead).toHaveBeenCalledWith('reminder-1');
     });
@@ -173,7 +175,8 @@ describe('ReminderController', () => {
     it('should cancel a reminder', async () => {
       mockReminderService.cancel.mockResolvedValue({ ...mockReminder, status: 'cancelled' });
 
-      const result = await controller.cancel('reminder-1');
+      mockReminderService.findOne.mockResolvedValue(mockReminder);
+      const result = await controller.cancel('reminder-1', 'org-1');
 
       expect(mockReminderService.cancel).toHaveBeenCalledWith('reminder-1');
     });
@@ -183,7 +186,8 @@ describe('ReminderController', () => {
     it('should delete a reminder', async () => {
       mockReminderService.remove.mockResolvedValue(undefined);
 
-      await controller.remove('reminder-1');
+      mockReminderService.findOne.mockResolvedValue(mockReminder);
+      await controller.remove('reminder-1', 'org-1');
 
       expect(mockReminderService.remove).toHaveBeenCalledWith('reminder-1');
     });

@@ -57,18 +57,18 @@ describe('FileStorageController', () => {
       mockFileStorageService.uploadFile.mockResolvedValue(mockFile);
 
       const file = { originalname: 'test.pdf', size: 1024 } as Express.Multer.File;
-      const result = await controller.uploadFile(file, 'proj-1', undefined as any, 'document', 'user-1');
+      const result = await controller.uploadFile(file, 'proj-1', undefined as any, 'document', 'user-1', 'org-1');
 
       expect(result.id).toBe('file-uuid-1');
       expect(result.fileName).toBe('test-file.pdf');
       expect(mockFileStorageService.uploadFile).toHaveBeenCalledWith(
-        file, 'proj-1', 'user-1', undefined, 'document',
+        file, 'proj-1', 'user-1', undefined, 'document', 'org-1',
       );
     });
 
     it('should throw when no file is provided', async () => {
       await expect(
-        controller.uploadFile(null as any, 'proj-1', undefined as any, undefined as any, 'user-1'),
+        controller.uploadFile(null as any, 'proj-1', undefined as any, undefined as any, 'user-1', 'org-1'),
       ).rejects.toThrow(BusinessException);
     });
 
@@ -76,7 +76,7 @@ describe('FileStorageController', () => {
       const file = { originalname: 'test.pdf' } as Express.Multer.File;
 
       await expect(
-        controller.uploadFile(file, undefined as any, undefined as any, undefined as any, 'user-1'),
+        controller.uploadFile(file, undefined as any, undefined as any, undefined as any, 'user-1', 'org-1'),
       ).rejects.toThrow(BusinessException);
     });
   });
@@ -85,7 +85,7 @@ describe('FileStorageController', () => {
     it('should return files for a project', async () => {
       mockFileStorageService.getFilesByProject.mockResolvedValue([mockFile]);
 
-      const result = await controller.getFilesByProject('proj-1');
+      const result = await controller.getFilesByProject('proj-1', 'org-1');
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('file-uuid-1');
@@ -96,7 +96,7 @@ describe('FileStorageController', () => {
     it('should return files for a task', async () => {
       mockFileStorageService.getFilesByTask.mockResolvedValue([mockFile]);
 
-      const result = await controller.getFilesByTask('task-1');
+      const result = await controller.getFilesByTask('task-1', 'org-1');
 
       expect(result).toHaveLength(1);
     });
@@ -106,7 +106,7 @@ describe('FileStorageController', () => {
     it('should return a file by id', async () => {
       mockFileStorageService.getFileById.mockResolvedValue(mockFile);
 
-      const result = await controller.getFile('file-1');
+      const result = await controller.getFile('file-1', 'org-1');
 
       expect(result.id).toBe('file-uuid-1');
     });
@@ -114,7 +114,7 @@ describe('FileStorageController', () => {
     it('should propagate not found errors', async () => {
       mockFileStorageService.getFileById.mockRejectedValue(new Error('Not found'));
 
-      await expect(controller.getFile('invalid')).rejects.toThrow('Not found');
+      await expect(controller.getFile('invalid', 'org-1')).rejects.toThrow('Not found');
     });
   });
 
@@ -122,9 +122,9 @@ describe('FileStorageController', () => {
     it('should delete a file', async () => {
       mockFileStorageService.deleteFile.mockResolvedValue(undefined);
 
-      await controller.deleteFile('file-1');
+      await controller.deleteFile('file-1', 'org-1');
 
-      expect(mockFileStorageService.deleteFile).toHaveBeenCalledWith('file-1');
+      expect(mockFileStorageService.deleteFile).toHaveBeenCalledWith('file-1', 'org-1');
     });
   });
 
@@ -136,7 +136,7 @@ describe('FileStorageController', () => {
       const result = await controller.getDownloadUrl('file-1', undefined);
 
       expect(result).toEqual(signedUrl);
-      expect(mockFileStorageService.generateSignedUrl).toHaveBeenCalledWith('file-1', 3600);
+      expect(mockFileStorageService.generateSignedUrl).toHaveBeenCalledWith('file-1', 3600, undefined);
     });
 
     it('should return a signed URL with custom expiration', async () => {
@@ -145,7 +145,7 @@ describe('FileStorageController', () => {
 
       const result = await controller.getDownloadUrl('file-1', 7200);
 
-      expect(mockFileStorageService.generateSignedUrl).toHaveBeenCalledWith('file-1', 7200);
+      expect(mockFileStorageService.generateSignedUrl).toHaveBeenCalledWith('file-1', 7200, undefined);
     });
   });
 });

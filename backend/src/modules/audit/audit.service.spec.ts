@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, Between, ILike } from 'typeorm';
 import { AuditService, CreateAuditLogDto, FindAllOptions } from './audit.service';
 import { AuditLog, AuditAction } from './entities/audit-log.entity';
 
 describe('AuditService', () => {
   let service: AuditService;
-  let auditLogRepository: Record<string, jest.Mock>;
 
   const now = new Date('2026-02-12T00:00:00Z');
 
@@ -25,14 +23,32 @@ describe('AuditService', () => {
     createdAt: now,
   };
 
+  // QueryBuilder mock
+  let mockQueryBuilder: Record<string, jest.Mock>;
+
+  const createMockQueryBuilder = () => {
+    const qb: Record<string, jest.Mock> = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    };
+    return qb;
+  };
+
   const mockAuditLogRepository = {
     create: jest.fn(),
     save: jest.fn(),
-    find: jest.fn(),
-    findAndCount: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
   beforeEach(async () => {
+    mockQueryBuilder = createMockQueryBuilder();
+    mockAuditLogRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuditService,
@@ -44,9 +60,9 @@ describe('AuditService', () => {
     }).compile();
 
     service = module.get<AuditService>(AuditService);
-    auditLogRepository = module.get(getRepositoryToken(AuditLog));
 
     jest.clearAllMocks();
+    mockAuditLogRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
   });
 
   it('should be defined', () => {
@@ -187,16 +203,14 @@ describe('AuditService', () => {
 
   describe('findAll', () => {
     it('should return paginated results with default options', async () => {
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[mockAuditLog], 1]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockAuditLog], 1]);
 
       const result = await service.findAll();
 
-      expect(mockAuditLogRepository.findAndCount).toHaveBeenCalledWith({
-        where: {},
-        order: { createdAt: 'DESC' },
-        skip: 0,
-        take: 20,
-      });
+      expect(mockAuditLogRepository.createQueryBuilder).toHaveBeenCalledWith('audit');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('audit.created_at', 'DESC');
+      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(20);
       expect(result).toEqual({
         data: [mockAuditLog],
         total: 1,
@@ -207,23 +221,19 @@ describe('AuditService', () => {
     });
 
     it('should apply pagination correctly', async () => {
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 100]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 100]);
 
       const result = await service.findAll({ page: 3, limit: 10 });
 
-      expect(mockAuditLogRepository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          skip: 20,
-          take: 10,
-        }),
-      );
+      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(20);
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
       expect(result.page).toBe(3);
       expect(result.limit).toBe(10);
       expect(result.totalPages).toBe(10);
     });
 
     it('should calculate totalPages correctly with non-even division', async () => {
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 25]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 25]);
 
       const result = await service.findAll({ page: 1, limit: 10 });
 
@@ -231,85 +241,104 @@ describe('AuditService', () => {
     });
 
     it('should filter by userId', async () => {
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 0]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findAll({ userId: 'user-1' });
 
-      expect(mockAuditLogRepository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ userId: 'user-1' }),
-        }),
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.user_id = :userId',
+        { userId: 'user-1' },
       );
     });
 
-    it('should filter by userEmail with ILike pattern', async () => {
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 0]);
+    it('should filter by userEmail with ILIKE pattern', async () => {
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findAll({ userEmail: 'user@example.com' });
 
-      const callArgs = mockAuditLogRepository.findAndCount.mock.calls[0][0];
-      expect(callArgs.where.userEmail).toEqual(ILike('%user@example.com%'));
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.user_email ILIKE :userEmail',
+        { userEmail: '%user@example.com%' },
+      );
     });
 
     it('should filter by action', async () => {
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 0]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findAll({ action: AuditAction.UPDATE });
 
-      expect(mockAuditLogRepository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ action: AuditAction.UPDATE }),
-        }),
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.action = :action',
+        { action: AuditAction.UPDATE },
       );
     });
 
     it('should filter by entityName', async () => {
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 0]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findAll({ entityName: 'Project' });
 
-      expect(mockAuditLogRepository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ entityName: 'Project' }),
-        }),
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.entity_name = :entityName',
+        { entityName: 'Project' },
       );
     });
 
     it('should filter by date range when both startDate and endDate are provided', async () => {
       const startDate = new Date('2026-01-01');
       const endDate = new Date('2026-01-31');
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 0]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findAll({ startDate, endDate });
 
-      const callArgs = mockAuditLogRepository.findAndCount.mock.calls[0][0];
-      expect(callArgs.where.createdAt).toEqual(Between(startDate, endDate));
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.created_at BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
+      );
     });
 
     it('should not filter by date when only startDate is provided', async () => {
       const startDate = new Date('2026-01-01');
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 0]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findAll({ startDate });
 
-      const callArgs = mockAuditLogRepository.findAndCount.mock.calls[0][0];
-      expect(callArgs.where.createdAt).toBeUndefined();
+      // Should not have been called with date range filter
+      const andWhereCalls = mockQueryBuilder.andWhere.mock.calls;
+      const dateFilterCalls = andWhereCalls.filter(
+        (call: any[]) => typeof call[0] === 'string' && call[0].includes('BETWEEN'),
+      );
+      expect(dateFilterCalls).toHaveLength(0);
     });
 
     it('should not filter by date when only endDate is provided', async () => {
       const endDate = new Date('2026-01-31');
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 0]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findAll({ endDate });
 
-      const callArgs = mockAuditLogRepository.findAndCount.mock.calls[0][0];
-      expect(callArgs.where.createdAt).toBeUndefined();
+      const andWhereCalls = mockQueryBuilder.andWhere.mock.calls;
+      const dateFilterCalls = andWhereCalls.filter(
+        (call: any[]) => typeof call[0] === 'string' && call[0].includes('BETWEEN'),
+      );
+      expect(dateFilterCalls).toHaveLength(0);
+    });
+
+    it('should filter by organizationId via user subquery', async () => {
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.findAll({ organizationId: 'org-uuid' });
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.user_id IN (SELECT id FROM profiles WHERE organization_id = :organizationId)',
+        { organizationId: 'org-uuid' },
+      );
     });
 
     it('should apply all filters simultaneously', async () => {
       const startDate = new Date('2026-01-01');
       const endDate = new Date('2026-01-31');
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 0]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findAll({
         page: 2,
@@ -320,20 +349,39 @@ describe('AuditService', () => {
         entityName: 'Partner',
         startDate,
         endDate,
+        organizationId: 'org-uuid',
       });
 
-      const callArgs = mockAuditLogRepository.findAndCount.mock.calls[0][0];
-      expect(callArgs.where.userId).toBe('user-1');
-      expect(callArgs.where.userEmail).toEqual(ILike('%test@example.com%'));
-      expect(callArgs.where.action).toBe(AuditAction.CREATE);
-      expect(callArgs.where.entityName).toBe('Partner');
-      expect(callArgs.where.createdAt).toEqual(Between(startDate, endDate));
-      expect(callArgs.skip).toBe(5);
-      expect(callArgs.take).toBe(5);
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.user_id IN (SELECT id FROM profiles WHERE organization_id = :organizationId)',
+        { organizationId: 'org-uuid' },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.user_id = :userId',
+        { userId: 'user-1' },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.user_email ILIKE :userEmail',
+        { userEmail: '%test@example.com%' },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.action = :action',
+        { action: AuditAction.CREATE },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.entity_name = :entityName',
+        { entityName: 'Partner' },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.created_at BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
+      );
+      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(5);
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(5);
     });
 
     it('should return empty data array when no logs found', async () => {
-      mockAuditLogRepository.findAndCount.mockResolvedValue([[], 0]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       const result = await service.findAll();
 
@@ -348,7 +396,7 @@ describe('AuditService', () => {
         { ...mockAuditLog, id: 'audit-2' },
         { ...mockAuditLog, id: 'audit-3' },
       ];
-      mockAuditLogRepository.findAndCount.mockResolvedValue([logs, 50]);
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([logs, 50]);
 
       const result = await service.findAll({ page: 2, limit: 3 });
 
@@ -370,42 +418,51 @@ describe('AuditService', () => {
         { ...mockAuditLog, id: 'audit-1', action: AuditAction.CREATE },
         { ...mockAuditLog, id: 'audit-2', action: AuditAction.UPDATE },
       ];
-      mockAuditLogRepository.find.mockResolvedValue(logs);
+      mockQueryBuilder.getMany.mockResolvedValue(logs);
 
       const result = await service.findByEntity('Project', 'project-1');
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith({
-        where: { entityName: 'Project', entityId: 'project-1' },
-        order: { createdAt: 'DESC' },
-      });
+      expect(mockAuditLogRepository.createQueryBuilder).toHaveBeenCalledWith('audit');
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'audit.entity_name = :entityName',
+        { entityName: 'Project' },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.entity_id = :entityId',
+        { entityId: 'project-1' },
+      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('audit.created_at', 'DESC');
       expect(result).toHaveLength(2);
       expect(result).toEqual(logs);
     });
 
     it('should return empty array when no logs exist for entity', async () => {
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       const result = await service.findByEntity('Task', 'nonexistent-task');
 
       expect(result).toEqual([]);
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith({
-        where: { entityName: 'Task', entityId: 'nonexistent-task' },
-        order: { createdAt: 'DESC' },
-      });
+    });
+
+    it('should filter by organizationId when provided', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([]);
+
+      await service.findByEntity('Project', 'project-1', 'org-uuid');
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.user_id IN (SELECT id FROM profiles WHERE organization_id = :organizationId)',
+        { organizationId: 'org-uuid' },
+      );
     });
 
     it('should return logs ordered by createdAt DESC', async () => {
       const olderLog = { ...mockAuditLog, id: 'audit-old', createdAt: new Date('2026-01-01') };
       const newerLog = { ...mockAuditLog, id: 'audit-new', createdAt: new Date('2026-02-01') };
-      mockAuditLogRepository.find.mockResolvedValue([newerLog, olderLog]);
+      mockQueryBuilder.getMany.mockResolvedValue([newerLog, olderLog]);
 
       const result = await service.findByEntity('Partner', 'partner-1');
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          order: { createdAt: 'DESC' },
-        }),
-      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('audit.created_at', 'DESC');
       expect(result[0].id).toBe('audit-new');
       expect(result[1].id).toBe('audit-old');
     });
@@ -418,52 +475,56 @@ describe('AuditService', () => {
   describe('findByUser', () => {
     it('should return audit logs for a specific user with default limit', async () => {
       const logs = [mockAuditLog as AuditLog];
-      mockAuditLogRepository.find.mockResolvedValue(logs);
+      mockQueryBuilder.getMany.mockResolvedValue(logs);
 
       const result = await service.findByUser('user-1');
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
-        order: { createdAt: 'DESC' },
-        take: 100,
-      });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'audit.user_id = :userId',
+        { userId: 'user-1' },
+      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('audit.created_at', 'DESC');
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(100);
       expect(result).toEqual(logs);
     });
 
     it('should apply custom limit', async () => {
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await service.findByUser('user-1', { limit: 10 });
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
-        order: { createdAt: 'DESC' },
-        take: 10,
-      });
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
     });
 
     it('should use default limit of 100 when options is undefined', async () => {
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await service.findByUser('user-1', undefined);
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 100 }),
-      );
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(100);
     });
 
     it('should use default limit of 100 when limit is not provided in options', async () => {
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await service.findByUser('user-1', {});
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 100 }),
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(100);
+    });
+
+    it('should filter by organizationId when provided', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([]);
+
+      await service.findByUser('user-1', undefined, 'org-uuid');
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.user_id IN (SELECT id FROM profiles WHERE organization_id = :organizationId)',
+        { organizationId: 'org-uuid' },
       );
     });
 
     it('should return empty array when user has no audit logs', async () => {
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       const result = await service.findByUser('user-with-no-logs');
 
@@ -480,23 +541,22 @@ describe('AuditService', () => {
       const startDate = new Date('2026-01-01');
       const endDate = new Date('2026-01-31');
       const logs = [mockAuditLog as AuditLog];
-      mockAuditLogRepository.find.mockResolvedValue(logs);
+      mockQueryBuilder.getMany.mockResolvedValue(logs);
 
       const result = await service.findByDateRange(startDate, endDate);
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith({
-        where: {
-          createdAt: Between(startDate, endDate),
-        },
-        order: { createdAt: 'DESC' },
-      });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'audit.created_at BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
+      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('audit.created_at', 'DESC');
       expect(result).toEqual(logs);
     });
 
     it('should return empty array when no logs exist in date range', async () => {
       const startDate = new Date('2020-01-01');
       const endDate = new Date('2020-01-31');
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       const result = await service.findByDateRange(startDate, endDate);
 
@@ -505,30 +565,37 @@ describe('AuditService', () => {
 
     it('should handle same-day date range', async () => {
       const sameDay = new Date('2026-02-12');
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await service.findByDateRange(sameDay, sameDay);
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith({
-        where: {
-          createdAt: Between(sameDay, sameDay),
-        },
-        order: { createdAt: 'DESC' },
-      });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'audit.created_at BETWEEN :startDate AND :endDate',
+        { startDate: sameDay, endDate: sameDay },
+      );
+    });
+
+    it('should filter by organizationId when provided', async () => {
+      const startDate = new Date('2026-01-01');
+      const endDate = new Date('2026-01-31');
+      mockQueryBuilder.getMany.mockResolvedValue([]);
+
+      await service.findByDateRange(startDate, endDate, 'org-uuid');
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'audit.user_id IN (SELECT id FROM profiles WHERE organization_id = :organizationId)',
+        { organizationId: 'org-uuid' },
+      );
     });
 
     it('should return results ordered by createdAt DESC', async () => {
       const startDate = new Date('2026-01-01');
       const endDate = new Date('2026-12-31');
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await service.findByDateRange(startDate, endDate);
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          order: { createdAt: 'DESC' },
-        }),
-      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('audit.created_at', 'DESC');
     });
   });
 
@@ -542,30 +609,26 @@ describe('AuditService', () => {
         ...mockAuditLog,
         id: `audit-${i}`,
       }));
-      mockAuditLogRepository.find.mockResolvedValue(logs);
+      mockQueryBuilder.getMany.mockResolvedValue(logs);
 
       const result = await service.getRecentLogs();
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith({
-        order: { createdAt: 'DESC' },
-        take: 50,
-      });
+      expect(mockAuditLogRepository.createQueryBuilder).toHaveBeenCalledWith('audit');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('audit.created_at', 'DESC');
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(50);
       expect(result).toHaveLength(50);
     });
 
     it('should accept a custom limit', async () => {
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await service.getRecentLogs(10);
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith({
-        order: { createdAt: 'DESC' },
-        take: 10,
-      });
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
     });
 
     it('should return empty array when no logs exist', async () => {
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       const result = await service.getRecentLogs();
 
@@ -574,27 +637,31 @@ describe('AuditService', () => {
 
     it('should accept limit of 1', async () => {
       const singleLog = [mockAuditLog as AuditLog];
-      mockAuditLogRepository.find.mockResolvedValue(singleLog);
+      mockQueryBuilder.getMany.mockResolvedValue(singleLog);
 
       const result = await service.getRecentLogs(1);
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith({
-        order: { createdAt: 'DESC' },
-        take: 1,
-      });
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(1);
       expect(result).toHaveLength(1);
     });
 
+    it('should filter by organizationId when provided', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([]);
+
+      await service.getRecentLogs(50, 'org-uuid');
+
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'audit.user_id IN (SELECT id FROM profiles WHERE organization_id = :organizationId)',
+        { organizationId: 'org-uuid' },
+      );
+    });
+
     it('should return results ordered by createdAt DESC', async () => {
-      mockAuditLogRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await service.getRecentLogs(25);
 
-      expect(mockAuditLogRepository.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          order: { createdAt: 'DESC' },
-        }),
-      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('audit.created_at', 'DESC');
     });
   });
 

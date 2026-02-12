@@ -124,8 +124,8 @@ export class AuthController {
   @Get('users')
   @ApiOperation({ summary: 'Get all users (Admin only)' })
   @ApiResponse({ status: 200, description: 'List of all users' })
-  async getAllUsers() {
-    const profiles = await this.authService.findAllProfiles();
+  async getAllUsers(@CurrentUser('organizationId') organizationId: string) {
+    const profiles = await this.authService.findAllProfiles(organizationId);
     return profiles.map((p) => this.authService.mapProfileToResponse(p));
   }
 
@@ -135,8 +135,11 @@ export class AuthController {
   @ApiOperation({ summary: 'Get user by ID (Admin only)' })
   @ApiResponse({ status: 200, description: 'User details' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async getUserById(@Param('id', ParseUUIDPipe) id: string) {
-    const profile = await this.authService.findProfileById(id);
+  async getUserById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    const profile = await this.authService.findProfileById(id, organizationId);
     return this.authService.mapProfileToResponse(profile);
   }
 
@@ -149,7 +152,10 @@ export class AuthController {
   async updateUser(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProfileDto: UpdateProfileDto,
+    @CurrentUser('organizationId') organizationId: string,
   ) {
+    // Verify user belongs to the same organization before updating
+    await this.authService.findProfileById(id, organizationId);
     const profile = await this.authService.updateProfile(id, updateProfileDto);
     return this.authService.mapProfileToResponse(profile);
   }
@@ -165,8 +171,9 @@ export class AuthController {
   async deactivateUser(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') currentUserId: string,
+    @CurrentUser('organizationId') organizationId: string,
   ) {
-    await this.authService.deactivateUser(id, currentUserId);
+    await this.authService.deactivateUser(id, currentUserId, organizationId);
     return { message: 'ユーザーを無効化しました' };
   }
 
@@ -177,8 +184,11 @@ export class AuthController {
   @ApiOperation({ summary: 'Activate user (Admin only)' })
   @ApiResponse({ status: 200, description: 'User activated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async activateUser(@Param('id', ParseUUIDPipe) id: string) {
-    await this.authService.activateUser(id);
+  async activateUser(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    await this.authService.activateUser(id, organizationId);
     return { message: 'ユーザーを有効化しました' };
   }
 

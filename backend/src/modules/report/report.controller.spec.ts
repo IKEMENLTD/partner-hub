@@ -60,7 +60,7 @@ describe('ReportController', () => {
       const expected = { data: [mockReportConfig], total: 1 };
       mockReportService.findAllConfigs.mockResolvedValue(expected);
 
-      const result = await controller.getConfigs({} as any);
+      const result = await controller.getConfigs({} as any, 'org-1');
 
       expect(result).toEqual(expected);
     });
@@ -72,10 +72,10 @@ describe('ReportController', () => {
       const user = { id: 'user-1' } as any;
       mockReportService.createConfig.mockResolvedValue(mockReportConfig);
 
-      const result = await controller.createConfig(createDto as any, user);
+      const result = await controller.createConfig(createDto as any, user, 'org-1');
 
       expect(result).toEqual(mockReportConfig);
-      expect(mockReportService.createConfig).toHaveBeenCalledWith(createDto, 'user-1');
+      expect(mockReportService.createConfig).toHaveBeenCalledWith(createDto, 'user-1', 'org-1');
     });
   });
 
@@ -83,7 +83,7 @@ describe('ReportController', () => {
     it('should return a report config by id', async () => {
       mockReportService.findConfigById.mockResolvedValue(mockReportConfig);
 
-      const result = await controller.getConfig('config-1');
+      const result = await controller.getConfig('config-1', 'org-1');
 
       expect(result).toEqual(mockReportConfig);
     });
@@ -91,7 +91,7 @@ describe('ReportController', () => {
     it('should propagate not found errors', async () => {
       mockReportService.findConfigById.mockRejectedValue(new Error('Not found'));
 
-      await expect(controller.getConfig('invalid')).rejects.toThrow('Not found');
+      await expect(controller.getConfig('invalid', 'org-1')).rejects.toThrow('Not found');
     });
   });
 
@@ -100,7 +100,7 @@ describe('ReportController', () => {
       const updateDto = { name: 'Updated Config' };
       mockReportService.updateConfig.mockResolvedValue({ ...mockReportConfig, ...updateDto });
 
-      const result = await controller.updateConfig('config-1', updateDto as any);
+      const result = await controller.updateConfig('config-1', updateDto as any, 'org-1');
 
       expect(result.name).toBe('Updated Config');
     });
@@ -110,9 +110,9 @@ describe('ReportController', () => {
     it('should delete a report config', async () => {
       mockReportService.deleteConfig.mockResolvedValue(undefined);
 
-      await controller.deleteConfig('config-1');
+      await controller.deleteConfig('config-1', 'org-1');
 
-      expect(mockReportService.deleteConfig).toHaveBeenCalledWith('config-1');
+      expect(mockReportService.deleteConfig).toHaveBeenCalledWith('config-1', 'org-1');
     });
   });
 
@@ -123,7 +123,7 @@ describe('ReportController', () => {
       const expected = { data: [mockGeneratedReport], total: 1 };
       mockReportService.findAllGeneratedReports.mockResolvedValue(expected);
 
-      const result = await controller.getGeneratedReports({} as any);
+      const result = await controller.getGeneratedReports({} as any, 'org-1');
 
       expect(result).toEqual(expected);
     });
@@ -133,7 +133,7 @@ describe('ReportController', () => {
     it('should return a generated report by id', async () => {
       mockReportService.findGeneratedReportById.mockResolvedValue(mockGeneratedReport);
 
-      const result = await controller.getGeneratedReport('report-1');
+      const result = await controller.getGeneratedReport('report-1', 'org-1');
 
       expect(result).toEqual(mockGeneratedReport);
     });
@@ -146,7 +146,7 @@ describe('ReportController', () => {
       mockReportService.findConfigById.mockResolvedValue(mockReportConfig);
       mockSchedulerService.generateAndSendReport.mockResolvedValue(mockGeneratedReport);
 
-      const result = await controller.generateReport(dto as any, user);
+      const result = await controller.generateReport(dto as any, user, 'org-1');
 
       expect(result).toEqual(mockGeneratedReport);
       expect(mockSchedulerService.generateAndSendReport).toHaveBeenCalledWith(mockReportConfig);
@@ -157,10 +157,10 @@ describe('ReportController', () => {
       const user = { id: 'user-1' } as any;
       mockReportService.generateReport.mockResolvedValue(mockGeneratedReport);
 
-      const result = await controller.generateReport(dto as any, user);
+      const result = await controller.generateReport(dto as any, user, 'org-1');
 
       expect(result).toEqual(mockGeneratedReport);
-      expect(mockReportService.generateReport).toHaveBeenCalledWith(dto, 'user-1');
+      expect(mockReportService.generateReport).toHaveBeenCalledWith(dto, 'user-1', 'org-1');
     });
   });
 

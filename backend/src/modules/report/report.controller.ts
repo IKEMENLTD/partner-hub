@@ -42,8 +42,11 @@ export class ReportController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all report configurations', description: 'Retrieve a paginated list of report configurations with optional filtering' })
   @ApiResponse({ status: 200, description: 'Report configurations retrieved successfully' })
-  async getConfigs(@Query() query: QueryReportConfigDto) {
-    return this.reportService.findAllConfigs(query);
+  async getConfigs(
+    @Query() query: QueryReportConfigDto,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.reportService.findAllConfigs(query, organizationId);
   }
 
   @Post('configs')
@@ -51,8 +54,12 @@ export class ReportController {
   @ApiOperation({ summary: 'Create a report configuration', description: 'Create a new scheduled report configuration' })
   @ApiResponse({ status: 201, description: 'Report configuration created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  async createConfig(@Body() dto: CreateReportConfigDto, @CurrentUser() user: UserProfile) {
-    return this.reportService.createConfig(dto, user.id);
+  async createConfig(
+    @Body() dto: CreateReportConfigDto,
+    @CurrentUser() user: UserProfile,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.reportService.createConfig(dto, user.id, organizationId);
   }
 
   @Get('configs/:id')
@@ -61,8 +68,11 @@ export class ReportController {
   @ApiParam({ name: 'id', description: 'Report configuration ID' })
   @ApiResponse({ status: 200, description: 'Report configuration retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Report configuration not found' })
-  async getConfig(@Param('id') id: string) {
-    return this.reportService.findConfigById(id);
+  async getConfig(
+    @Param('id') id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.reportService.findConfigById(id, organizationId);
   }
 
   @Put('configs/:id')
@@ -71,8 +81,12 @@ export class ReportController {
   @ApiParam({ name: 'id', description: 'Report configuration ID' })
   @ApiResponse({ status: 200, description: 'Report configuration updated successfully' })
   @ApiResponse({ status: 404, description: 'Report configuration not found' })
-  async updateConfig(@Param('id') id: string, @Body() dto: UpdateReportConfigDto) {
-    return this.reportService.updateConfig(id, dto);
+  async updateConfig(
+    @Param('id') id: string,
+    @Body() dto: UpdateReportConfigDto,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.reportService.updateConfig(id, dto, organizationId);
   }
 
   @Delete('configs/:id')
@@ -82,8 +96,11 @@ export class ReportController {
   @ApiParam({ name: 'id', description: 'Report configuration ID' })
   @ApiResponse({ status: 204, description: 'Report configuration deleted successfully' })
   @ApiResponse({ status: 404, description: 'Report configuration not found' })
-  async deleteConfig(@Param('id') id: string) {
-    await this.reportService.deleteConfig(id);
+  async deleteConfig(
+    @Param('id') id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    await this.reportService.deleteConfig(id, organizationId);
   }
 
   // ==================== Generated Reports ====================
@@ -92,8 +109,11 @@ export class ReportController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all generated reports', description: 'Retrieve a paginated list of generated reports with optional filtering' })
   @ApiResponse({ status: 200, description: 'Generated reports retrieved successfully' })
-  async getGeneratedReports(@Query() query: QueryGeneratedReportDto) {
-    return this.reportService.findAllGeneratedReports(query);
+  async getGeneratedReports(
+    @Query() query: QueryGeneratedReportDto,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.reportService.findAllGeneratedReports(query, organizationId);
   }
 
   @Get(':id')
@@ -102,8 +122,11 @@ export class ReportController {
   @ApiParam({ name: 'id', description: 'Generated report ID' })
   @ApiResponse({ status: 200, description: 'Generated report retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Generated report not found' })
-  async getGeneratedReport(@Param('id') id: string) {
-    return this.reportService.findGeneratedReportById(id);
+  async getGeneratedReport(
+    @Param('id') id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.reportService.findGeneratedReportById(id, organizationId);
   }
 
   @Post('generate')
@@ -112,15 +135,19 @@ export class ReportController {
   @ApiResponse({ status: 201, description: 'Report generated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 404, description: 'Report configuration not found' })
-  async generateReport(@Body() dto: GenerateReportDto, @CurrentUser() user: UserProfile) {
+  async generateReport(
+    @Body() dto: GenerateReportDto,
+    @CurrentUser() user: UserProfile,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
     // If a config ID is provided, use that config to generate
     if (dto.reportConfigId) {
-      const config = await this.reportService.findConfigById(dto.reportConfigId);
+      const config = await this.reportService.findConfigById(dto.reportConfigId, organizationId);
       return this.reportSchedulerService.generateAndSendReport(config);
     }
 
     // Otherwise, generate a manual report
-    return this.reportService.generateReport(dto, user.id);
+    return this.reportService.generateReport(dto, user.id, organizationId);
   }
 
   // ==================== Trigger for Testing ====================

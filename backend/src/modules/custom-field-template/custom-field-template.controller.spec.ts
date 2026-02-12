@@ -69,16 +69,16 @@ describe('CustomFieldTemplateController', () => {
     it('should return a template by id', async () => {
       mockTemplateService.findOne.mockResolvedValue(mockTemplate);
 
-      const result = await controller.findOne('template-1');
+      const result = await controller.findOne('template-1', 'org-1');
 
       expect(result).toEqual(mockTemplate);
-      expect(mockTemplateService.findOne).toHaveBeenCalledWith('template-1');
+      expect(mockTemplateService.findOne).toHaveBeenCalledWith('template-1', 'org-1');
     });
 
     it('should propagate not found errors', async () => {
       mockTemplateService.findOne.mockRejectedValue(new Error('Not found'));
 
-      await expect(controller.findOne('invalid')).rejects.toThrow('Not found');
+      await expect(controller.findOne('invalid', 'org-1')).rejects.toThrow('Not found');
     });
   });
 
@@ -86,9 +86,9 @@ describe('CustomFieldTemplateController', () => {
     it('should delete a template', async () => {
       mockTemplateService.remove.mockResolvedValue(undefined);
 
-      const result = await controller.remove('template-1');
+      const result = await controller.remove('template-1', 'org-1');
 
-      expect(mockTemplateService.remove).toHaveBeenCalledWith('template-1');
+      expect(mockTemplateService.remove).toHaveBeenCalledWith('template-1', 'org-1');
     });
   });
 
@@ -96,9 +96,9 @@ describe('CustomFieldTemplateController', () => {
     it('should increment usage count', async () => {
       mockTemplateService.incrementUsageCount.mockResolvedValue({ ...mockTemplate, usageCount: 6 });
 
-      const result = await controller.incrementUsage('template-1');
+      const result = await controller.incrementUsage('template-1', 'org-1');
 
-      expect(mockTemplateService.incrementUsageCount).toHaveBeenCalledWith('template-1');
+      expect(mockTemplateService.incrementUsageCount).toHaveBeenCalledWith('template-1', 'org-1');
     });
   });
 
@@ -106,9 +106,9 @@ describe('CustomFieldTemplateController', () => {
     it('should activate a template', async () => {
       mockTemplateService.activate.mockResolvedValue({ ...mockTemplate, isActive: true });
 
-      const result = await controller.activate('template-1');
+      const result = await controller.activate('template-1', 'org-1');
 
-      expect(mockTemplateService.activate).toHaveBeenCalledWith('template-1');
+      expect(mockTemplateService.activate).toHaveBeenCalledWith('template-1', 'org-1');
     });
   });
 
@@ -116,9 +116,9 @@ describe('CustomFieldTemplateController', () => {
     it('should deactivate a template', async () => {
       mockTemplateService.deactivate.mockResolvedValue({ ...mockTemplate, isActive: false });
 
-      const result = await controller.deactivate('template-1');
+      const result = await controller.deactivate('template-1', 'org-1');
 
-      expect(mockTemplateService.deactivate).toHaveBeenCalledWith('template-1');
+      expect(mockTemplateService.deactivate).toHaveBeenCalledWith('template-1', 'org-1');
     });
   });
 });

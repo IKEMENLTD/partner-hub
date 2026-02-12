@@ -52,32 +52,33 @@ export class EscalationService {
 
   async findAllRules(
     queryDto: QueryEscalationRuleDto,
+    organizationId?: string,
   ): Promise<PaginatedResponseDto<EscalationRule>> {
-    return this.ruleService.findAllRules(queryDto);
+    return this.ruleService.findAllRules(queryDto, organizationId);
   }
 
-  async findRuleById(id: string): Promise<EscalationRule> {
-    return this.ruleService.findRuleById(id);
+  async findRuleById(id: string, organizationId?: string): Promise<EscalationRule> {
+    return this.ruleService.findRuleById(id, organizationId);
   }
 
-  async updateRule(id: string, updateRuleDto: UpdateEscalationRuleDto): Promise<EscalationRule> {
-    return this.ruleService.updateRule(id, updateRuleDto);
+  async updateRule(id: string, updateRuleDto: UpdateEscalationRuleDto, organizationId?: string): Promise<EscalationRule> {
+    return this.ruleService.updateRule(id, updateRuleDto, organizationId);
   }
 
-  async deleteRule(id: string): Promise<void> {
-    return this.ruleService.deleteRule(id);
+  async deleteRule(id: string, organizationId?: string): Promise<void> {
+    return this.ruleService.deleteRule(id, organizationId);
   }
 
   // ========================
   // Log Operations (Delegated)
   // ========================
 
-  async findAllLogs(queryDto: QueryEscalationLogDto): Promise<PaginatedResponseDto<EscalationLog>> {
-    return this.ruleService.findAllLogs(queryDto);
+  async findAllLogs(queryDto: QueryEscalationLogDto, organizationId?: string): Promise<PaginatedResponseDto<EscalationLog>> {
+    return this.ruleService.findAllLogs(queryDto, organizationId);
   }
 
-  async getEscalationHistory(projectId: string): Promise<EscalationLog[]> {
-    return this.ruleService.getEscalationHistory(projectId);
+  async getEscalationHistory(projectId: string, organizationId?: string): Promise<EscalationLog[]> {
+    return this.ruleService.getEscalationHistory(projectId, organizationId);
   }
 
   // ========================
@@ -111,7 +112,7 @@ export class EscalationService {
     this.logger.log('Scheduled escalation check completed');
   }
 
-  async triggerEscalationCheck(dto: TriggerEscalationCheckDto): Promise<{
+  async triggerEscalationCheck(dto: TriggerEscalationCheckDto, organizationId?: string): Promise<{
     tasksChecked: number;
     escalationsTriggered: number;
     logs: EscalationLog[];
@@ -135,6 +136,10 @@ export class EscalationService {
         start: checkRangeStart,
         end: checkRangeEnd,
       });
+
+    if (organizationId) {
+      queryBuilder.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
 
     if (dto.projectId) {
       queryBuilder.andWhere('task.projectId = :projectId', { projectId: dto.projectId });
@@ -163,7 +168,7 @@ export class EscalationService {
   // Statistics
   // ========================
 
-  async getEscalationStatistics(): Promise<{
+  async getEscalationStatistics(organizationId?: string): Promise<{
     totalRules: number;
     activeRules: number;
     totalLogs: number;
@@ -171,36 +176,51 @@ export class EscalationService {
     logsByAction: Record<string, number>;
     recentEscalations: number;
   }> {
-    const [totalRules, activeRules, totalLogs] = await Promise.all([
-      this.ruleService.findAllRules({ page: 1, limit: 1 }).then((r) => r.pagination.total),
+    const [totalRules, activeRules] = await Promise.all([
+      this.ruleService.findAllRules({ page: 1, limit: 1 }, organizationId).then((r) => r.pagination.total),
       this.ruleService
-        .findAllRules({ page: 1, limit: 1, status: EscalationRuleStatus.ACTIVE })
+        .findAllRules({ page: 1, limit: 1, status: EscalationRuleStatus.ACTIVE }, organizationId)
         .then((r) => r.pagination.total),
-      this.escalationLogRepository.count(),
     ]);
 
-    const statusCounts = await this.escalationLogRepository
+    // For logs, filter through project.organizationId
+    const totalLogsQb = this.escalationLogRepository.createQueryBuilder('log');
+    if (organizationId) {
+      totalLogsQb.innerJoin('log.project', 'logProject')
+        .where('logProject.organizationId = :organizationId', { organizationId });
+    }
+    const totalLogs = await totalLogsQb.getCount();
+
+    const statusQb = this.escalationLogRepository
       .createQueryBuilder('log')
       .select('log.status', 'status')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('log.status')
-      .getRawMany();
+      .addSelect('COUNT(*)', 'count');
+    if (organizationId) {
+      statusQb.innerJoin('log.project', 'sProject')
+        .where('sProject.organizationId = :organizationId', { organizationId });
+    }
+    const statusCounts = await statusQb.groupBy('log.status').getRawMany();
 
-    const actionCounts = await this.escalationLogRepository
+    const actionQb = this.escalationLogRepository
       .createQueryBuilder('log')
       .select('log.action', 'action')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('log.action')
-      .getRawMany();
+      .addSelect('COUNT(*)', 'count');
+    if (organizationId) {
+      actionQb.innerJoin('log.project', 'aProject')
+        .where('aProject.organizationId = :organizationId', { organizationId });
+    }
+    const actionCounts = await actionQb.groupBy('log.action').getRawMany();
 
     const last24Hours = new Date();
     last24Hours.setHours(last24Hours.getHours() - 24);
 
-    const recentEscalations = await this.escalationLogRepository.count({
-      where: {
-        createdAt: MoreThanOrEqual(last24Hours),
-      },
-    });
+    const recentQb = this.escalationLogRepository.createQueryBuilder('log')
+      .where('log.createdAt >= :last24Hours', { last24Hours });
+    if (organizationId) {
+      recentQb.innerJoin('log.project', 'rProject')
+        .andWhere('rProject.organizationId = :organizationId', { organizationId });
+    }
+    const recentEscalations = await recentQb.getCount();
 
     const logsByStatus: Record<string, number> = {};
     statusCounts.forEach((item) => {

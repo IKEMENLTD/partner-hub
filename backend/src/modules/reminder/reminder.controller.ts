@@ -46,16 +46,19 @@ export class ReminderController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all reminders with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of reminders' })
-  async findAll(@Query() queryDto: QueryReminderDto) {
-    return this.reminderService.findAll(queryDto);
+  async findAll(
+    @Query() queryDto: QueryReminderDto,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.reminderService.findAll(queryDto, organizationId);
   }
 
   @Get('statistics')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get reminder statistics' })
   @ApiResponse({ status: 200, description: 'Reminder statistics' })
-  async getStatistics() {
-    return this.reminderService.getReminderStatistics();
+  async getStatistics(@CurrentUser('organizationId') organizationId: string) {
+    return this.reminderService.getReminderStatistics(organizationId);
   }
 
   @Get('my')
@@ -94,8 +97,9 @@ export class ReminderController {
   async getUserReminders(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Query('unreadOnly') unreadOnly?: boolean,
+    @CurrentUser('organizationId') organizationId?: string,
   ) {
-    return this.reminderService.getUserReminders(userId, unreadOnly === true);
+    return this.reminderService.getUserReminders(userId, unreadOnly === true, organizationId);
   }
 
   @Get(':id')
@@ -103,8 +107,11 @@ export class ReminderController {
   @ApiParam({ name: 'id', description: 'Reminder ID' })
   @ApiResponse({ status: 200, description: 'Reminder details' })
   @ApiResponse({ status: 404, description: 'Reminder not found' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.reminderService.findOne(id);
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.reminderService.findOne(id, organizationId);
   }
 
   @Patch(':id')
@@ -116,7 +123,10 @@ export class ReminderController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateReminderDto: UpdateReminderDto,
+    @CurrentUser('organizationId') organizationId: string,
   ) {
+    // Validate org access before updating
+    await this.reminderService.findOne(id, organizationId);
     return this.reminderService.update(id, updateReminderDto);
   }
 
@@ -125,7 +135,12 @@ export class ReminderController {
   @ApiParam({ name: 'id', description: 'Reminder ID' })
   @ApiResponse({ status: 200, description: 'Reminder marked as read' })
   @ApiResponse({ status: 404, description: 'Reminder not found' })
-  async markAsRead(@Param('id', ParseUUIDPipe) id: string) {
+  async markAsRead(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    // Validate org access before marking as read
+    await this.reminderService.findOne(id, organizationId);
     return this.reminderService.markAsRead(id);
   }
 
@@ -135,7 +150,12 @@ export class ReminderController {
   @ApiParam({ name: 'id', description: 'Reminder ID' })
   @ApiResponse({ status: 200, description: 'Reminder cancelled' })
   @ApiResponse({ status: 404, description: 'Reminder not found' })
-  async cancel(@Param('id', ParseUUIDPipe) id: string) {
+  async cancel(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    // Validate org access before cancelling
+    await this.reminderService.findOne(id, organizationId);
     return this.reminderService.cancel(id);
   }
 
@@ -146,7 +166,12 @@ export class ReminderController {
   @ApiParam({ name: 'id', description: 'Reminder ID' })
   @ApiResponse({ status: 204, description: 'Reminder deleted successfully' })
   @ApiResponse({ status: 404, description: 'Reminder not found' })
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    // Validate org access before removing
+    await this.reminderService.findOne(id, organizationId);
     await this.reminderService.remove(id);
   }
 

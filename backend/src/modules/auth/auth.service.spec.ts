@@ -20,6 +20,7 @@ describe('AuthService', () => {
     role: UserRole.MEMBER,
     isActive: true,
     avatarUrl: undefined,
+    organizationId: 'org-uuid',
     createdAt: new Date(),
     updatedAt: new Date(),
     lastLoginAt: undefined,
@@ -67,6 +68,17 @@ describe('AuthService', () => {
       });
     });
 
+    it('should return profile filtered by organizationId when provided', async () => {
+      mockProfileRepository.findOne.mockResolvedValue(mockProfile);
+
+      const result = await service.findProfileById('test-uuid', 'org-uuid');
+
+      expect(result).toEqual(mockProfile);
+      expect(mockProfileRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'test-uuid', organizationId: 'org-uuid' },
+      });
+    });
+
     it('should throw ResourceNotFoundException when profile not found', async () => {
       mockProfileRepository.findOne.mockResolvedValue(null);
 
@@ -75,13 +87,26 @@ describe('AuthService', () => {
   });
 
   describe('findAllProfiles', () => {
-    it('should return all profiles', async () => {
+    it('should return all profiles without org filter', async () => {
       mockProfileRepository.find.mockResolvedValue([mockProfile]);
 
       const result = await service.findAllProfiles();
 
       expect(result).toEqual([mockProfile]);
       expect(mockProfileRepository.find).toHaveBeenCalledWith({
+        where: {},
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('should return profiles filtered by organizationId', async () => {
+      mockProfileRepository.find.mockResolvedValue([mockProfile]);
+
+      const result = await service.findAllProfiles('org-uuid');
+
+      expect(result).toEqual([mockProfile]);
+      expect(mockProfileRepository.find).toHaveBeenCalledWith({
+        where: { organizationId: 'org-uuid' },
         order: { createdAt: 'DESC' },
       });
     });
@@ -254,6 +279,7 @@ describe('AuthService', () => {
         role: profile.role,
         isActive: profile.isActive,
         avatarUrl: profile.avatarUrl,
+        organizationId: profile.organizationId,
         createdAt: profile.createdAt,
       });
     });

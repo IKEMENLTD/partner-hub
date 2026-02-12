@@ -86,6 +86,7 @@ export class FileStorageController {
     @Body('taskId') taskId: string,
     @Body('category') category: string,
     @CurrentUser('id') userId: string,
+    @CurrentUser('organizationId') organizationId: string,
   ): Promise<FileResponseDto> {
     if (!file) {
       throw new BusinessException('VALIDATION_001', {
@@ -109,6 +110,7 @@ export class FileStorageController {
       userId,
       taskId || undefined,
       fileCategory,
+      organizationId,
     );
 
     return this.toResponseDto(projectFile);
@@ -125,8 +127,9 @@ export class FileStorageController {
   })
   async getFilesByProject(
     @Param('projectId', ParseUUIDPipe) projectId: string,
+    @CurrentUser('organizationId') organizationId: string,
   ): Promise<FileResponseDto[]> {
-    const files = await this.fileStorageService.getFilesByProject(projectId);
+    const files = await this.fileStorageService.getFilesByProject(projectId, organizationId);
     return files.map((file) => this.toResponseDto(file));
   }
 
@@ -139,8 +142,11 @@ export class FileStorageController {
     description: 'List of files',
     type: [FileResponseDto],
   })
-  async getFilesByTask(@Param('taskId', ParseUUIDPipe) taskId: string): Promise<FileResponseDto[]> {
-    const files = await this.fileStorageService.getFilesByTask(taskId);
+  async getFilesByTask(
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ): Promise<FileResponseDto[]> {
+    const files = await this.fileStorageService.getFilesByTask(taskId, organizationId);
     return files.map((file) => this.toResponseDto(file));
   }
 
@@ -154,8 +160,11 @@ export class FileStorageController {
     type: FileResponseDto,
   })
   @ApiResponse({ status: 404, description: 'File not found' })
-  async getFile(@Param('id', ParseUUIDPipe) id: string): Promise<FileResponseDto> {
-    const file = await this.fileStorageService.getFileById(id);
+  async getFile(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ): Promise<FileResponseDto> {
+    const file = await this.fileStorageService.getFileById(id, organizationId);
     return this.toResponseDto(file);
   }
 
@@ -166,8 +175,11 @@ export class FileStorageController {
   @ApiParam({ name: 'id', description: 'File ID' })
   @ApiResponse({ status: 204, description: 'File deleted successfully' })
   @ApiResponse({ status: 404, description: 'File not found' })
-  async deleteFile(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    await this.fileStorageService.deleteFile(id);
+  async deleteFile(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ): Promise<void> {
+    await this.fileStorageService.deleteFile(id, organizationId);
   }
 
   @Get('files/:id/download')
@@ -189,9 +201,10 @@ export class FileStorageController {
   async getDownloadUrl(
     @Param('id', ParseUUIDPipe) id: string,
     @Query('expiresIn') expiresIn?: number,
+    @CurrentUser('organizationId') organizationId?: string,
   ): Promise<SignedUrlResponseDto> {
     const expirationSeconds = expiresIn ? Number(expiresIn) : 3600;
-    return this.fileStorageService.generateSignedUrl(id, expirationSeconds);
+    return this.fileStorageService.generateSignedUrl(id, expirationSeconds, organizationId);
   }
 
   private toResponseDto(file: any): FileResponseDto {

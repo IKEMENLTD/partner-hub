@@ -61,33 +61,33 @@ export class PartnerController {
   @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get partner statistics' })
   @ApiResponse({ status: 200, description: 'Partner statistics' })
-  async getStatistics() {
-    return this.partnerService.getPartnerStatistics();
+  async getStatistics(@CurrentUser('organizationId') organizationId: string) {
+    return this.partnerService.getPartnerStatistics(organizationId);
   }
 
   @Get('active')
   @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all active partners' })
   @ApiResponse({ status: 200, description: 'List of active partners' })
-  async getActivePartners() {
-    return this.partnerService.getActivePartners();
+  async getActivePartners(@CurrentUser('organizationId') organizationId: string) {
+    return this.partnerService.getActivePartners(organizationId);
   }
 
   @Get('by-skills')
   @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get partners by skills' })
   @ApiResponse({ status: 200, description: 'List of partners matching skills' })
-  async getBySkills(@Query('skills') skills: string) {
+  async getBySkills(@Query('skills') skills: string, @CurrentUser('organizationId') organizationId: string) {
     const skillsArray = skills.split(',').map((s) => s.trim());
-    return this.partnerService.getPartnersBySkills(skillsArray);
+    return this.partnerService.getPartnersBySkills(skillsArray, organizationId);
   }
 
   @Get('deleted')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get soft-deleted partners' })
   @ApiResponse({ status: 200, description: 'List of soft-deleted partners' })
-  async findDeleted() {
-    return this.partnerService.findDeleted();
+  async findDeleted(@CurrentUser('organizationId') organizationId: string) {
+    return this.partnerService.findDeleted(organizationId);
   }
 
   @Patch(':id/restore')
@@ -96,8 +96,8 @@ export class PartnerController {
   @ApiParam({ name: 'id', description: 'Partner ID' })
   @ApiResponse({ status: 200, description: 'Partner restored successfully' })
   @ApiResponse({ status: 404, description: 'Deleted partner not found' })
-  async restore(@Param('id', ParseUUIDPipe) id: string) {
-    return this.partnerService.restore(id);
+  async restore(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('organizationId') organizationId: string) {
+    return this.partnerService.restore(id, organizationId);
   }
 
   @Get(':id/projects')
@@ -118,8 +118,8 @@ export class PartnerController {
   @ApiResponse({ status: 200, description: 'Partner details' })
   @ApiResponse({ status: 404, description: 'Partner not found' })
   @ApiResponse({ status: 403, description: 'Access denied' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.partnerService.findOne(id);
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('organizationId') organizationId: string) {
+    return this.partnerService.findOne(id, organizationId);
   }
 
   @Patch(':id')

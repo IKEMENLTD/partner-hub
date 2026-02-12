@@ -15,10 +15,11 @@ export class ReportConfigService {
     private reportConfigRepository: Repository<ReportConfig>,
   ) {}
 
-  async createConfig(dto: CreateReportConfigDto, createdById: string): Promise<ReportConfig> {
+  async createConfig(dto: CreateReportConfigDto, createdById: string, organizationId?: string): Promise<ReportConfig> {
     const config = this.reportConfigRepository.create({
       ...dto,
       createdById,
+      organizationId,
       scheduleCron: this.buildCronExpression(dto),
       nextRunAt: this.calculateNextRunTime(dto),
     });
@@ -26,11 +27,12 @@ export class ReportConfigService {
     await this.reportConfigRepository.save(config);
     this.logger.log(`Report config created: ${config.name} (${config.id})`);
 
-    return this.findConfigById(config.id);
+    return this.findConfigById(config.id, organizationId);
   }
 
   async findAllConfigs(
     queryDto: QueryReportConfigDto,
+    organizationId?: string,
   ): Promise<PaginatedResponseDto<ReportConfig>> {
     const {
       page = 1,
@@ -45,6 +47,10 @@ export class ReportConfigService {
     const queryBuilder = this.reportConfigRepository
       .createQueryBuilder('config')
       .leftJoinAndSelect('config.createdBy', 'createdBy');
+
+    if (organizationId) {
+      queryBuilder.andWhere('config.organizationId = :organizationId', { organizationId });
+    }
 
     if (period) {
       queryBuilder.andWhere('config.period = :period', { period });
@@ -75,9 +81,14 @@ export class ReportConfigService {
     return new PaginatedResponseDto(data, total, page, limit);
   }
 
-  async findConfigById(id: string): Promise<ReportConfig> {
+  async findConfigById(id: string, organizationId?: string): Promise<ReportConfig> {
+    const whereCondition: Record<string, any> = { id };
+    if (organizationId) {
+      whereCondition.organizationId = organizationId;
+    }
+
     const config = await this.reportConfigRepository.findOne({
-      where: { id },
+      where: whereCondition,
       relations: ['createdBy'],
     });
 
@@ -92,8 +103,8 @@ export class ReportConfigService {
     return config;
   }
 
-  async updateConfig(id: string, dto: UpdateReportConfigDto): Promise<ReportConfig> {
-    const config = await this.findConfigById(id);
+  async updateConfig(id: string, dto: UpdateReportConfigDto, organizationId?: string): Promise<ReportConfig> {
+    const config = await this.findConfigById(id, organizationId);
 
     Object.assign(config, dto);
 
@@ -106,11 +117,11 @@ export class ReportConfigService {
     await this.reportConfigRepository.save(config);
     this.logger.log(`Report config updated: ${config.name} (${config.id})`);
 
-    return this.findConfigById(id);
+    return this.findConfigById(id, organizationId);
   }
 
-  async deleteConfig(id: string): Promise<void> {
-    const config = await this.findConfigById(id);
+  async deleteConfig(id: string, organizationId?: string): Promise<void> {
+    const config = await this.findConfigById(id, organizationId);
     config.status = ReportStatus.DELETED;
     await this.reportConfigRepository.save(config);
     this.logger.log(`Report config deleted: ${config.name} (${id})`);

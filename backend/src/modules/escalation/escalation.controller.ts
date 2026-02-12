@@ -41,8 +41,11 @@ export class EscalationController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all escalation rules with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of escalation rules' })
-  async findAllRules(@Query() queryDto: QueryEscalationRuleDto) {
-    return this.escalationService.findAllRules(queryDto);
+  async findAllRules(
+    @Query() queryDto: QueryEscalationRuleDto,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.escalationService.findAllRules(queryDto, organizationId);
   }
 
   @Get('rules/:id')
@@ -51,8 +54,11 @@ export class EscalationController {
   @ApiParam({ name: 'id', description: 'Escalation Rule ID' })
   @ApiResponse({ status: 200, description: 'Escalation rule details' })
   @ApiResponse({ status: 404, description: 'Escalation rule not found' })
-  async findRuleById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.escalationService.findRuleById(id);
+  async findRuleById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.escalationService.findRuleById(id, organizationId);
   }
 
   @Post('rules')
@@ -75,8 +81,9 @@ export class EscalationController {
   async updateRule(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateRuleDto: UpdateEscalationRuleDto,
+    @CurrentUser('organizationId') organizationId: string,
   ) {
-    return this.escalationService.updateRule(id, updateRuleDto);
+    return this.escalationService.updateRule(id, updateRuleDto, organizationId);
   }
 
   @Delete('rules/:id')
@@ -86,8 +93,11 @@ export class EscalationController {
   @ApiParam({ name: 'id', description: 'Escalation Rule ID' })
   @ApiResponse({ status: 204, description: 'Escalation rule deleted successfully' })
   @ApiResponse({ status: 404, description: 'Escalation rule not found' })
-  async deleteRule(@Param('id', ParseUUIDPipe) id: string) {
-    await this.escalationService.deleteRule(id);
+  async deleteRule(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    await this.escalationService.deleteRule(id, organizationId);
   }
 
   // ========================
@@ -98,8 +108,11 @@ export class EscalationController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all escalation logs with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of escalation logs' })
-  async findAllLogs(@Query() queryDto: QueryEscalationLogDto) {
-    return this.escalationService.findAllLogs(queryDto);
+  async findAllLogs(
+    @Query() queryDto: QueryEscalationLogDto,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.escalationService.findAllLogs(queryDto, organizationId);
   }
 
   @Get('logs/project/:projectId')
@@ -107,8 +120,11 @@ export class EscalationController {
   @ApiOperation({ summary: 'Get escalation history for a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Escalation history for the project' })
-  async getEscalationHistory(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    return this.escalationService.getEscalationHistory(projectId);
+  async getEscalationHistory(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.escalationService.getEscalationHistory(projectId, organizationId);
   }
 
   // ========================
@@ -129,8 +145,11 @@ export class EscalationController {
       },
     },
   })
-  async triggerCheck(@Body() checkDto: TriggerEscalationCheckDto) {
-    return this.escalationService.triggerEscalationCheck(checkDto);
+  async triggerCheck(
+    @Body() checkDto: TriggerEscalationCheckDto,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.escalationService.triggerEscalationCheck(checkDto, organizationId);
   }
 
   // ========================
@@ -141,7 +160,9 @@ export class EscalationController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get escalation statistics' })
   @ApiResponse({ status: 200, description: 'Escalation statistics' })
-  async getStatistics() {
-    return this.escalationService.getEscalationStatistics();
+  async getStatistics(
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.escalationService.getEscalationStatistics(organizationId);
   }
 }

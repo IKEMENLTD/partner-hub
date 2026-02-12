@@ -81,8 +81,8 @@ export class ProjectController {
   @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get project statistics' })
   @ApiResponse({ status: 200, description: 'Project statistics' })
-  async getStatistics() {
-    return this.projectService.getProjectStatistics();
+  async getStatistics(@CurrentUser('organizationId') organizationId: string) {
+    return this.projectService.getProjectStatistics(organizationId);
   }
 
   @Get('health-statistics')
@@ -105,8 +105,8 @@ export class ProjectController {
   @Roles(UserRole.ADMIN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get overdue projects' })
   @ApiResponse({ status: 200, description: 'List of overdue projects' })
-  async getOverdueProjects() {
-    return this.projectService.getOverdueProjects();
+  async getOverdueProjects(@CurrentUser('organizationId') organizationId: string) {
+    return this.projectService.getOverdueProjects(organizationId);
   }
 
   @Get('upcoming-deadlines')
@@ -114,8 +114,8 @@ export class ProjectController {
   @ApiOperation({ summary: 'Get projects with upcoming deadlines' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of projects with upcoming deadlines' })
-  async getUpcomingDeadlines(@Query('days') days?: number) {
-    return this.projectService.getUpcomingDeadlines(days || 7);
+  async getUpcomingDeadlines(@Query('days') days?: number, @CurrentUser('organizationId') organizationId?: string) {
+    return this.projectService.getUpcomingDeadlines(days || 7, organizationId);
   }
 
   @Get('by-partner/:partnerId')
@@ -131,8 +131,8 @@ export class ProjectController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get soft-deleted projects' })
   @ApiResponse({ status: 200, description: 'List of soft-deleted projects' })
-  async findDeleted() {
-    return this.projectService.findDeleted();
+  async findDeleted(@CurrentUser('organizationId') organizationId: string) {
+    return this.projectService.findDeleted(organizationId);
   }
 
   @Patch(':id/restore')
@@ -141,8 +141,8 @@ export class ProjectController {
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Project restored successfully' })
   @ApiResponse({ status: 404, description: 'Deleted project not found' })
-  async restore(@Param('id', ParseUUIDPipe) id: string) {
-    return this.projectService.restore(id);
+  async restore(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('organizationId') organizationId: string) {
+    return this.projectService.restore(id, organizationId);
   }
 
   @Get(':id/timeline')
@@ -163,8 +163,8 @@ export class ProjectController {
   @ApiResponse({ status: 200, description: 'Project details' })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 403, description: 'Access denied' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
-    return this.projectService.findOne(id, userId);
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string, @CurrentUser('organizationId') organizationId: string) {
+    return this.projectService.findOne(id, userId, organizationId);
   }
 
   @Patch(':id')

@@ -48,8 +48,11 @@ export class CustomFieldTemplateController {
   @ApiParam({ name: 'id', description: 'テンプレートID' })
   @ApiResponse({ status: 200, description: 'テンプレート詳細' })
   @ApiResponse({ status: 404, description: 'テンプレートが見つかりません' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.templateService.findOne(id);
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.templateService.findOne(id, organizationId);
   }
 
   @Delete(':id')
@@ -59,8 +62,11 @@ export class CustomFieldTemplateController {
   @ApiParam({ name: 'id', description: 'テンプレートID' })
   @ApiResponse({ status: 204, description: 'テンプレートが削除されました' })
   @ApiResponse({ status: 404, description: 'テンプレートが見つかりません' })
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.templateService.remove(id);
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.templateService.remove(id, organizationId);
   }
 
   @Post(':id/increment-usage')
@@ -68,8 +74,11 @@ export class CustomFieldTemplateController {
   @ApiParam({ name: 'id', description: 'テンプレートID' })
   @ApiResponse({ status: 200, description: '使用回数が更新されました' })
   @ApiResponse({ status: 404, description: 'テンプレートが見つかりません' })
-  async incrementUsage(@Param('id', ParseUUIDPipe) id: string) {
-    return this.templateService.incrementUsageCount(id);
+  async incrementUsage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.templateService.incrementUsageCount(id, organizationId);
   }
 
   @Post(':id/activate')
@@ -78,8 +87,11 @@ export class CustomFieldTemplateController {
   @ApiParam({ name: 'id', description: 'テンプレートID' })
   @ApiResponse({ status: 200, description: 'テンプレートがアクティブ化されました' })
   @ApiResponse({ status: 404, description: 'テンプレートが見つかりません' })
-  async activate(@Param('id', ParseUUIDPipe) id: string) {
-    return this.templateService.activate(id);
+  async activate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.templateService.activate(id, organizationId);
   }
 
   @Post(':id/deactivate')
@@ -88,7 +100,10 @@ export class CustomFieldTemplateController {
   @ApiParam({ name: 'id', description: 'テンプレートID' })
   @ApiResponse({ status: 200, description: 'テンプレートが非アクティブ化されました' })
   @ApiResponse({ status: 404, description: 'テンプレートが見つかりません' })
-  async deactivate(@Param('id', ParseUUIDPipe) id: string) {
-    return this.templateService.deactivate(id);
+  async deactivate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('organizationId') organizationId: string,
+  ) {
+    return this.templateService.deactivate(id, organizationId);
   }
 }

@@ -23,21 +23,21 @@ export class ReportDataService {
     private partnerRepository: Repository<Partner>,
   ) {}
 
-  async gatherReportData(startDate: Date, endDate: Date): Promise<ReportData> {
+  async gatherReportData(startDate: Date, endDate: Date, organizationId?: string): Promise<ReportData> {
     // Project summary
-    const projectStats = await this.getProjectStats();
+    const projectStats = await this.getProjectStats(organizationId);
 
     // Task summary
-    const taskStats = await this.getTaskStats();
+    const taskStats = await this.getTaskStats(organizationId);
 
     // Partner performance
-    const partnerPerformance = await this.getPartnerPerformance();
+    const partnerPerformance = await this.getPartnerPerformance(organizationId);
 
     // Highlights
-    const highlights = await this.getHighlights(startDate, endDate);
+    const highlights = await this.getHighlights(startDate, endDate, organizationId);
 
     // Health score stats
-    const healthScoreStats = await this.getHealthScoreStats();
+    const healthScoreStats = await this.getHealthScoreStats(organizationId);
 
     return {
       period: ReportPeriod.WEEKLY,
@@ -53,32 +53,41 @@ export class ReportDataService {
     };
   }
 
-  async getProjectStats(): Promise<ReportData['projectSummary']> {
+  async getProjectStats(organizationId?: string): Promise<ReportData['projectSummary']> {
+    const orgWhere = organizationId ? { organizationId } : {};
+
     const [total, active, completed] = await Promise.all([
-      this.projectRepository.count(),
+      this.projectRepository.count({ where: orgWhere }),
       this.projectRepository.count({
-        where: { status: ProjectStatus.IN_PROGRESS },
+        where: { ...orgWhere, status: ProjectStatus.IN_PROGRESS },
       }),
       this.projectRepository.count({
-        where: { status: ProjectStatus.COMPLETED },
+        where: { ...orgWhere, status: ProjectStatus.COMPLETED },
       }),
     ]);
 
     // Calculate delayed projects
     const today = new Date();
-    const delayed = await this.projectRepository
+    const delayedQb = this.projectRepository
       .createQueryBuilder('project')
       .where('project.endDate < :today', { today })
       .andWhere('project.status NOT IN (:...completedStatuses)', {
         completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
-      })
-      .getCount();
+      });
+    if (organizationId) {
+      delayedQb.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const delayed = await delayedQb.getCount();
 
     // Get by status breakdown
-    const statusCounts = await this.projectRepository
+    const statusQb = this.projectRepository
       .createQueryBuilder('project')
       .select('project.status', 'status')
-      .addSelect('COUNT(*)', 'count')
+      .addSelect('COUNT(*)', 'count');
+    if (organizationId) {
+      statusQb.where('project.organizationId = :organizationId', { organizationId });
+    }
+    const statusCounts = await statusQb
       .groupBy('project.status')
       .getRawMany();
 
@@ -96,30 +105,53 @@ export class ReportDataService {
     };
   }
 
-  async getTaskStats(): Promise<ReportData['taskSummary']> {
+  async getTaskStats(organizationId?: string): Promise<ReportData['taskSummary']> {
     const today = new Date();
 
-    const [total, completed, inProgress] = await Promise.all([
-      this.taskRepository.count(),
-      this.taskRepository.count({ where: { status: TaskStatus.COMPLETED } }),
-      this.taskRepository.count({ where: { status: TaskStatus.IN_PROGRESS } }),
-    ]);
+    // Helper to add org filter to task query builders (tasks join through project)
+    const addTaskOrgFilter = (qb: any, alias: string = 'task') => {
+      if (organizationId) {
+        qb.innerJoin(`${alias}.project`, 'taskProject')
+          .andWhere('taskProject.organizationId = :organizationId', { organizationId });
+      }
+      return qb;
+    };
 
-    const overdue = await this.taskRepository
+    const totalQb = this.taskRepository.createQueryBuilder('task');
+    addTaskOrgFilter(totalQb);
+    const total = await totalQb.getCount();
+
+    const completedQb = this.taskRepository.createQueryBuilder('task')
+      .where('task.status = :status', { status: TaskStatus.COMPLETED });
+    addTaskOrgFilter(completedQb);
+    const completed = await completedQb.getCount();
+
+    const inProgressQb = this.taskRepository.createQueryBuilder('task')
+      .where('task.status = :status', { status: TaskStatus.IN_PROGRESS });
+    addTaskOrgFilter(inProgressQb);
+    const inProgress = await inProgressQb.getCount();
+
+    const overdueQb = this.taskRepository
       .createQueryBuilder('task')
       .where('task.dueDate < :today', { today })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
-      .getCount();
+      });
+    addTaskOrgFilter(overdueQb);
+    const overdue = await overdueQb.getCount();
 
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     // Get by priority breakdown
-    const priorityCounts = await this.taskRepository
+    const priorityQb = this.taskRepository
       .createQueryBuilder('task')
       .select('task.priority', 'priority')
-      .addSelect('COUNT(*)', 'count')
+      .addSelect('COUNT(*)', 'count');
+    if (organizationId) {
+      priorityQb.innerJoin('task.project', 'taskProject')
+        .where('taskProject.organizationId = :organizationId', { organizationId });
+    }
+    const priorityCounts = await priorityQb
       .groupBy('task.priority')
       .getRawMany();
 
@@ -138,9 +170,14 @@ export class ReportDataService {
     };
   }
 
-  async getPartnerPerformance(): Promise<ReportData['partnerPerformance']> {
+  async getPartnerPerformance(organizationId?: string): Promise<ReportData['partnerPerformance']> {
+    const partnerWhere: Record<string, any> = { status: PartnerStatus.ACTIVE };
+    if (organizationId) {
+      partnerWhere.organizationId = organizationId;
+    }
+
     const partners = await this.partnerRepository.find({
-      where: { status: PartnerStatus.ACTIVE },
+      where: partnerWhere,
       order: { rating: 'DESC' },
       take: 10,
     });
@@ -239,7 +276,7 @@ export class ReportDataService {
     return performances;
   }
 
-  async getHighlights(startDate: Date, endDate: Date): Promise<ReportData['highlights']> {
+  async getHighlights(startDate: Date, endDate: Date, organizationId?: string): Promise<ReportData['highlights']> {
     const today = new Date();
     const nextWeek = new Date();
     nextWeek.setDate(today.getDate() + 7);
@@ -247,29 +284,35 @@ export class ReportDataService {
     // Key achievements - recently completed projects and tasks
     const keyAchievements: string[] = [];
 
-    const recentlyCompletedProjects = await this.projectRepository
+    const recentProjectsQb = this.projectRepository
       .createQueryBuilder('project')
       .where('project.status = :status', { status: ProjectStatus.COMPLETED })
       .andWhere('project.updatedAt BETWEEN :start AND :end', {
         start: startDate,
         end: endDate,
-      })
-      .take(5)
-      .getMany();
+      });
+    if (organizationId) {
+      recentProjectsQb.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const recentlyCompletedProjects = await recentProjectsQb.take(5).getMany();
 
     for (const project of recentlyCompletedProjects) {
       keyAchievements.push(`案件「${project.name}」が完了しました`);
     }
 
     // Count completed tasks in period
-    const completedTasksCount = await this.taskRepository
+    const completedTasksQb = this.taskRepository
       .createQueryBuilder('task')
       .where('task.status = :status', { status: TaskStatus.COMPLETED })
       .andWhere('task.completedAt BETWEEN :start AND :end', {
         start: startDate,
         end: endDate,
-      })
-      .getCount();
+      });
+    if (organizationId) {
+      completedTasksQb.innerJoin('task.project', 'ctProject')
+        .andWhere('ctProject.organizationId = :organizationId', { organizationId });
+    }
+    const completedTasksCount = await completedTasksQb.getCount();
 
     if (completedTasksCount > 0) {
       keyAchievements.push(`期間中に${completedTasksCount}件のタスクが完了しました`);
@@ -278,26 +321,33 @@ export class ReportDataService {
     // Issues - overdue tasks and at-risk projects
     const issues: string[] = [];
 
-    const overdueTaskCount = await this.taskRepository
+    const overdueQb = this.taskRepository
       .createQueryBuilder('task')
       .where('task.dueDate < :today', { today })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
-      .getCount();
+      });
+    if (organizationId) {
+      overdueQb.innerJoin('task.project', 'odProject')
+        .andWhere('odProject.organizationId = :organizationId', { organizationId });
+    }
+    const overdueTaskCount = await overdueQb.getCount();
 
     if (overdueTaskCount > 0) {
       issues.push(`${overdueTaskCount}件のタスクが期限超過しています`);
     }
 
-    const atRiskProjects = await this.projectRepository
+    const atRiskQb = this.projectRepository
       .createQueryBuilder('project')
       .where('project.status = :status', { status: ProjectStatus.IN_PROGRESS })
       .andWhere('project.progress < 50')
       .andWhere('project.endDate < :futureDate', {
         futureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      })
-      .getCount();
+      });
+    if (organizationId) {
+      atRiskQb.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const atRiskProjects = await atRiskQb.getCount();
 
     if (atRiskProjects > 0) {
       issues.push(`${atRiskProjects}件の案件がリスク状態にあります`);
@@ -306,7 +356,7 @@ export class ReportDataService {
     // Upcoming deadlines
     const upcomingDeadlines: ReportData['highlights']['upcomingDeadlines'] = [];
 
-    const upcomingProjectDeadlines = await this.projectRepository
+    const upcomingProjectQb = this.projectRepository
       .createQueryBuilder('project')
       .where('project.endDate BETWEEN :today AND :nextWeek', {
         today,
@@ -314,7 +364,11 @@ export class ReportDataService {
       })
       .andWhere('project.status NOT IN (:...completedStatuses)', {
         completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
-      })
+      });
+    if (organizationId) {
+      upcomingProjectQb.andWhere('project.organizationId = :organizationId', { organizationId });
+    }
+    const upcomingProjectDeadlines = await upcomingProjectQb
       .orderBy('project.endDate', 'ASC')
       .take(5)
       .getMany();
@@ -332,12 +386,17 @@ export class ReportDataService {
       });
     }
 
-    const upcomingTaskDeadlines = await this.taskRepository
+    const upcomingTaskQb = this.taskRepository
       .createQueryBuilder('task')
       .where('task.dueDate BETWEEN :today AND :nextWeek', { today, nextWeek })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
+      });
+    if (organizationId) {
+      upcomingTaskQb.innerJoin('task.project', 'utProject')
+        .andWhere('utProject.organizationId = :organizationId', { organizationId });
+    }
+    const upcomingTaskDeadlines = await upcomingTaskQb
       .orderBy('task.dueDate', 'ASC')
       .take(5)
       .getMany();
@@ -362,11 +421,16 @@ export class ReportDataService {
     };
   }
 
-  async getHealthScoreStats(): Promise<ReportData['healthScoreStats']> {
+  async getHealthScoreStats(organizationId?: string): Promise<ReportData['healthScoreStats']> {
+    const whereCondition: any = {
+      status: Not(In([ProjectStatus.COMPLETED, ProjectStatus.CANCELLED])),
+    };
+    if (organizationId) {
+      whereCondition.organizationId = organizationId;
+    }
+
     const projects = await this.projectRepository.find({
-      where: {
-        status: Not(In([ProjectStatus.COMPLETED, ProjectStatus.CANCELLED])),
-      },
+      where: whereCondition,
       select: ['id', 'healthScore'],
     });
 

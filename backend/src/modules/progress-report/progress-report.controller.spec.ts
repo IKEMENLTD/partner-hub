@@ -52,19 +52,19 @@ describe('ProgressReportController', () => {
       mockProgressReportService.requestReport.mockResolvedValue(mockReport);
 
       const req = { user: { id: 'user-1' } };
-      const result = await controller.requestReport(dto as any, req);
+      const result = await controller.requestReport(dto as any, req, 'org-1');
 
       expect(result.success).toBe(true);
       expect(result.data.id).toBe('report-uuid-1');
       expect(result.message).toBe('進捗報告リクエストを送信しました');
-      expect(mockProgressReportService.requestReport).toHaveBeenCalledWith(dto, 'user-1');
+      expect(mockProgressReportService.requestReport).toHaveBeenCalledWith(dto, 'user-1', 'org-1');
     });
 
     it('should propagate errors', async () => {
       mockProgressReportService.requestReport.mockRejectedValue(new Error('Task not found'));
 
       const req = { user: { id: 'user-1' } };
-      await expect(controller.requestReport({} as any, req)).rejects.toThrow('Task not found');
+      await expect(controller.requestReport({} as any, req, 'org-1')).rejects.toThrow('Task not found');
     });
   });
 
@@ -110,7 +110,7 @@ describe('ProgressReportController', () => {
     it('should return reports for a task', async () => {
       mockProgressReportService.getReportsByTask.mockResolvedValue([mockReport]);
 
-      const result = await controller.getReportsByTask('task-1');
+      const result = await controller.getReportsByTask('task-1', 'org-1');
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(1);
@@ -122,7 +122,7 @@ describe('ProgressReportController', () => {
     it('should return a report by id', async () => {
       mockProgressReportService.getReportById.mockResolvedValue(mockReport);
 
-      const result = await controller.getReportById('report-1');
+      const result = await controller.getReportById('report-1', 'org-1');
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockReport);
@@ -131,7 +131,7 @@ describe('ProgressReportController', () => {
     it('should propagate not found errors', async () => {
       mockProgressReportService.getReportById.mockRejectedValue(new Error('Not found'));
 
-      await expect(controller.getReportById('invalid')).rejects.toThrow('Not found');
+      await expect(controller.getReportById('invalid', 'org-1')).rejects.toThrow('Not found');
     });
   });
 
@@ -147,7 +147,7 @@ describe('ProgressReportController', () => {
       mockProgressReportService.reviewReport.mockResolvedValue(reviewedReport);
 
       const req = { user: { id: 'user-1' } };
-      const result = await controller.reviewReport('report-1', dto as any, req);
+      const result = await controller.reviewReport('report-1', dto as any, req, 'org-1');
 
       expect(result.success).toBe(true);
       expect(result.data.status).toBe('approved');

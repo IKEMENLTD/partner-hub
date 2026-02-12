@@ -5,10 +5,11 @@ import * as multer from 'multer';
 import { FileStorageController } from './file-storage.controller';
 import { FileStorageService } from './file-storage.service';
 import { ProjectFile } from './entities/project-file.entity';
+import { Project } from '../project/entities/project.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProjectFile]),
+    TypeOrmModule.forFeature([ProjectFile, Project]),
     MulterModule.register({
       storage: multer.memoryStorage(),
       limits: {

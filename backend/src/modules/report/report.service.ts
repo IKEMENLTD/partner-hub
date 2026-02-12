@@ -48,26 +48,27 @@ export class ReportService {
 
   // ==================== Report Config (Delegated) ====================
 
-  async createConfig(dto: CreateReportConfigDto, createdById: string): Promise<ReportConfig> {
-    return this.reportConfigService.createConfig(dto, createdById);
+  async createConfig(dto: CreateReportConfigDto, createdById: string, organizationId?: string): Promise<ReportConfig> {
+    return this.reportConfigService.createConfig(dto, createdById, organizationId);
   }
 
   async findAllConfigs(
     queryDto: QueryReportConfigDto,
+    organizationId?: string,
   ): Promise<PaginatedResponseDto<ReportConfig>> {
-    return this.reportConfigService.findAllConfigs(queryDto);
+    return this.reportConfigService.findAllConfigs(queryDto, organizationId);
   }
 
-  async findConfigById(id: string): Promise<ReportConfig> {
-    return this.reportConfigService.findConfigById(id);
+  async findConfigById(id: string, organizationId?: string): Promise<ReportConfig> {
+    return this.reportConfigService.findConfigById(id, organizationId);
   }
 
-  async updateConfig(id: string, dto: UpdateReportConfigDto): Promise<ReportConfig> {
-    return this.reportConfigService.updateConfig(id, dto);
+  async updateConfig(id: string, dto: UpdateReportConfigDto, organizationId?: string): Promise<ReportConfig> {
+    return this.reportConfigService.updateConfig(id, dto, organizationId);
   }
 
-  async deleteConfig(id: string): Promise<void> {
-    return this.reportConfigService.deleteConfig(id);
+  async deleteConfig(id: string, organizationId?: string): Promise<void> {
+    return this.reportConfigService.deleteConfig(id, organizationId);
   }
 
   async getActiveConfigsForScheduling(): Promise<ReportConfig[]> {
@@ -86,6 +87,7 @@ export class ReportService {
 
   async findAllGeneratedReports(
     queryDto: QueryGeneratedReportDto,
+    organizationId?: string,
   ): Promise<PaginatedResponseDto<GeneratedReport>> {
     const {
       page = 1,
@@ -103,6 +105,10 @@ export class ReportService {
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.reportConfig', 'reportConfig')
       .leftJoinAndSelect('report.generatedBy', 'generatedBy');
+
+    if (organizationId) {
+      queryBuilder.andWhere('report.organizationId = :organizationId', { organizationId });
+    }
 
     if (reportConfigId) {
       queryBuilder.andWhere('report.reportConfigId = :reportConfigId', {
@@ -138,9 +144,14 @@ export class ReportService {
     return new PaginatedResponseDto(data, total, page, limit);
   }
 
-  async findGeneratedReportById(id: string): Promise<GeneratedReport> {
+  async findGeneratedReportById(id: string, organizationId?: string): Promise<GeneratedReport> {
+    const whereCondition: Record<string, any> = { id };
+    if (organizationId) {
+      whereCondition.organizationId = organizationId;
+    }
+
     const report = await this.generatedReportRepository.findOne({
-      where: { id },
+      where: whereCondition,
       relations: ['reportConfig', 'generatedBy'],
     });
 
@@ -153,7 +164,7 @@ export class ReportService {
 
   // ==================== Report Generation ====================
 
-  async generateReport(dto: GenerateReportDto, generatedById?: string): Promise<GeneratedReport> {
+  async generateReport(dto: GenerateReportDto, generatedById?: string, organizationId?: string): Promise<GeneratedReport> {
     const { period, startDate, endDate, reportConfigId } = dto;
 
     // Calculate date range
@@ -164,7 +175,7 @@ export class ReportService {
     );
 
     // Generate report data using delegated service
-    const reportData = await this.reportDataService.gatherReportData(start, end);
+    const reportData = await this.reportDataService.gatherReportData(start, end, organizationId);
 
     // Determine title
     const periodLabel = period === ReportPeriod.MONTHLY ? '月次' : '週次';
@@ -183,6 +194,7 @@ export class ReportService {
       reportData,
       isManual: true,
       generatedById,
+      organizationId,
     });
 
     await this.generatedReportRepository.save(generatedReport);
@@ -191,8 +203,8 @@ export class ReportService {
     return this.findGeneratedReportById(generatedReport.id);
   }
 
-  async gatherReportData(startDate: Date, endDate: Date): Promise<ReportData> {
-    return this.reportDataService.gatherReportData(startDate, endDate);
+  async gatherReportData(startDate: Date, endDate: Date, organizationId?: string): Promise<ReportData> {
+    return this.reportDataService.gatherReportData(startDate, endDate, organizationId);
   }
 
   // ==================== Helper Methods ====================

@@ -98,7 +98,7 @@ export class CustomFieldTemplateService {
     return new PaginatedResponseDto(data, total, page, limit);
   }
 
-  async findOne(id: string): Promise<CustomFieldTemplate> {
+  async findOne(id: string, organizationId?: string): Promise<CustomFieldTemplate> {
     const template = await this.templateRepository.findOne({
       where: { id },
       relations: ['createdBy'],
@@ -112,17 +112,26 @@ export class CustomFieldTemplateService {
       });
     }
 
+    // Validate organization access
+    if (organizationId && template.organizationId && template.organizationId !== organizationId) {
+      throw new ResourceNotFoundException('SYSTEM_001', {
+        resourceType: 'CustomFieldTemplate',
+        resourceId: id,
+        userMessage: 'カスタムフィールドテンプレートが見つかりません',
+      });
+    }
+
     return template;
   }
 
-  async remove(id: string): Promise<void> {
-    const template = await this.findOne(id);
+  async remove(id: string, organizationId?: string): Promise<void> {
+    const template = await this.findOne(id, organizationId);
     await this.templateRepository.remove(template);
     this.logger.log(`Custom field template deleted: ${template.name} (${id})`);
   }
 
-  async incrementUsageCount(id: string): Promise<CustomFieldTemplate> {
-    const template = await this.findOne(id);
+  async incrementUsageCount(id: string, organizationId?: string): Promise<CustomFieldTemplate> {
+    const template = await this.findOne(id, organizationId);
     template.usageCount += 1;
     await this.templateRepository.save(template);
     this.logger.log(
@@ -131,16 +140,16 @@ export class CustomFieldTemplateService {
     return template;
   }
 
-  async activate(id: string): Promise<CustomFieldTemplate> {
-    const template = await this.findOne(id);
+  async activate(id: string, organizationId?: string): Promise<CustomFieldTemplate> {
+    const template = await this.findOne(id, organizationId);
     template.isActive = true;
     await this.templateRepository.save(template);
     this.logger.log(`Custom field template activated: ${template.name}`);
     return template;
   }
 
-  async deactivate(id: string): Promise<CustomFieldTemplate> {
-    const template = await this.findOne(id);
+  async deactivate(id: string, organizationId?: string): Promise<CustomFieldTemplate> {
+    const template = await this.findOne(id, organizationId);
     template.isActive = false;
     await this.templateRepository.save(template);
     this.logger.log(`Custom field template deactivated: ${template.name}`);

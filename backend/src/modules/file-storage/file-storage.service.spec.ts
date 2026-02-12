@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FileStorageService } from './file-storage.service';
 import { ProjectFile } from './entities/project-file.entity';
+import { Project } from '../project/entities/project.entity';
 import { FileCategory } from './enums/file-category.enum';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
@@ -69,6 +70,10 @@ describe('FileStorageService', () => {
     delete: jest.fn(),
   };
 
+  const mockProjectRepository = {
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,6 +81,10 @@ describe('FileStorageService', () => {
         {
           provide: getRepositoryToken(ProjectFile),
           useValue: mockProjectFileRepository,
+        },
+        {
+          provide: getRepositoryToken(Project),
+          useValue: mockProjectRepository,
         },
         {
           provide: SupabaseService,

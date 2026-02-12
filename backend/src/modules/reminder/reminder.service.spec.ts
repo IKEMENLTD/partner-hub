@@ -38,6 +38,7 @@ describe('ReminderService', () => {
 
   // Helper: create a query builder mock with chainable methods
   const createQueryBuilderMock = (overrides: Record<string, any> = {}) => ({
+    leftJoin: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
@@ -216,24 +217,21 @@ describe('ReminderService', () => {
 
   describe('getUserReminders', () => {
     it('should return all reminders for user', async () => {
-      reminderRepository.find.mockResolvedValue([mockReminder] as Reminder[]);
+      const qb = createQueryBuilderMock({ getMany: jest.fn().mockResolvedValue([mockReminder]) });
+      reminderRepository.createQueryBuilder.mockReturnValue(qb as any);
+
       const result = await service.getUserReminders('user-1');
       expect(result).toHaveLength(1);
-      expect(reminderRepository.find).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
-        relations: ['task', 'project'],
-        order: { scheduledAt: 'DESC' },
-      });
+      expect(qb.where).toHaveBeenCalledWith('reminder.userId = :userId', { userId: 'user-1' });
+      expect(qb.orderBy).toHaveBeenCalledWith('reminder.scheduledAt', 'DESC');
     });
 
     it('should filter unread only when flag is true', async () => {
-      reminderRepository.find.mockResolvedValue([]);
+      const qb = createQueryBuilderMock({ getMany: jest.fn().mockResolvedValue([]) });
+      reminderRepository.createQueryBuilder.mockReturnValue(qb as any);
+
       await service.getUserReminders('user-1', true);
-      expect(reminderRepository.find).toHaveBeenCalledWith({
-        where: { userId: 'user-1', isRead: false },
-        relations: ['task', 'project'],
-        order: { scheduledAt: 'DESC' },
-      });
+      expect(qb.andWhere).toHaveBeenCalledWith('reminder.isRead = :isRead', { isRead: false });
     });
   });
 
@@ -576,24 +574,39 @@ describe('ReminderService', () => {
 
   describe('getReminderStatistics', () => {
     it('should aggregate statistics correctly', async () => {
-      reminderRepository.count
-        .mockResolvedValueOnce(100) // total
-        .mockResolvedValueOnce(25);  // pendingCount
-
-      const qb = createQueryBuilderMock({
-        getRawMany: jest.fn()
-          .mockResolvedValueOnce([
-            { status: 'pending', count: '25' },
-            { status: 'sent', count: '70' },
-            { status: 'failed', count: '5' },
-          ])
-          .mockResolvedValueOnce([
-            { type: 'task_due', count: '40' },
-            { type: 'task_overdue', count: '30' },
-          ]),
-        getCount: jest.fn().mockResolvedValue(10),
+      // The service now creates multiple query builders via baseQb().
+      // Each call to createQueryBuilder returns a fresh mock.
+      let callCount = 0;
+      reminderRepository.createQueryBuilder.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          // total count
+          return createQueryBuilderMock({ getCount: jest.fn().mockResolvedValue(100) }) as any;
+        } else if (callCount === 2) {
+          // statusCounts
+          return createQueryBuilderMock({
+            getRawMany: jest.fn().mockResolvedValue([
+              { status: 'pending', count: '25' },
+              { status: 'sent', count: '70' },
+              { status: 'failed', count: '5' },
+            ]),
+          }) as any;
+        } else if (callCount === 3) {
+          // typeCounts
+          return createQueryBuilderMock({
+            getRawMany: jest.fn().mockResolvedValue([
+              { type: 'task_due', count: '40' },
+              { type: 'task_overdue', count: '30' },
+            ]),
+          }) as any;
+        } else if (callCount === 4) {
+          // pendingCount
+          return createQueryBuilderMock({ getCount: jest.fn().mockResolvedValue(25) }) as any;
+        } else {
+          // sentToday
+          return createQueryBuilderMock({ getCount: jest.fn().mockResolvedValue(10) }) as any;
+        }
       });
-      reminderRepository.createQueryBuilder.mockReturnValue(qb as any);
 
       const result = await service.getReminderStatistics();
 

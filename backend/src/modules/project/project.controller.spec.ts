@@ -111,9 +111,10 @@ describe('ProjectController', () => {
       const stats = { total: 5, active: 3 };
       mockProjectService.getProjectStatistics.mockResolvedValue(stats);
 
-      const result = await controller.getStatistics();
+      const result = await controller.getStatistics('org-1');
 
       expect(result).toEqual(stats);
+      expect(mockProjectService.getProjectStatistics).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -143,9 +144,10 @@ describe('ProjectController', () => {
     it('should return overdue projects', async () => {
       mockProjectService.getOverdueProjects.mockResolvedValue([mockProject]);
 
-      const result = await controller.getOverdueProjects();
+      const result = await controller.getOverdueProjects('org-1');
 
       expect(result).toEqual([mockProject]);
+      expect(mockProjectService.getOverdueProjects).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -153,17 +155,17 @@ describe('ProjectController', () => {
     it('should return upcoming deadlines with default days', async () => {
       mockProjectService.getUpcomingDeadlines.mockResolvedValue([]);
 
-      const result = await controller.getUpcomingDeadlines(undefined);
+      const result = await controller.getUpcomingDeadlines(undefined, 'org-1');
 
-      expect(mockProjectService.getUpcomingDeadlines).toHaveBeenCalledWith(7);
+      expect(mockProjectService.getUpcomingDeadlines).toHaveBeenCalledWith(7, 'org-1');
     });
 
     it('should return upcoming deadlines with custom days', async () => {
       mockProjectService.getUpcomingDeadlines.mockResolvedValue([]);
 
-      await controller.getUpcomingDeadlines(14);
+      await controller.getUpcomingDeadlines(14, 'org-1');
 
-      expect(mockProjectService.getUpcomingDeadlines).toHaveBeenCalledWith(14);
+      expect(mockProjectService.getUpcomingDeadlines).toHaveBeenCalledWith(14, 'org-1');
     });
   });
 
@@ -182,9 +184,10 @@ describe('ProjectController', () => {
     it('should return soft-deleted projects', async () => {
       mockProjectService.findDeleted.mockResolvedValue([]);
 
-      const result = await controller.findDeleted();
+      const result = await controller.findDeleted('org-1');
 
       expect(result).toEqual([]);
+      expect(mockProjectService.findDeleted).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -192,9 +195,10 @@ describe('ProjectController', () => {
     it('should restore a soft-deleted project', async () => {
       mockProjectService.restore.mockResolvedValue(mockProject);
 
-      const result = await controller.restore('proj-1');
+      const result = await controller.restore('proj-1', 'org-1');
 
       expect(result).toEqual(mockProject);
+      expect(mockProjectService.restore).toHaveBeenCalledWith('proj-1', 'org-1');
     });
   });
 
@@ -213,10 +217,10 @@ describe('ProjectController', () => {
     it('should return a project by id', async () => {
       mockProjectService.findOne.mockResolvedValue(mockProject);
 
-      const result = await controller.findOne('proj-1', 'user-1');
+      const result = await controller.findOne('proj-1', 'user-1', 'org-1');
 
       expect(result).toEqual(mockProject);
-      expect(mockProjectService.findOne).toHaveBeenCalledWith('proj-1', 'user-1');
+      expect(mockProjectService.findOne).toHaveBeenCalledWith('proj-1', 'user-1', 'org-1');
     });
   });
 

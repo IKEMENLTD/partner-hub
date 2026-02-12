@@ -345,7 +345,7 @@ export class ProjectService {
     }
   }
 
-  async findOne(id: string, userId?: string): Promise<Project> {
+  async findOne(id: string, userId?: string, organizationId?: string): Promise<Project> {
     const project = await this.projectRepository.findOne({
       where: { id },
       relations: ['owner', 'manager', 'partners', 'createdBy'],
@@ -354,6 +354,13 @@ export class ProjectService {
     if (!project) {
       // Use custom exception for consistent error response format
       throw ResourceNotFoundException.forProject(id);
+    }
+
+    // Multi-tenancy: verify project belongs to the user's organization
+    if (organizationId && project.organizationId && project.organizationId !== organizationId) {
+      throw new AuthorizationException('PROJECT_002', {
+        message: 'この案件へのアクセス権限がありません',
+      });
     }
 
     // If userId is provided, check access control
@@ -544,21 +551,31 @@ export class ProjectService {
     return this.findOne(projectId);
   }
 
-  async findDeleted(): Promise<Project[]> {
+  async findDeleted(organizationId?: string): Promise<Project[]> {
+    const where: any = { deletedAt: Not(IsNull()) };
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
     return this.projectRepository.find({
       withDeleted: true,
-      where: { deletedAt: Not(IsNull()) },
+      where,
       order: { deletedAt: 'DESC' },
     });
   }
 
-  async restore(id: string): Promise<Project> {
+  async restore(id: string, organizationId?: string): Promise<Project> {
     const project = await this.projectRepository.findOne({
       where: { id },
       withDeleted: true,
     });
     if (!project || !project.deletedAt) {
       throw ResourceNotFoundException.forProject(id);
+    }
+    // Multi-tenancy: verify project belongs to the user's organization
+    if (organizationId && project.organizationId && project.organizationId !== organizationId) {
+      throw new AuthorizationException('PROJECT_002', {
+        message: 'この案件へのアクセス権限がありません',
+      });
     }
     await this.projectRepository.recover(project);
     this.logger.log(`Project restored: ${project.name} (${id})`);
@@ -575,7 +592,7 @@ export class ProjectService {
   /**
    * Permanently delete a project (admin only)
    */
-  async forceRemove(id: string): Promise<void> {
+  async forceRemove(id: string, organizationId?: string): Promise<void> {
     const project = await this.projectRepository.findOne({
       where: { id },
       withDeleted: true,
@@ -583,6 +600,12 @@ export class ProjectService {
     if (!project) {
       // Use custom exception for consistent error response format
       throw ResourceNotFoundException.forProject(id);
+    }
+    // Multi-tenancy: verify project belongs to the user's organization
+    if (organizationId && project.organizationId && project.organizationId !== organizationId) {
+      throw new AuthorizationException('PROJECT_002', {
+        message: 'この案件へのアクセス権限がありません',
+      });
     }
     await this.projectRepository.remove(project);
     this.logger.log(`Project permanently deleted: ${project.name} (${id})`);
@@ -597,16 +620,16 @@ export class ProjectService {
   }
 
   // Delegate to statistics service
-  async getProjectStatistics() {
-    return this.statisticsService.getProjectStatistics();
+  async getProjectStatistics(organizationId?: string) {
+    return this.statisticsService.getProjectStatistics(organizationId);
   }
 
-  async getOverdueProjects(): Promise<Project[]> {
-    return this.statisticsService.getOverdueProjects();
+  async getOverdueProjects(organizationId?: string): Promise<Project[]> {
+    return this.statisticsService.getOverdueProjects(organizationId);
   }
 
-  async getUpcomingDeadlines(days: number = 7): Promise<Project[]> {
-    return this.statisticsService.getUpcomingDeadlines(days);
+  async getUpcomingDeadlines(days: number = 7, organizationId?: string): Promise<Project[]> {
+    return this.statisticsService.getUpcomingDeadlines(days, organizationId);
   }
 
   async updateHealthScore(id: string): Promise<Project> {
