@@ -45,6 +45,24 @@ export class OrganizationService {
     firstName: string,
     lastName: string,
   ): Promise<Organization> {
+    // 既に組織メンバーとして登録されていれば、その組織を返す（重複防止）
+    const existingMember = await this.memberRepository.findOne({
+      where: { userId },
+    });
+    if (existingMember) {
+      const existingOrg = await this.organizationRepository.findOne({
+        where: { id: existingMember.organizationId },
+      });
+      if (existingOrg) {
+        // profiles の organizationId を確実に更新
+        await this.userProfileRepository.update(userId, {
+          organizationId: existingOrg.id,
+        });
+        this.logger.log(`User ${email} already has organization: "${existingOrg.name}" (${existingOrg.id})`);
+        return existingOrg;
+      }
+    }
+
     const orgName = `${lastName}${firstName}の組織`;
     const slug = `org-${crypto.randomBytes(6).toString('hex')}`;
 
