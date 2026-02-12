@@ -84,7 +84,7 @@ export class DigestService {
       await Promise.all(
         userBatch.map(async (user) => {
           try {
-            const digest = await this.generateUserDigest(user.id);
+            const digest = await this.generateUserDigest(user.id, user.organizationId);
 
             // Only send if there are tasks or notifications
             if (
@@ -113,14 +113,14 @@ export class DigestService {
   /**
    * Generate digest data for a specific user
    */
-  async generateUserDigest(userId: string): Promise<DigestData> {
+  async generateUserDigest(userId: string, organizationId?: string): Promise<DigestData> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Get today's tasks
-    const todayTasks = await this.taskRepository
+    // Get today's tasks (filtered by organization)
+    const todayTasksQb = this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.project', 'project')
       .where('task.assigneeId = :userId', { userId })
@@ -128,23 +128,25 @@ export class DigestService {
       .andWhere('task.dueDate < :tomorrow', { tomorrow })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
-      .orderBy('task.priority', 'DESC')
-      .take(10)
-      .getMany();
+      });
+    if (organizationId) {
+      todayTasksQb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+    const todayTasks = await todayTasksQb.orderBy('task.priority', 'DESC').take(10).getMany();
 
-    // Get overdue tasks
-    const overdueTasks = await this.taskRepository
+    // Get overdue tasks (filtered by organization)
+    const overdueTasksQb = this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.project', 'project')
       .where('task.assigneeId = :userId', { userId })
       .andWhere('task.dueDate < :today', { today })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
-      .orderBy('task.dueDate', 'ASC')
-      .take(10)
-      .getMany();
+      });
+    if (organizationId) {
+      overdueTasksQb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+    const overdueTasks = await overdueTasksQb.orderBy('task.dueDate', 'ASC').take(10).getMany();
 
     // Get unread notifications
     const unreadNotifications = await this.reminderRepository.find({
@@ -156,13 +158,25 @@ export class DigestService {
       take: 10,
     });
 
-    // Calculate statistics
-    const [totalTasks, completedTasks] = await Promise.all([
-      this.taskRepository.count({ where: { assigneeId: userId } }),
-      this.taskRepository.count({
-        where: { assigneeId: userId, status: TaskStatus.COMPLETED },
-      }),
-    ]);
+    // Calculate statistics (filtered by organization)
+    const totalTasksQb = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoin('task.project', 'project')
+      .where('task.assigneeId = :userId', { userId });
+    if (organizationId) {
+      totalTasksQb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+    const totalTasks = await totalTasksQb.getCount();
+
+    const completedTasksQb = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoin('task.project', 'project')
+      .where('task.assigneeId = :userId', { userId })
+      .andWhere('task.status = :completedStatus', { completedStatus: TaskStatus.COMPLETED });
+    if (organizationId) {
+      completedTasksQb.andWhere('project.organizationId = :orgId', { orgId: organizationId });
+    }
+    const completedTasks = await completedTasksQb.getCount();
 
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 

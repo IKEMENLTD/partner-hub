@@ -11,6 +11,8 @@ import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { ReminderChannel } from '../../reminder/enums/reminder-type.enum';
 import { NotificationChannel } from '../entities/notification-channel.entity';
 import { InAppNotificationType } from '../entities/in-app-notification.entity';
+import { AuthorizationException } from '../../../common/exceptions/business.exception';
+import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
 
 export interface SendNotificationOptions {
   channel: ReminderChannel;
@@ -220,11 +222,17 @@ export class NotificationService {
   }
 
   /**
-   * Get recipients by user IDs
+   * Get recipients by user IDs, optionally filtered by organization
    */
-  async getRecipientsByIds(userIds: string[]): Promise<UserProfile[]> {
+  async getRecipientsByIds(userIds: string[], organizationId?: string): Promise<UserProfile[]> {
     if (userIds.length === 0) {
       return [];
+    }
+
+    if (organizationId) {
+      return this.userProfileRepository.find({
+        where: userIds.map((id) => ({ id, organizationId })),
+      });
     }
 
     return this.userProfileRepository.findBy(userIds.map((id) => ({ id })));
@@ -273,8 +281,9 @@ export class NotificationService {
     project: Project,
     recipientIds: string[],
     additionalInfo?: string,
+    organizationId?: string,
   ): Promise<boolean> {
-    const recipients = await this.getRecipientsByIds(recipientIds);
+    const recipients = await this.getRecipientsByIds(recipientIds, organizationId);
 
     if (recipients.length === 0) {
       this.logger.warn(`No recipients found for escalation on project: ${project.id}`);
@@ -291,21 +300,50 @@ export class NotificationService {
   }
 
   /**
-   * Update a notification channel
+   * Update a notification channel with organization validation
    */
   async updateNotificationChannel(
     id: string,
     updates: Partial<NotificationChannel>,
+    organizationId?: string,
   ): Promise<NotificationChannel | null> {
+    if (organizationId) {
+      await this.verifyChannelOrganization(id, organizationId);
+    }
     await this.notificationChannelRepository.update(id, updates);
     return this.notificationChannelRepository.findOne({ where: { id } });
   }
 
   /**
-   * Delete a notification channel
+   * Delete a notification channel with organization validation
    */
-  async deleteNotificationChannel(id: string): Promise<boolean> {
+  async deleteNotificationChannel(id: string, organizationId?: string): Promise<boolean> {
+    if (organizationId) {
+      await this.verifyChannelOrganization(id, organizationId);
+    }
     const result = await this.notificationChannelRepository.delete(id);
     return (result.affected ?? 0) > 0;
+  }
+
+  /**
+   * Verify that a notification channel belongs to the given organization
+   */
+  private async verifyChannelOrganization(channelId: string, organizationId: string): Promise<void> {
+    const channel = await this.notificationChannelRepository.findOne({
+      where: { id: channelId },
+      relations: ['project'],
+    });
+    if (!channel) {
+      throw new ResourceNotFoundException('SYSTEM_001', {
+        resourceType: 'NotificationChannel',
+        resourceId: channelId,
+        userMessage: '通知チャンネルが見つかりません',
+      });
+    }
+    if (channel.project && channel.project.organizationId && channel.project.organizationId !== organizationId) {
+      throw new AuthorizationException('AUTH_004', {
+        message: 'この通知チャンネルへのアクセス権限がありません',
+      });
+    }
   }
 }
