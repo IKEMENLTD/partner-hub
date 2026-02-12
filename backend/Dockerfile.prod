@@ -19,6 +19,9 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
+# Create logs directory with proper permissions before switching to non-root user
+RUN mkdir -p /app/logs && chown node:node /app/logs
+
 # Run as non-root user for security
 USER node
 
