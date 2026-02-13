@@ -137,9 +137,16 @@ export class EscalationExecutorService {
     const savedLog = await this.escalationLogRepository.save(log);
 
     // SMS送信（パートナーへの緊急連絡）
-    await this.sendPartnerSms(task, rule).catch((err) => {
-      this.logger.error(`SMS送信エラー: ${err.message}`);
-    });
+    try {
+      await this.sendPartnerSms(task, rule);
+    } catch (err) {
+      this.logger.error(`SMS送信エラー (Rule: ${rule.name}, Task: ${task.id}): ${err.message}`);
+      // SMS失敗をログに記録（エスカレーション自体は成功扱いのまま）
+      savedLog.errorMessage = savedLog.errorMessage
+        ? `${savedLog.errorMessage}; SMS送信失敗: ${err.message}`
+        : `SMS送信失敗: ${err.message}`;
+      await this.escalationLogRepository.save(savedLog);
+    }
 
     return this.escalationLogRepository.findOne({
       where: { id: savedLog.id },

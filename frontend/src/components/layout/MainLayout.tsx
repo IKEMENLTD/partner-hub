@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '@/store';
+import { getRecoveryModeFromStorage } from '@/store/authStore';
 import { useResponsive } from '@/hooks';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -23,8 +24,7 @@ export function MainLayout() {
   }, [location.pathname, closeMobileMenu]);
 
   // パスワードリカバリーモード中は保護されたページにアクセスできない
-  // localStorage を使用して全タブで共有する
-  const isInRecoveryMode = localStorage.getItem('password_recovery_mode') === 'true';
+  const isInRecoveryMode = getRecoveryModeFromStorage();
   if (isInRecoveryMode) {
     return <Navigate to="/reset-password" replace />;
   }

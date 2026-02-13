@@ -13,11 +13,12 @@ import { UserProfile } from '../auth/entities/user-profile.entity';
 import { Project } from '../project/entities/project.entity';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { BusinessException, AuthorizationException } from '../../common/exceptions/business.exception';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ProgressReportService {
   private readonly logger = new Logger(ProgressReportService.name);
-  private readonly TOKEN_VALIDITY_HOURS = 24;
+  private readonly TOKEN_VALIDITY_HOURS: number;
 
   constructor(
     @InjectRepository(ProgressReport)
@@ -27,7 +28,10 @@ export class ProgressReportService {
     @InjectRepository(UserProfile)
     private userProfileRepository: Repository<UserProfile>,
     private emailService: EmailService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.TOKEN_VALIDITY_HOURS = this.configService.get<number>('PROGRESS_REPORT_TOKEN_HOURS', 24);
+  }
 
   /**
    * Generate a unique report token for a task

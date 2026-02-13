@@ -17,7 +17,7 @@ import { BusinessException } from '../../../common/exceptions/business.exception
 @Injectable()
 export class PartnerContactSetupService {
   private readonly logger = new Logger(PartnerContactSetupService.name);
-  private readonly TOKEN_VALIDITY_HOURS = 168; // 7日間有効
+  private readonly TOKEN_VALIDITY_HOURS: number;
   private readonly frontendUrl: string;
 
   constructor(
@@ -26,6 +26,7 @@ export class PartnerContactSetupService {
     private emailService: EmailService,
     private configService: ConfigService,
   ) {
+    this.TOKEN_VALIDITY_HOURS = this.configService.get<number>('CONTACT_SETUP_TOKEN_HOURS', 168); // デフォルト7日間
     this.frontendUrl =
       this.configService.get<string>('app.frontendUrl') ||
       'https://partner-hub-frontend.onrender.com';
@@ -41,7 +42,7 @@ export class PartnerContactSetupService {
   /**
    * パートナーに初回セットアップメールを送信
    */
-  async sendContactSetupEmail(partnerId: string): Promise<void> {
+  async sendContactSetupEmail(partnerId: string): Promise<{ emailSent: boolean }> {
     const partner = await this.partnerRepository.findOne({
       where: { id: partnerId },
     });
@@ -69,12 +70,17 @@ export class PartnerContactSetupService {
     // セットアップURLを生成
     const setupUrl = `${this.frontendUrl}/partner-setup/${token}`;
 
-    // メール送信（非同期 — レスポンスをブロックしない）
-    this.emailService.sendContactSetupEmail(partner, setupUrl, expiresAt).catch((err) => {
+    // メール送信
+    let emailSent = false;
+    try {
+      await this.emailService.sendContactSetupEmail(partner, setupUrl, expiresAt);
+      emailSent = true;
+      this.logger.log(`Contact setup email sent to partner: ${partner.email}`);
+    } catch (err) {
       this.logger.error(`Failed to send contact setup email to ${partner.email}`, err);
-    });
+    }
 
-    this.logger.log(`Contact setup email queued for partner: ${partner.email}`);
+    return { emailSent };
   }
 
   /**

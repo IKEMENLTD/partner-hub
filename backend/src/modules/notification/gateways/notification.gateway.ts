@@ -26,6 +26,7 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   private readonly logger = new Logger(NotificationGateway.name);
   private userSockets: Map<string, Set<string>> = new Map();
   private allowedOrigins: string[] = [];
+  private nodeEnv: string;
 
   @WebSocketServer()
   server: Server;
@@ -36,11 +37,17 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   ) {
     // Build allowed origins list
     const nodeEnv = this.configService.get<string>('app.nodeEnv') || 'development';
+    this.nodeEnv = nodeEnv;
     if (nodeEnv === 'production') {
       const corsOrigin = this.configService.get<string>('app.corsOrigin') || '';
       this.allowedOrigins = corsOrigin
         ? corsOrigin.split(',').map((o) => o.trim())
         : [];
+      if (this.allowedOrigins.length === 0) {
+        this.logger.warn(
+          'CORS_ORIGIN is not configured in production. All WebSocket connections without a recognized origin will be rejected.',
+        );
+      }
     } else {
       this.allowedOrigins = [
         'http://localhost:3000',
@@ -54,7 +61,19 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     try {
       // Validate origin
       const origin = client.handshake.headers.origin;
-      if (
+      if (this.nodeEnv === 'production') {
+        // In production: reject if no allowed origins configured, or origin not in list
+        if (this.allowedOrigins.length === 0) {
+          this.logger.warn(`Rejected connection: no CORS origins configured in production (origin: ${origin})`);
+          client.disconnect(true);
+          return;
+        }
+        if (origin && !this.allowedOrigins.includes(origin)) {
+          this.logger.warn(`Rejected connection from unauthorized origin: ${origin}`);
+          client.disconnect(true);
+          return;
+        }
+      } else if (
         this.allowedOrigins.length > 0 &&
         origin &&
         !this.allowedOrigins.includes(origin)

@@ -337,8 +337,13 @@ export class TaskService {
 
     this.logger.log(`Task assigned to partner: ${task.title} -> ${partnerId}`);
 
-    // Send email notification to the partner (async, don't block response)
-    const partner = await this.partnerRepository.findOne({ where: { id: partnerId } });
+    // Send email notification to the partner (filtered by organization)
+    const organizationId = task.project?.organizationId;
+    const partnerWhere: Record<string, string> = { id: partnerId };
+    if (organizationId) {
+      partnerWhere.organizationId = organizationId;
+    }
+    const partner = await this.partnerRepository.findOne({ where: partnerWhere });
     if (partner) {
       this.emailService.sendTaskAssignmentEmail(task, partner).catch((error) => {
         this.logger.error(`Failed to send task assignment email to ${partner.email}`, error);

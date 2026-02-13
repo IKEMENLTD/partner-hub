@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '@/store';
+import { getRecoveryModeFromStorage, setRecoveryModeInStorage } from '@/store/authStore';
 import { useResetPassword } from '@/hooks';
 import { supabase } from '@/lib/supabase';
 import { Button, Input, Alert } from '@/components/common';
@@ -40,7 +41,7 @@ export function ResetPasswordPage() {
 
     const checkSession = async () => {
       // sessionStorageでリカバリーモードを確認（AuthListenerで設定される）
-      const isInRecoveryMode = localStorage.getItem('password_recovery_mode') === 'true';
+      const isInRecoveryMode = getRecoveryModeFromStorage();
 
       if (isInRecoveryMode) {
         // リカバリーモードが設定されている場合
@@ -72,7 +73,7 @@ export function ResetPasswordPage() {
 
         if (type === 'recovery' || accessToken) {
           setIsRecoveryMode(true);
-          localStorage.setItem('password_recovery_mode', 'true');
+          setRecoveryModeInStorage(true);
 
           // 少し待ってからセッションを確認
           setTimeout(async () => {

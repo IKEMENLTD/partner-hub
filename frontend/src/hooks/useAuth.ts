@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuthStore } from '@/store';
+import { getRecoveryModeFromStorage, setRecoveryModeInStorage } from '@/store/authStore';
 import { authService } from '@/services/authService';
 import { ApiError } from '@/services/api';
 import { queryClient } from '@/lib/queryClient';
@@ -120,9 +121,8 @@ export function useAuthListener() {
         if (!isMounted) return;
 
         // PASSWORD_RECOVERYイベントを検知したらフラグを設定
-        // localStorage を使用して全タブで共有する
         if (event === 'PASSWORD_RECOVERY') {
-          localStorage.setItem('password_recovery_mode', 'true');
+          setRecoveryModeInStorage(true);
           // リカバリーモード中はセッションを設定しない
           markInitialized();
           return;
@@ -130,11 +130,11 @@ export function useAuthListener() {
 
         // ログアウト時はリカバリーモードフラグをクリア
         if (event === 'SIGNED_OUT') {
-          localStorage.removeItem('password_recovery_mode');
+          setRecoveryModeInStorage(false);
         }
 
         // リカバリーモード中はセッションを設定しない（ただしログアウトは除く）
-        const isInRecoveryMode = localStorage.getItem('password_recovery_mode') === 'true';
+        const isInRecoveryMode = getRecoveryModeFromStorage();
         if (isInRecoveryMode && event !== 'SIGNED_OUT') {
           markInitialized();
           return;
@@ -190,7 +190,7 @@ export function useLogin() {
       }
 
       // ログイン前にリカバリーモードフラグをクリア
-      localStorage.removeItem('password_recovery_mode');
+      setRecoveryModeInStorage(false);
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -270,7 +270,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: async () => {
       // ログアウト前にリカバリーモードフラグをクリア
-      localStorage.removeItem('password_recovery_mode');
+      setRecoveryModeInStorage(false);
 
       if (!isSupabaseConfigured) {
         // Supabaseが設定されていなくてもローカル状態はクリア
@@ -341,7 +341,7 @@ export function useResetPassword() {
       if (error) throw error;
 
       // リカバリーモードフラグをクリア
-      localStorage.removeItem('password_recovery_mode');
+      setRecoveryModeInStorage(false);
 
       // パスワード更新後、セッションをクリアして再ログインを要求
       await supabase.auth.signOut();

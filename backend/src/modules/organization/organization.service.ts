@@ -142,7 +142,8 @@ export class OrganizationService {
 
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 72);
+    const invitationExpiryHours = this.configService.get<number>('INVITATION_EXPIRY_HOURS', 72);
+    expiresAt.setHours(expiresAt.getHours() + invitationExpiryHours);
 
     const invitation = this.invitationRepository.create({
       organizationId,
@@ -317,7 +318,8 @@ export class OrganizationService {
 
     // 期限を延長
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 72);
+    const invitationExpiryHours = this.configService.get<number>('INVITATION_EXPIRY_HOURS', 72);
+    expiresAt.setHours(expiresAt.getHours() + invitationExpiryHours);
     invitation.expiresAt = expiresAt;
     await this.invitationRepository.save(invitation);
 

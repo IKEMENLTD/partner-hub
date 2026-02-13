@@ -90,11 +90,15 @@ export class PartnerService {
     this.logger.log(`Partner created: ${partner.name} (${partner.id})`);
 
     // 報告用トークンを生成してメール送信（ログイン不要）
-    this.generateReportTokenAndSendEmail(partner).catch((error) => {
+    let emailSent = false;
+    try {
+      await this.generateReportTokenAndSendEmail(partner);
+      emailSent = true;
+    } catch (error) {
       this.logger.error(`Failed to send report URL email to ${partner.email}`, error);
-    });
+    }
 
-    return partner;
+    return Object.assign(partner, { emailSent });
   }
 
   /**
