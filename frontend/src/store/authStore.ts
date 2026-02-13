@@ -123,8 +123,6 @@ interface AuthActions {
   enterRecoveryMode: () => void;
   exitRecoveryMode: () => void;
 
-  // 複数タブ同期用
-  syncRecoveryModeFromStorage: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -232,34 +230,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     set({ isRecoveryMode: false });
   },
 
-  // ============================================
-  // 複数タブ同期
-  // ============================================
-  syncRecoveryModeFromStorage: () => {
-    const storedValue = getRecoveryModeFromStorage();
-    const { isRecoveryMode, session } = get();
-
-    if (storedValue !== isRecoveryMode) {
-      console.info(`[AUTH] Syncing recovery mode from storage: ${storedValue}`);
-      set({
-        isRecoveryMode: storedValue,
-        // リカバリーモードが解除された場合、セッションがあれば認証状態を更新
-        isAuthenticated: !storedValue && !!session,
-      });
-    }
-  },
 }));
-
-// ============================================
-// 複数タブ同期の初期化
-// ============================================
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (event) => {
-    if (event.key === RECOVERY_MODE_KEY) {
-      useAuthStore.getState().syncRecoveryModeFromStorage();
-    }
-  });
-}
 
 // ============================================
 // セレクター（パフォーマンス最適化用）
