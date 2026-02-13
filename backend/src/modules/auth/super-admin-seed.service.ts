@@ -53,7 +53,11 @@ export class SuperAdminSeedService implements OnModuleInit {
       }
 
       // Try to find existing Supabase auth user
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+      if (listError) {
+        this.logger.error(`Failed to list Supabase auth users: ${listError.message}`);
+        return;
+      }
       const existingAuthUser = existingUsers?.users?.find((u) => u.email === email);
 
       let userId: string;
