@@ -44,6 +44,8 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   text?: string;
+  /** ログ出力用の操作種別（例: 'reminder', 'escalation', 'report'） */
+  context?: string;
 }
 
 @Injectable()
@@ -219,7 +221,8 @@ export class EmailService {
       this.logger.log(`Email sent successfully: ${info.messageId} to ${recipients}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send email to ${recipients}: ${error.message}`);
+      const ctx = options.context ? ` [${options.context}]` : '';
+      this.logger.error(`Failed to send email${ctx} to ${recipients}: ${error.message}`);
       throw error;
     }
   }

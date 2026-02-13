@@ -11,7 +11,7 @@ import { Subtask } from './entities/subtask.entity';
 import { TaskComment } from './entities/task-comment.entity';
 import { CreateTaskDto, UpdateTaskDto, QueryTaskDto, BulkCreateTaskDto } from './dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
-import { TaskStatus } from './enums/task-status.enum';
+import { TaskStatus, TaskPriority } from './enums/task-status.enum';
 import { HealthScoreService } from '../project/services/health-score.service';
 import { EmailService } from '../notification/services/email.service';
 import { Partner } from '../partner/entities/partner.entity';
@@ -95,7 +95,7 @@ export class TaskService {
         title: item.title,
         projectId: dto.projectId,
         status: TaskStatus.TODO,
-        priority: 'medium' as any,
+        priority: TaskPriority.MEDIUM,
         createdById,
       }),
     );

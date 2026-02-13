@@ -73,7 +73,7 @@ export class GeneratedReport {
   @Column({ name: 'report_config_id', nullable: true })
   reportConfigId: string;
 
-  @ManyToOne(() => ReportConfig, { onDelete: 'SET NULL' })
+  @ManyToOne(() => ReportConfig, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'report_config_id' })
   reportConfig: ReportConfig;
 

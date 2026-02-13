@@ -7,6 +7,16 @@ import { EmailService } from '../notification/services/email.service';
 import { ReportConfig, ReportPeriod, ReportStatus } from './entities/report-config.entity';
 import { GeneratedReport, GeneratedReportStatus } from './entities/generated-report.entity';
 
+/** HTML特殊文字をエスケープ（XSS対策） */
+function escapeHtml(str: string | number): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 @Injectable()
 export class ReportSchedulerService implements OnModuleInit {
   private readonly logger = new Logger(ReportSchedulerService.name);
@@ -132,6 +142,7 @@ export class ReportSchedulerService implements OnModuleInit {
       subject: `【Partner Hub】${report.title}`,
       html,
       text,
+      context: 'scheduled-report',
     });
   }
 
@@ -242,11 +253,11 @@ export class ReportSchedulerService implements OnModuleInit {
             .map(
               (p) => `
             <tr>
-              <td>${p.partnerName}</td>
-              <td>${p.activeProjects}</td>
-              <td>${p.tasksCompleted}/${p.tasksTotal}</td>
-              <td>${p.onTimeDeliveryRate}%</td>
-              <td>${p.rating.toFixed(1)}</td>
+              <td>${escapeHtml(p.partnerName)}</td>
+              <td>${escapeHtml(p.activeProjects)}</td>
+              <td>${escapeHtml(p.tasksCompleted)}/${escapeHtml(p.tasksTotal)}</td>
+              <td>${escapeHtml(p.onTimeDeliveryRate)}%</td>
+              <td>${escapeHtml(p.rating.toFixed(1))}</td>
             </tr>
           `,
             )
@@ -264,7 +275,7 @@ export class ReportSchedulerService implements OnModuleInit {
         reportData.highlights.keyAchievements.length > 0
           ? `
         <h4>主な成果</h4>
-        ${reportData.highlights.keyAchievements.map((a) => `<div class="highlight">✓ ${a}</div>`).join('')}
+        ${reportData.highlights.keyAchievements.map((a) => `<div class="highlight">✓ ${escapeHtml(a)}</div>`).join('')}
       `
           : ''
       }
@@ -272,7 +283,7 @@ export class ReportSchedulerService implements OnModuleInit {
         reportData.highlights.issues.length > 0
           ? `
         <h4>注意事項</h4>
-        ${reportData.highlights.issues.map((i) => `<div class="issue">⚠ ${i}</div>`).join('')}
+        ${reportData.highlights.issues.map((i) => `<div class="issue">⚠ ${escapeHtml(i)}</div>`).join('')}
       `
           : ''
       }
@@ -295,9 +306,9 @@ export class ReportSchedulerService implements OnModuleInit {
                 (d) => `
               <tr>
                 <td>${d.type === 'project' ? '案件' : 'タスク'}</td>
-                <td>${d.name}</td>
-                <td>${d.dueDate}</td>
-                <td>${d.daysRemaining}日</td>
+                <td>${escapeHtml(d.name)}</td>
+                <td>${escapeHtml(d.dueDate)}</td>
+                <td>${escapeHtml(d.daysRemaining)}日</td>
               </tr>
             `,
               )
