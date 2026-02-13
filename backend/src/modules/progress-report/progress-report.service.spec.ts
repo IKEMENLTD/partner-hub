@@ -53,8 +53,8 @@ describe('ProgressReportService', () => {
     progress: 0,
   };
 
-  const futureDate = new Date('2026-02-13T00:00:00Z');
-  const pastDate = new Date('2026-02-10T00:00:00Z');
+  const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+  const pastDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
 
   const mockProgressReport: Partial<ProgressReport> = {
     id: 'report-1',
