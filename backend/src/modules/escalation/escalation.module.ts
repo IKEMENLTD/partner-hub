@@ -10,13 +10,14 @@ import { Task } from '../task/entities/task.entity';
 import { Project } from '../project/entities/project.entity';
 import { ProjectStakeholder } from '../project/entities/project-stakeholder.entity';
 import { Partner } from '../partner/entities/partner.entity';
+import { Organization } from '../organization/entities/organization.entity';
 import { ReminderModule } from '../reminder/reminder.module';
 import { NotificationModule } from '../notification/notification.module';
 import { SystemSettingsModule } from '../system-settings/system-settings.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([EscalationRule, EscalationLog, Task, Project, ProjectStakeholder, Partner]),
+    TypeOrmModule.forFeature([EscalationRule, EscalationLog, Task, Project, ProjectStakeholder, Partner, Organization]),
     ReminderModule,
     NotificationModule,
     SystemSettingsModule,

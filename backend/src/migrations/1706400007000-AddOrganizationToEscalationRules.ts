@@ -29,6 +29,30 @@ export class AddOrganizationToEscalationRules1706400007000 implements MigrationI
         AND er."organization_id" IS NULL
     `);
 
+    // For orphaned rules (seed data: no project_id, no created_by),
+    // duplicate them into each existing organization so they aren't lost
+    await queryRunner.query(`
+      INSERT INTO "escalation_rules" (
+        "id", "name", "description", "trigger_type", "trigger_value",
+        "action", "status", "priority", "organization_id", "created_at", "updated_at"
+      )
+      SELECT
+        uuid_generate_v4(),
+        er."name", er."description", er."trigger_type", er."trigger_value",
+        er."action", er."status", er."priority", o."id", er."created_at", now()
+      FROM "escalation_rules" er
+      CROSS JOIN "organizations" o
+      WHERE er."organization_id" IS NULL
+        AND er."project_id" IS NULL
+    `);
+
+    // Remove the original orphaned rules (now duplicated into each org)
+    await queryRunner.query(`
+      DELETE FROM "escalation_rules"
+      WHERE "organization_id" IS NULL
+        AND "project_id" IS NULL
+    `);
+
     // Add foreign key constraint
     await queryRunner.query(`
       ALTER TABLE "escalation_rules"
