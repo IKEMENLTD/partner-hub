@@ -128,6 +128,15 @@ export class FileStorageService {
     // Determine category if not provided
     const fileCategory = category || this.determineCategory(extension);
 
+    // Validate projectId is UUID format (path traversal prevention)
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(projectId)) {
+      throw new BusinessException('FILE_005', {
+        message: '不正なプロジェクトIDです',
+        userMessage: 'ファイルのアップロードに失敗しました',
+      });
+    }
+
     // Generate unique file name
     const uniqueFileName = `${uuidv4()}.${extension}`;
     const storagePath = `${projectId}/${uniqueFileName}`;

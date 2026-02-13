@@ -56,6 +56,9 @@ export class PaginatedResponseDto<T> {
   };
 
   constructor(data: T[], total: number, page: number, limit: number) {
+    // ランタイムガード: DTOバリデーションを通らない内部呼び出しへの防御
+    limit = Math.max(1, limit);
+    page = Math.max(1, page);
     const offset = (page - 1) * limit;
     this.data = data;
     this.pagination = {

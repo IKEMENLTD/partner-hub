@@ -157,13 +157,17 @@ export class OrganizationService {
     });
     await this.invitationRepository.save(invitation);
 
-    // メール送信（非同期）
-    this.sendInvitationEmail(invitation, org).catch((err) => {
-      this.logger.error(`Failed to send invitation email: ${err.message}`);
-    });
+    // メール送信
+    let emailSent = false;
+    try {
+      await this.sendInvitationEmail(invitation, org);
+      emailSent = true;
+    } catch (err) {
+      this.logger.error(`Failed to send invitation email to ${dto.email}: ${err.message}`);
+    }
 
-    this.logger.log(`Invitation created: ${dto.email} -> org ${org.name}`);
-    return invitation;
+    this.logger.log(`Invitation created: ${dto.email} -> org ${org.name} (emailSent=${emailSent})`);
+    return Object.assign(invitation, { emailSent });
   }
 
   /**

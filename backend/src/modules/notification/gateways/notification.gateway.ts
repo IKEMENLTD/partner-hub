@@ -27,6 +27,10 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   private userSockets: Map<string, Set<string>> = new Map();
   private allowedOrigins: string[] = [];
   private nodeEnv: string;
+  /** クライアントごとのメッセージ頻度制限 (clientId → { count, resetAt }) */
+  private rateLimits: Map<string, { count: number; resetAt: number }> = new Map();
+  private readonly RATE_LIMIT_MAX = 20;
+  private readonly RATE_LIMIT_WINDOW_MS = 60_000; // 1分
 
   @WebSocketServer()
   server: Server;
@@ -123,10 +127,37 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
         }
       }
     });
+    // Clean up rate limit entry
+    this.rateLimits.delete(client.id);
+  }
+
+  /**
+   * クライアントのメッセージ頻度を確認（レート制限）
+   */
+  private checkRateLimit(client: Socket): boolean {
+    const now = Date.now();
+    const entry = this.rateLimits.get(client.id);
+
+    if (!entry || now > entry.resetAt) {
+      this.rateLimits.set(client.id, { count: 1, resetAt: now + this.RATE_LIMIT_WINDOW_MS });
+      return true;
+    }
+
+    entry.count++;
+    if (entry.count > this.RATE_LIMIT_MAX) {
+      this.logger.warn(`Rate limit exceeded for client ${client.id}`);
+      return false;
+    }
+
+    return true;
   }
 
   @SubscribeMessage('subscribe')
   handleSubscribe(client: Socket, userId: string) {
+    if (!this.checkRateLimit(client)) {
+      return { success: false, error: 'Rate limit exceeded' };
+    }
+
     const authenticatedUserId = (client as any).userId;
 
     if (!authenticatedUserId) {
@@ -158,6 +189,10 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
 
   @SubscribeMessage('unsubscribe')
   handleUnsubscribe(client: Socket, userId: string) {
+    if (!this.checkRateLimit(client)) {
+      return { success: false, error: 'Rate limit exceeded' };
+    }
+
     if (!userId) return;
 
     client.leave(`user:${userId}`);
