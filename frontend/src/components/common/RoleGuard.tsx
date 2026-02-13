@@ -10,6 +10,11 @@ interface RoleGuardProps {
 export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
   const user = useAuthStore((state) => state.user);
 
+  // Super admin bypasses all role checks
+  if (user?.isSuperAdmin) {
+    return <>{children}</>;
+  }
+
   if (!user?.role || !allowedRoles.includes(user.role as UserRole)) {
     return <Navigate to="/today" replace />;
   }

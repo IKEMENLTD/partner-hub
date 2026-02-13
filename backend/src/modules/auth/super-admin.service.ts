@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { UserProfile } from './entities/user-profile.entity';
 import { Organization } from '../organization/entities/organization.entity';
 import { OrganizationMember } from '../organization/entities/organization-member.entity';
@@ -71,7 +71,7 @@ export class SuperAdminService {
     // Get organization names for each user
     const orgIds = [...new Set(profiles.filter((p) => p.organizationId).map((p) => p.organizationId!))];
     const organizations = orgIds.length > 0
-      ? await this.organizationRepository.findByIds(orgIds)
+      ? await this.organizationRepository.find({ where: { id: In(orgIds) } })
       : [];
     const orgMap = new Map(organizations.map((o) => [o.id, o.name]));
 
@@ -143,7 +143,7 @@ export class SuperAdminService {
     await this.profileRepository
       .createQueryBuilder()
       .update(UserProfile)
-      .set({ organizationId: undefined as any })
+      .set({ organizationId: () => 'NULL' })
       .where('organization_id = :orgId', { orgId })
       .execute();
 
