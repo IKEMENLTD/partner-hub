@@ -43,6 +43,11 @@ export class RolesGuard implements CanActivate {
       });
     }
 
+    // Super admin bypasses all role checks
+    if (user.isSuperAdmin === true) {
+      return true;
+    }
+
     // If no specific roles required, allow any authenticated user
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;

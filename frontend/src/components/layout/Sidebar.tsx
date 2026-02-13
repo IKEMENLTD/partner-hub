@@ -17,6 +17,7 @@ import {
   FileSearch,
   Layers,
   UserPlus,
+  Shield,
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 
@@ -47,6 +48,7 @@ export function Sidebar() {
   const { sidebarOpen, toggleSidebar, isMobile, mobileMenuOpen, closeMobileMenu } = useUIStore();
 
   const isAdmin = user?.role === 'admin';
+  const isSuperAdmin = user?.isSuperAdmin === true;
 
   const handleNavClick = () => {
     if (isMobile) {
@@ -130,7 +132,7 @@ export function Sidebar() {
           </ul>
 
           {/* ADMIN のみ */}
-          {isAdmin && (
+          {(isAdmin || isSuperAdmin) && (
             <>
               <div className="my-4 border-t border-gray-200 dark:border-slate-700" />
               <ul className="space-y-1">
@@ -157,6 +159,33 @@ export function Sidebar() {
                     </li>
                   );
                 })}
+              </ul>
+            </>
+          )}
+
+          {/* スーパーアドミン のみ */}
+          {isSuperAdmin && (
+            <>
+              <div className="my-4 border-t border-gray-200 dark:border-slate-700" />
+              <ul className="space-y-1">
+                <li>
+                  <Link
+                    to="/super-admin"
+                    onClick={handleNavClick}
+                    className={clsx(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      location.pathname.startsWith('/super-admin')
+                        ? 'bg-red-50 dark:bg-red-900/20 text-red-700'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                    )}
+                    title={!isMobile && !sidebarOpen ? 'システム管理' : undefined}
+                  >
+                    <Shield
+                      className={clsx('h-5 w-5 flex-shrink-0', location.pathname.startsWith('/super-admin') && 'text-red-600')}
+                    />
+                    {(isMobile || sidebarOpen) && <span>システム管理</span>}
+                  </Link>
+                </li>
               </ul>
             </>
           )}

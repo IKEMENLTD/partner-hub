@@ -6,6 +6,7 @@ export interface User {
   lastName: string;
   role: UserRole;
   isActive: boolean;
+  isSuperAdmin?: boolean;
   avatarUrl?: string;
   organizationId?: string;
   departmentId?: string;

@@ -223,12 +223,24 @@ export function RegisterPage() {
                 <Building2 className="h-5 w-5 flex-shrink-0" />
                 <span><strong>{inviteOrgName}</strong> への招待を受けて登録します</span>
               </div>
-            ) : (
-              <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
-                <Shield className="h-5 w-5 flex-shrink-0" />
-                <span>新しい組織の<strong>管理者</strong>として登録されます。登録後、メンバーを招待できます。</span>
+            ) : !inviteToken && !inviteLoading ? (
+              <div className="mt-6 rounded-lg bg-gray-50 p-6 text-center">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+                  <Shield className="h-6 w-6 text-amber-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800">招待が必要です</h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  登録には管理者からの招待が必要です。<br />
+                  招待リンクを受け取ってからアクセスしてください。
+                </p>
+                <Link
+                  to="/login"
+                  className="mt-4 inline-block rounded-lg bg-primary-600 px-6 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  ログインページへ
+                </Link>
               </div>
-            )}
+            ) : null}
           </div>
 
           {registerSuccess && (
@@ -262,7 +274,6 @@ export function RegisterPage() {
           {inviteError && (
             <Alert variant="warning" className="mt-6">
               {inviteError}
-              <span className="block mt-1 text-sm">通常の管理者登録として続行できます。</span>
             </Alert>
           )}
 
@@ -272,7 +283,7 @@ export function RegisterPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5" style={{ display: registerSuccess ? 'none' : undefined }}>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5" style={{ display: (registerSuccess || (!inviteToken && !inviteLoading) || inviteError) ? 'none' : undefined }}>
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="姓"
@@ -377,15 +388,17 @@ export function RegisterPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-600">
-            既にアカウントをお持ちですか？{' '}
-            <Link
-              to="/login"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              ログイン
-            </Link>
-          </p>
+          {(inviteToken || inviteLoading) && (
+            <p className="mt-6 text-center text-sm text-gray-600">
+              既にアカウントをお持ちですか？{' '}
+              <Link
+                to="/login"
+                className="font-medium text-primary-600 hover:text-primary-500"
+              >
+                ログイン
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </div>

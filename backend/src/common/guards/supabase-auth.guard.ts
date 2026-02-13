@@ -120,7 +120,10 @@ export class SupabaseAuthGuard implements CanActivate {
           const firstName = user.user_metadata?.first_name || userProfile?.firstName || '';
           const lastName = user.user_metadata?.last_name || userProfile?.lastName || '';
 
-          if (inviteToken) {
+          // スーパーアドミンは組織なしで通過OK
+          if (userProfile?.isSuperAdmin) {
+            this.logger.log(`Super admin without organization, allowing access: ${user.email}`);
+          } else if (inviteToken) {
             // 招待トークン経由の登録: 招待を検証して組織に追加
             this.logger.log(`User with invite token: ${user.email}`);
             const orgService = this.getOrganizationService();
@@ -150,57 +153,20 @@ export class SupabaseAuthGuard implements CanActivate {
               await orgService.acceptInvitation(inviteToken, user.id);
               this.logger.log(`User ${user.email} joined org via invitation (role: ${validation.invitation.role})`);
             } else {
-              // 無効な招待トークン: 新規組織作成にフォールバック
-              this.logger.warn(`Invalid invite token for ${user.email}, creating new organization`);
-              if (userProfile) {
-                userProfile.role = UserRole.ADMIN;
-                userProfile.isActive = true;
-                if (firstName) userProfile.firstName = firstName;
-                if (lastName) userProfile.lastName = lastName;
-                await this.userProfileRepository.save(userProfile);
-              } else {
-                userProfile = this.userProfileRepository.create({
-                  id: user.id,
-                  email: user.email || '',
-                  firstName,
-                  lastName,
-                  role: UserRole.ADMIN,
-                  isActive: true,
-                });
-                await this.userProfileRepository.save(userProfile);
-              }
-              const orgService2 = this.getOrganizationService();
-              await orgService2.createOrganizationForNewUser(user.id, user.email || '', firstName, lastName);
-              const refetchedFallback = await this.userProfileRepository.findOne({ where: { id: user.id } });
-              if (refetchedFallback) userProfile = refetchedFallback;
+              // 無効な招待トークン: 登録をブロック
+              this.logger.warn(`Invalid invite token for ${user.email}, blocking registration`);
+              throw new AuthenticationException('AUTH_004', {
+                message: 'Invalid invitation token',
+                userMessage: '招待リンクが無効または期限切れです。管理者に新しい招待を依頼してください。',
+              });
             }
           } else {
-            // 招待なし: 新規組織の管理者として作成
-            this.logger.log(`Setting up organization admin for user: ${user.email}`);
-            if (userProfile) {
-              userProfile.role = UserRole.ADMIN;
-              userProfile.isActive = true;
-              if (firstName) userProfile.firstName = firstName;
-              if (lastName) userProfile.lastName = lastName;
-              await this.userProfileRepository.save(userProfile);
-            } else {
-              userProfile = this.userProfileRepository.create({
-                id: user.id,
-                email: user.email || '',
-                firstName,
-                lastName,
-                role: UserRole.ADMIN,
-                isActive: true,
-              });
-              await this.userProfileRepository.save(userProfile);
-            }
-
-            // 新規組織を作成
-            const orgService = this.getOrganizationService();
-            await orgService.createOrganizationForNewUser(user.id, user.email || '', firstName, lastName);
-            const refetched = await this.userProfileRepository.findOne({ where: { id: user.id } });
-            if (refetched) userProfile = refetched;
-            this.logger.log(`New organization created for admin user: ${user.email}`);
+            // 招待なし: 登録をブロック
+            this.logger.warn(`Registration without invitation blocked for: ${user.email}`);
+            throw new AuthenticationException('AUTH_004', {
+              message: 'Registration requires invitation',
+              userMessage: '登録には招待が必要です。管理者から招待リンクを受け取ってください。',
+            });
           }
 
         // キャッシュを無効化して最新状態を反映

@@ -35,6 +35,9 @@ export class UserProfile {
   @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, any>;
 
+  @Column({ name: 'is_super_admin', default: false })
+  isSuperAdmin: boolean;
+
   @Column({ name: 'organization_id', type: 'uuid', nullable: true })
   organizationId?: string;
 

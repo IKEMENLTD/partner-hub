@@ -153,6 +153,7 @@ export class AuthService {
       lastName: profile.lastName,
       role: profile.role,
       isActive: profile.isActive,
+      isSuperAdmin: profile.isSuperAdmin,
       avatarUrl: profile.avatarUrl,
       organizationId: profile.organizationId,
       createdAt: profile.createdAt,

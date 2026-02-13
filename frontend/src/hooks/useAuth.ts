@@ -60,6 +60,7 @@ async function fetchAndSetUserProfile(
         lastName: profile.lastName || '',
         role: profile.role || 'member',
         isActive: profile.isActive ?? true,
+        isSuperAdmin: profile.isSuperAdmin ?? false,
         avatarUrl: profile.avatarUrl,
         organizationId: profile.organizationId,
         createdAt: profile.createdAt || fallbackUser.createdAt,
