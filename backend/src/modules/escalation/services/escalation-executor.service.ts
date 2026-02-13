@@ -38,7 +38,7 @@ export class EscalationExecutorService {
     private systemSettingsService: SystemSettingsService,
   ) {}
 
-  async checkAndTriggerEscalation(task: Task): Promise<EscalationLog[]> {
+  async checkAndTriggerEscalation(task: Task, organizationId?: string): Promise<EscalationLog[]> {
     const logs: EscalationLog[] = [];
 
     if (!task.dueDate) {
@@ -58,8 +58,9 @@ export class EscalationExecutorService {
 
     const daysDiff = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    // Get applicable rules
-    const rules = await this.ruleService.getActiveRulesForTask(task.projectId);
+    // Get applicable rules filtered by organization
+    const orgId = organizationId || task.project?.organizationId;
+    const rules = await this.ruleService.getActiveRulesForTask(task.projectId, orgId);
 
     for (const rule of rules) {
       const shouldTrigger = this.evaluateRule(rule, daysDiff, task);

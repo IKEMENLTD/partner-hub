@@ -72,10 +72,10 @@ describe('EscalationController', () => {
       const rule = { id: 'rule-1', ...createDto };
       mockEscalationService.createRule.mockResolvedValue(rule);
 
-      const result = await controller.createRule(createDto as any, 'user-1');
+      const result = await controller.createRule(createDto as any, 'user-1', 'org-1');
 
       expect(result).toEqual(rule);
-      expect(mockEscalationService.createRule).toHaveBeenCalledWith(createDto, 'user-1');
+      expect(mockEscalationService.createRule).toHaveBeenCalledWith(createDto, 'user-1', 'org-1');
     });
   });
 

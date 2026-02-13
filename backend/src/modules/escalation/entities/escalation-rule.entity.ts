@@ -12,6 +12,7 @@ import {
   EscalationTriggerType,
   EscalationRuleStatus,
 } from '../enums/escalation.enum';
+import { Organization } from '../../organization/entities/organization.entity';
 import { Project } from '../../project/entities/project.entity';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
 
@@ -22,6 +23,13 @@ export class EscalationRule {
 
   @Column()
   name: string;
+
+  @Column({ name: 'organization_id', nullable: true })
+  organizationId: string;
+
+  @ManyToOne(() => Organization, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'organization_id' })
+  organization: Organization;
 
   @Column({ type: 'text', nullable: true })
   description: string;

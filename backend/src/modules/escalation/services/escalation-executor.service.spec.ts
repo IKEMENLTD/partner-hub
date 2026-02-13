@@ -549,16 +549,16 @@ describe('EscalationExecutorService', () => {
       expect(logs).toHaveLength(2);
     });
 
-    it('should call getActiveRulesForTask with task projectId', async () => {
+    it('should call getActiveRulesForTask with task projectId and organizationId', async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const task = createMockTask({ projectId: 'proj-xyz', dueDate: today });
 
       ruleService.getActiveRulesForTask.mockResolvedValue([]);
 
-      await service.checkAndTriggerEscalation(task);
+      await service.checkAndTriggerEscalation(task, 'org-1');
 
-      expect(ruleService.getActiveRulesForTask).toHaveBeenCalledWith('proj-xyz');
+      expect(ruleService.getActiveRulesForTask).toHaveBeenCalledWith('proj-xyz', 'org-1');
     });
   });
 

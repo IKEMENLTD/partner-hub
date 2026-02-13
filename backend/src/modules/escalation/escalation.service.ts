@@ -46,8 +46,9 @@ export class EscalationService {
   async createRule(
     createRuleDto: CreateEscalationRuleDto,
     createdById: string,
+    organizationId?: string,
   ): Promise<EscalationRule> {
-    return this.ruleService.createRule(createRuleDto, createdById);
+    return this.ruleService.createRule(createRuleDto, createdById, organizationId);
   }
 
   async findAllRules(
@@ -85,8 +86,8 @@ export class EscalationService {
   // Core Escalation Logic (Delegated)
   // ========================
 
-  async checkAndTriggerEscalation(task: Task): Promise<EscalationLog[]> {
-    return this.executorService.checkAndTriggerEscalation(task);
+  async checkAndTriggerEscalation(task: Task, organizationId?: string): Promise<EscalationLog[]> {
+    return this.executorService.checkAndTriggerEscalation(task, organizationId);
   }
 
   async executeEscalation(rule: EscalationRule, task: Task): Promise<EscalationLog> {
@@ -153,7 +154,8 @@ export class EscalationService {
     const allLogs: EscalationLog[] = [];
 
     for (const task of tasks) {
-      const logs = await this.executorService.checkAndTriggerEscalation(task);
+      const taskOrgId = organizationId || task.project?.organizationId;
+      const logs = await this.executorService.checkAndTriggerEscalation(task, taskOrgId);
       allLogs.push(...logs);
     }
 

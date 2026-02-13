@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository } from 'typeorm';
 import { EscalationRule } from '../entities/escalation-rule.entity';
 import { EscalationLog } from '../entities/escalation-log.entity';
 import {
@@ -27,16 +27,18 @@ export class EscalationRuleService {
   async createRule(
     createRuleDto: CreateEscalationRuleDto,
     createdById: string,
+    organizationId?: string,
   ): Promise<EscalationRule> {
     const rule = this.escalationRuleRepository.create({
       ...createRuleDto,
       createdById,
+      organizationId,
     });
 
     await this.escalationRuleRepository.save(rule);
     this.logger.log(`Escalation rule created: ${rule.name} (${rule.id})`);
 
-    return this.findRuleById(rule.id);
+    return this.findRuleById(rule.id, organizationId);
   }
 
   async findAllRules(
@@ -61,11 +63,7 @@ export class EscalationRuleService {
       .leftJoinAndSelect('rule.createdBy', 'createdBy');
 
     if (organizationId) {
-      // Filter rules: either linked to a project in this org, or global rules (no project)
-      queryBuilder.andWhere(
-        '(project.organizationId = :organizationId OR rule.projectId IS NULL)',
-        { organizationId },
-      );
+      queryBuilder.andWhere('rule.organizationId = :organizationId', { organizationId });
     }
 
     if (projectId) {
@@ -105,10 +103,7 @@ export class EscalationRuleService {
       .where('rule.id = :id', { id });
 
     if (organizationId) {
-      queryBuilder.andWhere(
-        '(project.organizationId = :organizationId OR rule.projectId IS NULL)',
-        { organizationId },
-      );
+      queryBuilder.andWhere('rule.organizationId = :organizationId', { organizationId });
     }
 
     const rule = await queryBuilder.getOne();
@@ -140,14 +135,17 @@ export class EscalationRuleService {
     this.logger.log(`Escalation rule deleted: ${rule.name} (${id})`);
   }
 
-  async getActiveRulesForTask(projectId?: string): Promise<EscalationRule[]> {
-    return this.escalationRuleRepository.find({
-      where: [
-        { projectId, status: EscalationRuleStatus.ACTIVE },
-        { projectId: IsNull(), status: EscalationRuleStatus.ACTIVE },
-      ],
-      order: { priority: 'ASC' },
-    });
+  async getActiveRulesForTask(projectId?: string, organizationId?: string): Promise<EscalationRule[]> {
+    const queryBuilder = this.escalationRuleRepository
+      .createQueryBuilder('rule')
+      .where('rule.status = :status', { status: EscalationRuleStatus.ACTIVE })
+      .andWhere('(rule.projectId = :projectId OR rule.projectId IS NULL)', { projectId });
+
+    if (organizationId) {
+      queryBuilder.andWhere('rule.organizationId = :organizationId', { organizationId });
+    }
+
+    return queryBuilder.orderBy('rule.priority', 'ASC').getMany();
   }
 
   // Log Operations

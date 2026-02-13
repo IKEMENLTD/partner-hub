@@ -68,8 +68,9 @@ export class EscalationController {
   async createRule(
     @Body() createRuleDto: CreateEscalationRuleDto,
     @CurrentUser('id') userId: string,
+    @CurrentUser('organizationId') organizationId: string,
   ) {
-    return this.escalationService.createRule(createRuleDto, userId);
+    return this.escalationService.createRule(createRuleDto, userId, organizationId);
   }
 
   @Patch('rules/:id')
