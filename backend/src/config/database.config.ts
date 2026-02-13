@@ -48,13 +48,13 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
     );
   }
 
-  // 本番環境でのセキュリティチェック
+  // 本番環境でのセキュリティ情報
   if (process.env.NODE_ENV === 'production') {
-    // 本番環境でSSL検証無効化を試みた場合は警告を出力（設定は無視される）
-    if (process.env.DB_SSL_REJECT_UNAUTHORIZED?.toLowerCase() === 'false') {
-      console.error(
-        '[SECURITY] DB_SSL_REJECT_UNAUTHORIZED=false is ignored in production. ' +
-          'SSL certificate verification is enforced for security.',
+    const sslConfig = getSslConfig();
+    if (typeof sslConfig === 'object' && !sslConfig.rejectUnauthorized) {
+      console.info(
+        '[AUDIT] SSL certificate verification is disabled (Supabase compatible). ' +
+          'Connection is still encrypted via TLS. Set DB_SSL_CA_CERT to enable full verification.',
       );
     }
   }

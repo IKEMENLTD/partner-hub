@@ -82,9 +82,11 @@ export function getSslConfig(): boolean | { rejectUnauthorized: boolean; ca?: st
     return { rejectUnauthorized: true };
   }
 
-  // 本番環境: SSL有効、デフォルトで証明書検証を強制
+  // 本番環境: SSL有効（通信は常に暗号化）
+  // Supabaseは自己署名証明書チェーンを使用するため、デフォルトは検証スキップ
+  // カスタムCA証明書が設定されている場合は自動的に厳密検証に切り替わる
   if (nodeEnv === 'production') {
-    const rejectUnauthorized = parseEnvBoolean(dbSslRejectUnauthorized, true);
+    const rejectUnauthorized = parseEnvBoolean(dbSslRejectUnauthorized, false);
 
     if (!rejectUnauthorized) {
       console.warn(
