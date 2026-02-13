@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, extractData } from './api';
 
 export interface InvitationValidation {
   valid: boolean;
@@ -17,50 +17,56 @@ export interface OrganizationInvitation {
   createdAt: string;
 }
 
-export interface InvitationListResponse {
-  success: boolean;
-  data: {
-    data: OrganizationInvitation[];
-    pagination: {
-      total: number;
-      limit: number;
-      offset: number;
-      hasMore: boolean;
-    };
+export interface InvitationListData {
+  data: OrganizationInvitation[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
   };
 }
 
 export const organizationService = {
-  validateInvitation: (token: string) =>
-    api.get<{ success: boolean; data: InvitationValidation }>(
+  validateInvitation: async (token: string) => {
+    const response = await api.get<{ success: boolean; data: InvitationValidation }>(
       `/organizations/invitations/validate/${token}`,
       true,
-    ),
+    );
+    return extractData(response);
+  },
 
-  listInvitations: (orgId: string, params?: { status?: string; page?: number; limit?: number }) => {
+  listInvitations: async (orgId: string, params?: { status?: string; page?: number; limit?: number }) => {
     const searchParams = new URLSearchParams();
     if (params?.status) searchParams.set('status', params.status);
     if (params?.page) searchParams.set('page', String(params.page));
     if (params?.limit) searchParams.set('limit', String(params.limit));
     const qs = searchParams.toString();
-    return api.get<InvitationListResponse>(
+    const response = await api.get<{ success: boolean; data: InvitationListData }>(
       `/organizations/${orgId}/invitations${qs ? `?${qs}` : ''}`,
     );
+    return extractData(response);
   },
 
-  createInvitation: (orgId: string, data: { email: string; role?: string; message?: string }) =>
-    api.post<{ success: boolean; data: OrganizationInvitation }>(
+  createInvitation: async (orgId: string, data: { email: string; role?: string; message?: string }) => {
+    const response = await api.post<{ success: boolean; data: OrganizationInvitation }>(
       `/organizations/${orgId}/invitations`,
       data,
-    ),
+    );
+    return extractData(response);
+  },
 
-  cancelInvitation: (id: string) =>
-    api.post<{ success: boolean; message: string }>(
+  cancelInvitation: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: { message: string } }>(
       `/organizations/invitations/${id}/cancel`,
-    ),
+    );
+    return extractData(response);
+  },
 
-  resendInvitation: (id: string) =>
-    api.post<{ success: boolean; message: string }>(
+  resendInvitation: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: { message: string } }>(
       `/organizations/invitations/${id}/resend`,
-    ),
+    );
+    return extractData(response);
+  },
 };

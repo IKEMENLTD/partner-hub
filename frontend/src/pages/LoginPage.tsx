@@ -214,16 +214,6 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-600">
-            アカウントをお持ちでないですか？{' '}
-            <Link
-              to="/register"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              新規登録
-            </Link>
-          </p>
-
           {/* Demo credentials hint - only show in development */}
           {import.meta.env.MODE === 'development' && (
             <div className="mt-8 rounded-lg bg-gray-50 p-4">

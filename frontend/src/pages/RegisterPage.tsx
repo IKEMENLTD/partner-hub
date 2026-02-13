@@ -42,8 +42,7 @@ export function RegisterPage() {
     setInviteLoading(true);
     organizationService
       .validateInvitation(inviteToken)
-      .then((res) => {
-        const data = res.data || res;
+      .then((data) => {
         if (data.valid) {
           setInviteValid(true);
           setInviteOrgName(data.organizationName || '');

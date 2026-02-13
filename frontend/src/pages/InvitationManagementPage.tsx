@@ -47,8 +47,8 @@ export function InvitationManagementPage() {
     },
   });
 
-  const invitations: OrganizationInvitation[] = data?.data?.data || [];
-  const total = data?.data?.pagination?.total || 0;
+  const invitations: OrganizationInvitation[] = data?.data || [];
+  const total = data?.pagination?.total || 0;
   const totalPages = Math.ceil(total / 10);
 
   if (!orgId) {
