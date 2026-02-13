@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, extractData } from './api';
 
 export interface SuperAdminStats {
   totalOrganizations: number;
@@ -31,24 +31,38 @@ export interface SuperAdminUser {
 }
 
 export const superAdminService = {
-  getStats: () =>
-    api.get<SuperAdminStats>('/super-admin/stats'),
+  getStats: async () => {
+    const response = await api.get<{ success: boolean; data: SuperAdminStats }>('/super-admin/stats');
+    return extractData(response);
+  },
 
-  getOrganizations: () =>
-    api.get<SuperAdminOrganization[]>('/super-admin/organizations'),
+  getOrganizations: async () => {
+    const response = await api.get<{ success: boolean; data: SuperAdminOrganization[] }>('/super-admin/organizations');
+    return extractData(response);
+  },
 
-  deleteOrganization: (id: string) =>
-    api.delete<{ message: string }>(`/super-admin/organizations/${id}`),
+  deleteOrganization: async (id: string) => {
+    const response = await api.delete<{ success: boolean; data: { message: string } }>(`/super-admin/organizations/${id}`);
+    return extractData(response);
+  },
 
-  getUsers: () =>
-    api.get<SuperAdminUser[]>('/super-admin/users'),
+  getUsers: async () => {
+    const response = await api.get<{ success: boolean; data: SuperAdminUser[] }>('/super-admin/users');
+    return extractData(response);
+  },
 
-  deleteUser: (id: string) =>
-    api.delete<{ message: string }>(`/super-admin/users/${id}`),
+  deleteUser: async (id: string) => {
+    const response = await api.delete<{ success: boolean; data: { message: string } }>(`/super-admin/users/${id}`);
+    return extractData(response);
+  },
 
-  setSuperAdmin: (id: string) =>
-    api.post<{ message: string }>(`/super-admin/users/${id}/set-super-admin`),
+  setSuperAdmin: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: { message: string } }>(`/super-admin/users/${id}/set-super-admin`);
+    return extractData(response);
+  },
 
-  revokeSuperAdmin: (id: string) =>
-    api.post<{ message: string }>(`/super-admin/users/${id}/revoke-super-admin`),
+  revokeSuperAdmin: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: { message: string } }>(`/super-admin/users/${id}/revoke-super-admin`);
+    return extractData(response);
+  },
 };
