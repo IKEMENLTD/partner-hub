@@ -177,7 +177,7 @@ export class PartnerContactSetupService {
   /**
    * セットアップメールを再送信
    */
-  async resendSetupEmail(partnerId: string): Promise<void> {
+  async resendSetupEmail(partnerId: string): Promise<{ emailSent: boolean }> {
     return this.sendContactSetupEmail(partnerId);
   }
 
