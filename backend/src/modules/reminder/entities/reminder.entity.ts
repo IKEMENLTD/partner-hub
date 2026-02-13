@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { ReminderType, ReminderStatus, ReminderChannel } from '../enums/reminder-type.enum';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
@@ -13,6 +14,8 @@ import { Task } from '../../task/entities/task.entity';
 import { Project } from '../../project/entities/project.entity';
 
 @Entity('reminders')
+@Index('IDX_reminders_scheduled_status', ['scheduledAt', 'status'])
+@Index('IDX_reminders_user_id', ['userId'])
 export class Reminder {
   @PrimaryGeneratedColumn('uuid')
   id: string;

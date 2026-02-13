@@ -8,12 +8,14 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { PartnerStatus, PartnerType } from '../enums/partner-status.enum';
 import { PreferredChannel } from '../enums/preferred-channel.enum';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
 
 @Entity('partners')
+@Index('IDX_partners_organization_id', ['organizationId'])
 export class Partner {
   @PrimaryGeneratedColumn('uuid')
   id: string;

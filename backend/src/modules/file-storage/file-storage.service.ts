@@ -17,6 +17,35 @@ const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', '
 const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif'];
 
+/**
+ * Extension to allowed MIME types mapping
+ * Used to verify that the file content matches the declared extension
+ */
+const EXTENSION_MIME_MAP: Record<string, string[]> = {
+  pdf: ['application/pdf'],
+  doc: ['application/msword'],
+  docx: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+  xls: ['application/vnd.ms-excel'],
+  xlsx: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+  png: ['image/png'],
+  jpg: ['image/jpeg'],
+  jpeg: ['image/jpeg'],
+  gif: ['image/gif'],
+};
+
+/**
+ * Magic bytes signatures for file type verification
+ * Checks the actual file content to prevent extension spoofing
+ */
+const MAGIC_BYTES: Array<{ extensions: string[]; bytes: number[]; offset?: number }> = [
+  { extensions: ['pdf'], bytes: [0x25, 0x50, 0x44, 0x46] }, // %PDF
+  { extensions: ['png'], bytes: [0x89, 0x50, 0x4e, 0x47] }, // .PNG
+  { extensions: ['jpg', 'jpeg'], bytes: [0xff, 0xd8, 0xff] }, // JPEG SOI
+  { extensions: ['gif'], bytes: [0x47, 0x49, 0x46, 0x38] }, // GIF8
+  { extensions: ['docx', 'xlsx'], bytes: [0x50, 0x4b, 0x03, 0x04] }, // PK (ZIP)
+  { extensions: ['doc', 'xls'], bytes: [0xd0, 0xcf, 0x11, 0xe0] }, // OLE2 compound
+];
+
 @Injectable()
 export class FileStorageService {
   private readonly logger = new Logger(FileStorageService.name);
@@ -89,6 +118,12 @@ export class FileStorageService {
         details: { allowedExtensions: ALLOWED_EXTENSIONS, actualExtension: extension },
       });
     }
+
+    // Validate MIME type matches extension
+    this.validateMimeType(extension, file.mimetype);
+
+    // Validate file content via magic bytes
+    this.validateMagicBytes(extension, file.buffer);
 
     // Determine category if not provided
     const fileCategory = category || this.determineCategory(extension);
@@ -263,6 +298,58 @@ export class FileStorageService {
   private getFileExtension(filename: string): string {
     const parts = filename.split('.');
     return parts.length > 1 ? parts[parts.length - 1] : '';
+  }
+
+  /**
+   * Validate MIME type matches the expected types for the extension
+   */
+  private validateMimeType(extension: string, mimetype: string): void {
+    const allowedMimes = EXTENSION_MIME_MAP[extension];
+    if (allowedMimes && !allowedMimes.includes(mimetype)) {
+      this.logger.warn(
+        `MIME type mismatch: extension="${extension}", mimetype="${mimetype}", expected=${allowedMimes.join('|')}`,
+      );
+      throw new BusinessException('FILE_005', {
+        message: 'ファイルの内容が拡張子と一致しません',
+        userMessage: 'ファイルの内容が拡張子と一致しません。正しいファイルを選択してください。',
+        details: { extension, mimetype },
+      });
+    }
+  }
+
+  /**
+   * Validate file content via magic bytes to prevent extension spoofing
+   */
+  private validateMagicBytes(extension: string, buffer: Buffer): void {
+    if (!buffer || buffer.length < 4) {
+      throw new BusinessException('FILE_006', {
+        message: 'ファイルが空または破損しています',
+        userMessage: 'ファイルが空または破損しています。',
+      });
+    }
+
+    const signature = MAGIC_BYTES.find((sig) => sig.extensions.includes(extension));
+    if (!signature) {
+      return; // No magic bytes check available for this extension
+    }
+
+    const offset = signature.offset || 0;
+    const matches = signature.bytes.every(
+      (byte, i) => buffer.length > offset + i && buffer[offset + i] === byte,
+    );
+
+    if (!matches) {
+      this.logger.warn(
+        `Magic bytes mismatch for extension="${extension}": ` +
+          `expected=[${signature.bytes.map((b) => '0x' + b.toString(16)).join(',')}], ` +
+          `actual=[${Array.from(buffer.slice(offset, offset + signature.bytes.length)).map((b) => '0x' + b.toString(16)).join(',')}]`,
+      );
+      throw new BusinessException('FILE_005', {
+        message: 'ファイルの内容が拡張子と一致しません',
+        userMessage: 'ファイルの内容が拡張子と一致しません。正しいファイルを選択してください。',
+        details: { extension },
+      });
+    }
   }
 
   /**

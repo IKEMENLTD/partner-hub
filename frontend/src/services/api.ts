@@ -50,6 +50,32 @@ function getAccessToken(): string | null {
   return session?.access_token ?? null;
 }
 
+// Token refresh mutex: prevents multiple concurrent refresh calls
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  // If a refresh is already in progress, wait for it
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  // Start a new refresh and share the Promise
+  refreshPromise = (async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+      if (error || !session) {
+        return null;
+      }
+      return session.access_token;
+    } finally {
+      // Clear the shared Promise so future refreshes can proceed
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -89,16 +115,16 @@ async function request<T>(
 
     // Handle 401 Unauthorized
     if (response.status === 401) {
-      // Supabaseのセッション更新を試みる
-      const { data: { session }, error } = await supabase.auth.refreshSession();
+      // Use mutex to prevent concurrent refresh calls
+      const newToken = await refreshAccessToken();
 
-      if (error || !session) {
+      if (!newToken) {
         logout();
         throw new ApiError(401, '認証の有効期限が切れました。再度ログインしてください。', 'SESSION_EXPIRED');
       }
 
       // 新しいトークンでリトライ
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${session.access_token}`;
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
       const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,

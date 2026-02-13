@@ -236,220 +236,236 @@ export class ReminderService {
   // Scheduled task to process pending reminders
   @Cron(CronExpression.EVERY_MINUTE)
   async processReminders(): Promise<void> {
-    const pendingReminders = await this.getPendingReminders();
+    try {
+      const pendingReminders = await this.getPendingReminders();
 
-    for (const reminder of pendingReminders) {
-      try {
-        await this.sendReminder(reminder);
-        reminder.status = ReminderStatus.SENT;
-        reminder.sentAt = new Date();
-        this.logger.log(`Reminder sent: ${reminder.title} to user ${reminder.userId}`);
-      } catch (error) {
-        reminder.retryCount += 1;
-        reminder.errorMessage = error.message;
+      for (const reminder of pendingReminders) {
+        try {
+          await this.sendReminder(reminder);
+          reminder.status = ReminderStatus.SENT;
+          reminder.sentAt = new Date();
+          this.logger.log(`Reminder sent: ${reminder.title} to user ${reminder.userId}`);
+        } catch (error) {
+          reminder.retryCount += 1;
+          reminder.errorMessage = error.message;
 
-        if (reminder.retryCount >= 3) {
-          reminder.status = ReminderStatus.FAILED;
-          this.logger.error(`Reminder failed after 3 retries: ${reminder.id}`);
+          if (reminder.retryCount >= 3) {
+            reminder.status = ReminderStatus.FAILED;
+            this.logger.error(`Reminder failed after 3 retries: ${reminder.id}`);
+          }
         }
-      }
 
-      await this.reminderRepository.save(reminder);
+        await this.reminderRepository.save(reminder);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to process reminders: ${error.message}`, error.stack);
     }
   }
 
   // Scheduled task to create task due reminders
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async createTaskDueReminders(): Promise<void> {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(23, 59, 59, 999);
+    try {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(23, 59, 59, 999);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const tasksDueTomorrow = await this.taskRepository
-      .createQueryBuilder('task')
-      .leftJoinAndSelect('task.assignee', 'assignee')
-      .where('task.dueDate BETWEEN :today AND :tomorrow', { today, tomorrow })
-      .andWhere('task.status NOT IN (:...completedStatuses)', {
-        completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
-      .getMany();
+      const tasksDueTomorrow = await this.taskRepository
+        .createQueryBuilder('task')
+        .leftJoinAndSelect('task.assignee', 'assignee')
+        .where('task.dueDate BETWEEN :today AND :tomorrow', { today, tomorrow })
+        .andWhere('task.status NOT IN (:...completedStatuses)', {
+          completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
+        })
+        .getMany();
 
-    // Filter tasks with assignees
-    const tasksWithAssignees = tasksDueTomorrow.filter((task) => task.assigneeId);
-    if (tasksWithAssignees.length === 0) {
-      return;
-    }
+      // Filter tasks with assignees
+      const tasksWithAssignees = tasksDueTomorrow.filter((task) => task.assigneeId);
+      if (tasksWithAssignees.length === 0) {
+        return;
+      }
 
-    const taskIds = tasksWithAssignees.map((t) => t.id);
+      const taskIds = tasksWithAssignees.map((t) => t.id);
 
-    // Batch query: Get all existing pending reminders for these tasks in one query
-    const existingReminders = await this.reminderRepository.find({
-      where: {
-        taskId: In(taskIds),
+      // Batch query: Get all existing pending reminders for these tasks in one query
+      const existingReminders = await this.reminderRepository.find({
+        where: {
+          taskId: In(taskIds),
+          type: ReminderType.TASK_DUE,
+          status: ReminderStatus.PENDING,
+        },
+        select: ['taskId'],
+      });
+
+      const existingTaskIds = new Set(existingReminders.map((r) => r.taskId));
+
+      // Filter tasks that don't have existing reminders
+      const tasksNeedingReminders = tasksWithAssignees.filter(
+        (task) => !existingTaskIds.has(task.id),
+      );
+
+      if (tasksNeedingReminders.length === 0) {
+        return;
+      }
+
+      // Batch insert: Create all reminders at once
+      const remindersToCreate = tasksNeedingReminders.map((task) => ({
+        title: `期限間近: ${task.title}`,
+        message: `タスク「${task.title}」の期限が明日です。`,
         type: ReminderType.TASK_DUE,
-        status: ReminderStatus.PENDING,
-      },
-      select: ['taskId'],
-    });
+        channel: ReminderChannel.IN_APP,
+        userId: task.assigneeId,
+        taskId: task.id,
+        projectId: task.projectId,
+        scheduledAt: new Date(),
+      }));
 
-    const existingTaskIds = new Set(existingReminders.map((r) => r.taskId));
-
-    // Filter tasks that don't have existing reminders
-    const tasksNeedingReminders = tasksWithAssignees.filter(
-      (task) => !existingTaskIds.has(task.id),
-    );
-
-    if (tasksNeedingReminders.length === 0) {
-      return;
+      await this.reminderRepository.save(remindersToCreate);
+      this.logger.log(`Task due reminders created for ${remindersToCreate.length} tasks`);
+    } catch (error) {
+      this.logger.error(`Failed to create task due reminders: ${error.message}`, error.stack);
     }
-
-    // Batch insert: Create all reminders at once
-    const remindersToCreate = tasksNeedingReminders.map((task) => ({
-      title: `期限間近: ${task.title}`,
-      message: `タスク「${task.title}」の期限が明日です。`,
-      type: ReminderType.TASK_DUE,
-      channel: ReminderChannel.IN_APP,
-      userId: task.assigneeId,
-      taskId: task.id,
-      projectId: task.projectId,
-      scheduledAt: new Date(),
-    }));
-
-    await this.reminderRepository.save(remindersToCreate);
-    this.logger.log(`Task due reminders created for ${remindersToCreate.length} tasks`);
   }
 
   // Scheduled task to create overdue task reminders
   @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async createOverdueTaskReminders(): Promise<void> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const overdueTasks = await this.taskRepository
-      .createQueryBuilder('task')
-      .leftJoinAndSelect('task.assignee', 'assignee')
-      .where('task.dueDate < :today', { today })
-      .andWhere('task.status NOT IN (:...completedStatuses)', {
-        completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
-      })
-      .getMany();
+      const overdueTasks = await this.taskRepository
+        .createQueryBuilder('task')
+        .leftJoinAndSelect('task.assignee', 'assignee')
+        .where('task.dueDate < :today', { today })
+        .andWhere('task.status NOT IN (:...completedStatuses)', {
+          completedStatuses: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],
+        })
+        .getMany();
 
-    // Filter tasks with assignees
-    const tasksWithAssignees = overdueTasks.filter((task) => task.assigneeId);
-    if (tasksWithAssignees.length === 0) {
-      return;
-    }
+      // Filter tasks with assignees
+      const tasksWithAssignees = overdueTasks.filter((task) => task.assigneeId);
+      if (tasksWithAssignees.length === 0) {
+        return;
+      }
 
-    const taskIds = tasksWithAssignees.map((t) => t.id);
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+      const taskIds = tasksWithAssignees.map((t) => t.id);
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
 
-    // Batch query: Get all existing overdue reminders created before today for these tasks
-    const existingReminders = await this.reminderRepository.find({
-      where: {
-        taskId: In(taskIds),
+      // Batch query: Get all existing overdue reminders created before today for these tasks
+      const existingReminders = await this.reminderRepository.find({
+        where: {
+          taskId: In(taskIds),
+          type: ReminderType.TASK_OVERDUE,
+          createdAt: LessThanOrEqual(todayStart),
+        },
+        select: ['taskId'],
+      });
+
+      const existingTaskIds = new Set(existingReminders.map((r) => r.taskId));
+
+      // Filter tasks that don't have existing reminders
+      const tasksNeedingReminders = tasksWithAssignees.filter(
+        (task) => !existingTaskIds.has(task.id),
+      );
+
+      if (tasksNeedingReminders.length === 0) {
+        return;
+      }
+
+      // Batch insert: Create all reminders at once
+      const remindersToCreate = tasksNeedingReminders.map((task) => ({
+        title: `期限超過: ${task.title}`,
+        message: `タスク「${task.title}」が期限を過ぎています。状況を更新してください。`,
         type: ReminderType.TASK_OVERDUE,
-        createdAt: LessThanOrEqual(todayStart),
-      },
-      select: ['taskId'],
-    });
+        channel: ReminderChannel.IN_APP,
+        userId: task.assigneeId,
+        taskId: task.id,
+        projectId: task.projectId,
+        scheduledAt: new Date(),
+      }));
 
-    const existingTaskIds = new Set(existingReminders.map((r) => r.taskId));
-
-    // Filter tasks that don't have existing reminders
-    const tasksNeedingReminders = tasksWithAssignees.filter(
-      (task) => !existingTaskIds.has(task.id),
-    );
-
-    if (tasksNeedingReminders.length === 0) {
-      return;
+      await this.reminderRepository.save(remindersToCreate);
+      this.logger.log(`Overdue task reminders created for ${remindersToCreate.length} tasks`);
+    } catch (error) {
+      this.logger.error(`Failed to create overdue task reminders: ${error.message}`, error.stack);
     }
-
-    // Batch insert: Create all reminders at once
-    const remindersToCreate = tasksNeedingReminders.map((task) => ({
-      title: `期限超過: ${task.title}`,
-      message: `タスク「${task.title}」が期限を過ぎています。状況を更新してください。`,
-      type: ReminderType.TASK_OVERDUE,
-      channel: ReminderChannel.IN_APP,
-      userId: task.assigneeId,
-      taskId: task.id,
-      projectId: task.projectId,
-      scheduledAt: new Date(),
-    }));
-
-    await this.reminderRepository.save(remindersToCreate);
-    this.logger.log(`Overdue task reminders created for ${remindersToCreate.length} tasks`);
   }
 
   // Scheduled task to create project deadline reminders
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async createProjectDeadlineReminders(): Promise<void> {
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
+    try {
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const projectsDeadlineApproaching = await this.projectRepository
-      .createQueryBuilder('project')
-      .leftJoinAndSelect('project.manager', 'manager')
-      .where('project.endDate BETWEEN :today AND :nextWeek', { today, nextWeek })
-      .andWhere('project.status NOT IN (:...completedStatuses)', {
-        completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
-      })
-      .getMany();
+      const projectsDeadlineApproaching = await this.projectRepository
+        .createQueryBuilder('project')
+        .leftJoinAndSelect('project.manager', 'manager')
+        .where('project.endDate BETWEEN :today AND :nextWeek', { today, nextWeek })
+        .andWhere('project.status NOT IN (:...completedStatuses)', {
+          completedStatuses: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
+        })
+        .getMany();
 
-    // Filter projects with managers
-    const projectsWithManagers = projectsDeadlineApproaching.filter((p) => p.managerId);
-    if (projectsWithManagers.length === 0) {
-      return;
-    }
+      // Filter projects with managers
+      const projectsWithManagers = projectsDeadlineApproaching.filter((p) => p.managerId);
+      if (projectsWithManagers.length === 0) {
+        return;
+      }
 
-    const projectIds = projectsWithManagers.map((p) => p.id);
+      const projectIds = projectsWithManagers.map((p) => p.id);
 
-    // Batch query: Get all existing pending reminders for these projects
-    const existingReminders = await this.reminderRepository.find({
-      where: {
-        projectId: In(projectIds),
-        type: ReminderType.PROJECT_DEADLINE,
-        status: ReminderStatus.PENDING,
-      },
-      select: ['projectId'],
-    });
+      // Batch query: Get all existing pending reminders for these projects
+      const existingReminders = await this.reminderRepository.find({
+        where: {
+          projectId: In(projectIds),
+          type: ReminderType.PROJECT_DEADLINE,
+          status: ReminderStatus.PENDING,
+        },
+        select: ['projectId'],
+      });
 
-    const existingProjectIds = new Set(existingReminders.map((r) => r.projectId));
+      const existingProjectIds = new Set(existingReminders.map((r) => r.projectId));
 
-    // Filter projects that don't have existing reminders
-    const projectsNeedingReminders = projectsWithManagers.filter(
-      (project) => !existingProjectIds.has(project.id),
-    );
-
-    if (projectsNeedingReminders.length === 0) {
-      return;
-    }
-
-    // Batch insert: Create all reminders at once
-    const remindersToCreate = projectsNeedingReminders.map((project) => {
-      const daysUntilDeadline = Math.ceil(
-        (new Date(project.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+      // Filter projects that don't have existing reminders
+      const projectsNeedingReminders = projectsWithManagers.filter(
+        (project) => !existingProjectIds.has(project.id),
       );
 
-      return {
-        title: `案件期限間近: ${project.name}`,
-        message: `案件「${project.name}」の期限まであと${daysUntilDeadline}日です。`,
-        type: ReminderType.PROJECT_DEADLINE,
-        channel: ReminderChannel.IN_APP,
-        userId: project.managerId,
-        projectId: project.id,
-        scheduledAt: new Date(),
-      };
-    });
+      if (projectsNeedingReminders.length === 0) {
+        return;
+      }
 
-    await this.reminderRepository.save(remindersToCreate);
-    this.logger.log(`Project deadline reminders created for ${remindersToCreate.length} projects`);
+      // Batch insert: Create all reminders at once
+      const remindersToCreate = projectsNeedingReminders.map((project) => {
+        const daysUntilDeadline = Math.ceil(
+          (new Date(project.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        return {
+          title: `案件期限間近: ${project.name}`,
+          message: `案件「${project.name}」の期限まであと${daysUntilDeadline}日です。`,
+          type: ReminderType.PROJECT_DEADLINE,
+          channel: ReminderChannel.IN_APP,
+          userId: project.managerId,
+          projectId: project.id,
+          scheduledAt: new Date(),
+        };
+      });
+
+      await this.reminderRepository.save(remindersToCreate);
+      this.logger.log(`Project deadline reminders created for ${remindersToCreate.length} projects`);
+    } catch (error) {
+      this.logger.error(`Failed to create project deadline reminders: ${error.message}`, error.stack);
+    }
   }
 
   private async sendReminder(reminder: Reminder): Promise<void> {
@@ -487,80 +503,84 @@ export class ReminderService {
    */
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async createStagnantProjectReminders(): Promise<void> {
-    const stagnantDays = 7; // Configurable: days without updates
-    const stagnantDate = new Date();
-    stagnantDate.setDate(stagnantDate.getDate() - stagnantDays);
+    try {
+      const stagnantDays = 7; // Configurable: days without updates
+      const stagnantDate = new Date();
+      stagnantDate.setDate(stagnantDate.getDate() - stagnantDays);
 
-    const stagnantProjects = await this.projectRepository
-      .createQueryBuilder('project')
-      .leftJoinAndSelect('project.manager', 'manager')
-      .leftJoinAndSelect('project.owner', 'owner')
-      .where('project.updatedAt < :stagnantDate', { stagnantDate })
-      .andWhere('project.status NOT IN (:...completedStatuses)', {
-        completedStatuses: [
-          ProjectStatus.COMPLETED,
-          ProjectStatus.CANCELLED,
-          ProjectStatus.ON_HOLD,
-        ],
-      })
-      .getMany();
+      const stagnantProjects = await this.projectRepository
+        .createQueryBuilder('project')
+        .leftJoinAndSelect('project.manager', 'manager')
+        .leftJoinAndSelect('project.owner', 'owner')
+        .where('project.updatedAt < :stagnantDate', { stagnantDate })
+        .andWhere('project.status NOT IN (:...completedStatuses)', {
+          completedStatuses: [
+            ProjectStatus.COMPLETED,
+            ProjectStatus.CANCELLED,
+            ProjectStatus.ON_HOLD,
+          ],
+        })
+        .getMany();
 
-    this.logger.log(`Found ${stagnantProjects.length} stagnant projects`);
+      this.logger.log(`Found ${stagnantProjects.length} stagnant projects`);
 
-    // Filter projects with recipients (manager or owner)
-    const projectsWithRecipients = stagnantProjects.filter(
-      (p) => p.managerId || p.ownerId,
-    );
-
-    if (projectsWithRecipients.length === 0) {
-      return;
-    }
-
-    const projectIds = projectsWithRecipients.map((p) => p.id);
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-
-    // Batch query: Get all existing stagnant reminders sent before this week
-    const existingReminders = await this.reminderRepository.find({
-      where: {
-        projectId: In(projectIds),
-        type: ReminderType.PROJECT_STAGNANT,
-        createdAt: LessThanOrEqual(weekAgo),
-      },
-      select: ['projectId'],
-    });
-
-    const existingProjectIds = new Set(existingReminders.map((r) => r.projectId));
-
-    // Filter projects that don't have existing reminders
-    const projectsNeedingReminders = projectsWithRecipients.filter(
-      (project) => !existingProjectIds.has(project.id),
-    );
-
-    if (projectsNeedingReminders.length === 0) {
-      return;
-    }
-
-    // Batch insert: Create all reminders at once
-    const remindersToCreate = projectsNeedingReminders.map((project) => {
-      const recipientId = project.managerId || project.ownerId;
-      const daysSinceUpdate = Math.floor(
-        (Date.now() - new Date(project.updatedAt).getTime()) / (1000 * 60 * 60 * 24),
+      // Filter projects with recipients (manager or owner)
+      const projectsWithRecipients = stagnantProjects.filter(
+        (p) => p.managerId || p.ownerId,
       );
 
-      return {
-        title: `案件が停滞しています: ${project.name}`,
-        message: `案件「${project.name}」は${daysSinceUpdate}日間更新がありません。状況を確認してください。`,
-        type: ReminderType.PROJECT_STAGNANT,
-        channel: ReminderChannel.IN_APP,
-        userId: recipientId,
-        projectId: project.id,
-        scheduledAt: new Date(),
-      };
-    });
+      if (projectsWithRecipients.length === 0) {
+        return;
+      }
 
-    await this.reminderRepository.save(remindersToCreate);
-    this.logger.log(`Stagnant project reminders created for ${remindersToCreate.length} projects`);
+      const projectIds = projectsWithRecipients.map((p) => p.id);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+
+      // Batch query: Get all existing stagnant reminders sent before this week
+      const existingReminders = await this.reminderRepository.find({
+        where: {
+          projectId: In(projectIds),
+          type: ReminderType.PROJECT_STAGNANT,
+          createdAt: LessThanOrEqual(weekAgo),
+        },
+        select: ['projectId'],
+      });
+
+      const existingProjectIds = new Set(existingReminders.map((r) => r.projectId));
+
+      // Filter projects that don't have existing reminders
+      const projectsNeedingReminders = projectsWithRecipients.filter(
+        (project) => !existingProjectIds.has(project.id),
+      );
+
+      if (projectsNeedingReminders.length === 0) {
+        return;
+      }
+
+      // Batch insert: Create all reminders at once
+      const remindersToCreate = projectsNeedingReminders.map((project) => {
+        const recipientId = project.managerId || project.ownerId;
+        const daysSinceUpdate = Math.floor(
+          (Date.now() - new Date(project.updatedAt).getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        return {
+          title: `案件が停滞しています: ${project.name}`,
+          message: `案件「${project.name}」は${daysSinceUpdate}日間更新がありません。状況を確認してください。`,
+          type: ReminderType.PROJECT_STAGNANT,
+          channel: ReminderChannel.IN_APP,
+          userId: recipientId,
+          projectId: project.id,
+          scheduledAt: new Date(),
+        };
+      });
+
+      await this.reminderRepository.save(remindersToCreate);
+      this.logger.log(`Stagnant project reminders created for ${remindersToCreate.length} projects`);
+    } catch (error) {
+      this.logger.error(`Failed to create stagnant project reminders: ${error.message}`, error.stack);
+    }
   }
 
   async getReminderStatistics(organizationId?: string): Promise<{

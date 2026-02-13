@@ -279,13 +279,17 @@ export class HealthScoreService {
    */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async scheduledHealthScoreUpdate(): Promise<void> {
-    this.logger.log('Running scheduled health score update...');
-    const result = await this.updateAllProjectHealthScores();
-    this.logger.log(
-      `Scheduled health score update completed: ${result.updatedProjects}/${result.totalProjects} projects updated`,
-    );
-    if (result.errors.length > 0) {
-      this.logger.warn(`Errors during update: ${result.errors.length}`);
+    try {
+      this.logger.log('Running scheduled health score update...');
+      const result = await this.updateAllProjectHealthScores();
+      this.logger.log(
+        `Scheduled health score update completed: ${result.updatedProjects}/${result.totalProjects} projects updated`,
+      );
+      if (result.errors.length > 0) {
+        this.logger.warn(`Errors during update: ${result.errors.length}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to run scheduled health score update: ${error.message}`, error.stack);
     }
   }
 

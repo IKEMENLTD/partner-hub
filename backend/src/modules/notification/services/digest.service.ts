@@ -57,57 +57,61 @@ export class DigestService {
    */
   @Cron('0 7 * * *', { timeZone: 'Asia/Tokyo' })
   async sendDailyDigest(): Promise<void> {
-    this.logger.log('Starting daily digest email distribution...');
+    try {
+      this.logger.log('Starting daily digest email distribution...');
 
-    const users = await this.userRepository.find({
-      where: { isActive: true },
-    });
+      const users = await this.userRepository.find({
+        where: { isActive: true },
+      });
 
-    // Filter users with digest enabled
-    const usersWithDigestEnabled = users.filter(
-      (user) => user.metadata?.digestEnabled !== false,
-    );
-
-    if (usersWithDigestEnabled.length === 0) {
-      this.logger.log('No users with digest enabled');
-      return;
-    }
-
-    let sentCount = 0;
-    let skippedCount = users.length - usersWithDigestEnabled.length;
-
-    // Process users in batches to avoid overwhelming the system
-    const batchSize = 50;
-    for (let i = 0; i < usersWithDigestEnabled.length; i += batchSize) {
-      const userBatch = usersWithDigestEnabled.slice(i, i + batchSize);
-
-      await Promise.all(
-        userBatch.map(async (user) => {
-          try {
-            const digest = await this.generateUserDigest(user.id, user.organizationId);
-
-            // Only send if there are tasks or notifications
-            if (
-              digest.todayTasks.length > 0 ||
-              digest.overdueTasks.length > 0 ||
-              digest.unreadNotifications.length > 0
-            ) {
-              await this.sendDigestEmail(user, digest);
-              sentCount++;
-            } else {
-              skippedCount++;
-            }
-          } catch (error) {
-            this.logger.error(
-              `Failed to send digest to ${user.email}: ${error.message}`,
-              error.stack,
-            );
-          }
-        }),
+      // Filter users with digest enabled
+      const usersWithDigestEnabled = users.filter(
+        (user) => user.metadata?.digestEnabled !== false,
       );
-    }
 
-    this.logger.log(`Daily digest complete: ${sentCount} sent, ${skippedCount} skipped`);
+      if (usersWithDigestEnabled.length === 0) {
+        this.logger.log('No users with digest enabled');
+        return;
+      }
+
+      let sentCount = 0;
+      let skippedCount = users.length - usersWithDigestEnabled.length;
+
+      // Process users in batches to avoid overwhelming the system
+      const batchSize = 50;
+      for (let i = 0; i < usersWithDigestEnabled.length; i += batchSize) {
+        const userBatch = usersWithDigestEnabled.slice(i, i + batchSize);
+
+        await Promise.all(
+          userBatch.map(async (user) => {
+            try {
+              const digest = await this.generateUserDigest(user.id, user.organizationId);
+
+              // Only send if there are tasks or notifications
+              if (
+                digest.todayTasks.length > 0 ||
+                digest.overdueTasks.length > 0 ||
+                digest.unreadNotifications.length > 0
+              ) {
+                await this.sendDigestEmail(user, digest);
+                sentCount++;
+              } else {
+                skippedCount++;
+              }
+            } catch (error) {
+              this.logger.error(
+                `Failed to send digest to ${user.email}: ${error.message}`,
+                error.stack,
+              );
+            }
+          }),
+        );
+      }
+
+      this.logger.log(`Daily digest complete: ${sentCount} sent, ${skippedCount} skipped`);
+    } catch (error) {
+      this.logger.error(`Failed to run daily digest: ${error.message}`, error.stack);
+    }
   }
 
   /**

@@ -44,27 +44,31 @@ export class ReportReminderService {
    */
   @Cron(CronExpression.EVERY_HOUR)
   async processScheduledRequests(): Promise<void> {
-    this.logger.log('Processing scheduled report requests...');
+    try {
+      this.logger.log('Processing scheduled report requests...');
 
-    const now = new Date();
+      const now = new Date();
 
-    // Find active schedules that are due
-    const dueSchedules = await this.scheduleRepository.find({
-      where: {
-        isActive: true,
-        nextSendAt: LessThan(now),
-      },
-      relations: ['partner'],
-    });
+      // Find active schedules that are due
+      const dueSchedules = await this.scheduleRepository.find({
+        where: {
+          isActive: true,
+          nextSendAt: LessThan(now),
+        },
+        relations: ['partner'],
+      });
 
-    this.logger.log(`Found ${dueSchedules.length} due schedules`);
+      this.logger.log(`Found ${dueSchedules.length} due schedules`);
 
-    for (const schedule of dueSchedules) {
-      try {
-        await this.processSchedule(schedule);
-      } catch (error) {
-        this.logger.error(`Failed to process schedule ${schedule.id}:`, error);
+      for (const schedule of dueSchedules) {
+        try {
+          await this.processSchedule(schedule);
+        } catch (error) {
+          this.logger.error(`Failed to process schedule ${schedule.id}:`, error);
+        }
       }
+    } catch (error) {
+      this.logger.error(`Failed to process scheduled requests: ${error.message}`, error.stack);
     }
   }
 
@@ -73,27 +77,31 @@ export class ReportReminderService {
    */
   @Cron('0 */4 * * *') // Every 4 hours
   async processReminders(): Promise<void> {
-    this.logger.log('Processing report reminders...');
+    try {
+      this.logger.log('Processing report reminders...');
 
-    const now = new Date();
+      const now = new Date();
 
-    // Find pending requests that are overdue
-    const overdueRequests = await this.requestRepository.find({
-      where: {
-        status: RequestStatus.PENDING,
-        deadlineAt: LessThan(now),
-      },
-      relations: ['partner', 'project'],
-    });
+      // Find pending requests that are overdue
+      const overdueRequests = await this.requestRepository.find({
+        where: {
+          status: RequestStatus.PENDING,
+          deadlineAt: LessThan(now),
+        },
+        relations: ['partner', 'project'],
+      });
 
-    this.logger.log(`Found ${overdueRequests.length} overdue requests`);
+      this.logger.log(`Found ${overdueRequests.length} overdue requests`);
 
-    for (const request of overdueRequests) {
-      try {
-        await this.processReminder(request);
-      } catch (error) {
-        this.logger.error(`Failed to process reminder for request ${request.id}:`, error);
+      for (const request of overdueRequests) {
+        try {
+          await this.processReminder(request);
+        } catch (error) {
+          this.logger.error(`Failed to process reminder for request ${request.id}:`, error);
+        }
       }
+    } catch (error) {
+      this.logger.error(`Failed to process report reminders: ${error.message}`, error.stack);
     }
   }
 

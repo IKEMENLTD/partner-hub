@@ -66,7 +66,7 @@ function loadAndValidateCaCert(certPathOrContent: string): string {
  * SSL設定を環境に応じて生成する
  *
  * セキュリティ方針:
- * - production: 必ずSSL有効化。CA証明書設定時は厳密検証
+ * - production: 必ずSSL有効化。デフォルトで証明書検証を強制（DB_SSL_REJECT_UNAUTHORIZED=falseで無効化可能だが非推奨）
  * - development: SSL有効だが、DB_SSL_REJECT_UNAUTHORIZED=falseで検証スキップ可能
  * - test: ALLOW_INSECURE_TEST_DB=trueの場合のみSSL無効化可能
  * - 未設定: 安全側に倒し、SSLを有効化して警告出力
@@ -82,10 +82,19 @@ export function getSslConfig(): boolean | { rejectUnauthorized: boolean; ca?: st
     return { rejectUnauthorized: true };
   }
 
-  // 本番環境: SSL有効（Supabaseの証明書チェーン対応）
+  // 本番環境: SSL有効、デフォルトで証明書検証を強制
   if (nodeEnv === 'production') {
+    const rejectUnauthorized = parseEnvBoolean(dbSslRejectUnauthorized, true);
+
+    if (!rejectUnauthorized) {
+      console.warn(
+        '[SECURITY WARNING] SSL certificate verification is disabled in production. ' +
+          'Set DB_SSL_CA_CERT to provide a custom CA certificate instead of disabling verification.',
+      );
+    }
+
     const sslConfig: { rejectUnauthorized: boolean; ca?: string } = {
-      rejectUnauthorized: false,
+      rejectUnauthorized,
     };
 
     // カスタムCA証明書が設定されている場合は厳密検証

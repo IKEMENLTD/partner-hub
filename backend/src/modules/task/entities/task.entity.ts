@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { TaskStatus, TaskPriority, TaskType } from '../enums/task-status.enum';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
@@ -18,6 +19,11 @@ import { Subtask } from './subtask.entity';
 import { TaskComment } from './task-comment.entity';
 
 @Entity('tasks')
+@Index('IDX_tasks_project_id', ['projectId'])
+@Index('IDX_tasks_assignee_id', ['assigneeId'])
+@Index('IDX_tasks_due_date', ['dueDate'])
+@Index('IDX_tasks_status', ['status'])
+@Index('IDX_tasks_project_status', ['projectId', 'status'])
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -331,16 +331,20 @@ export class OrganizationService {
    */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async cleanupExpiredInvitations(): Promise<void> {
-    const result = await this.invitationRepository
-      .createQueryBuilder()
-      .update(OrganizationInvitation)
-      .set({ status: InvitationStatus.EXPIRED })
-      .where('status = :status', { status: InvitationStatus.PENDING })
-      .andWhere('expires_at < :now', { now: new Date() })
-      .execute();
+    try {
+      const result = await this.invitationRepository
+        .createQueryBuilder()
+        .update(OrganizationInvitation)
+        .set({ status: InvitationStatus.EXPIRED })
+        .where('status = :status', { status: InvitationStatus.PENDING })
+        .andWhere('expires_at < :now', { now: new Date() })
+        .execute();
 
-    if (result.affected && result.affected > 0) {
-      this.logger.log(`Cleaned up ${result.affected} expired invitations`);
+      if (result.affected && result.affected > 0) {
+        this.logger.log(`Cleaned up ${result.affected} expired invitations`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to cleanup expired invitations: ${error.message}`, error.stack);
     }
   }
 

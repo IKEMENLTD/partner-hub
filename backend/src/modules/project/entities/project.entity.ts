@@ -10,6 +10,7 @@ import {
   ManyToMany,
   JoinTable,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { ProjectStatus, ProjectPriority } from '../enums/project-status.enum';
 import { ProjectType } from '../enums/project-type.enum';
@@ -18,6 +19,8 @@ import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { Partner } from '../../partner/entities/partner.entity';
 
 @Entity('projects')
+@Index('IDX_projects_organization_id', ['organizationId'])
+@Index('IDX_projects_org_status', ['organizationId', 'status'])
 export class Project {
   @PrimaryGeneratedColumn('uuid')
   id: string;

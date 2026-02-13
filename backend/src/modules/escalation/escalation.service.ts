@@ -108,9 +108,13 @@ export class EscalationService {
 
   @Cron(CronExpression.EVERY_HOUR)
   async runScheduledEscalationCheck(): Promise<void> {
-    this.logger.log('Running scheduled escalation check...');
-    await this.triggerEscalationCheck({});
-    this.logger.log('Scheduled escalation check completed');
+    try {
+      this.logger.log('Running scheduled escalation check...');
+      await this.triggerEscalationCheck({});
+      this.logger.log('Scheduled escalation check completed');
+    } catch (error) {
+      this.logger.error(`Failed to run scheduled escalation check: ${error.message}`, error.stack);
+    }
   }
 
   async triggerEscalationCheck(dto: TriggerEscalationCheckDto, organizationId?: string): Promise<{
